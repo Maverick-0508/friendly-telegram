@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Professional lawn care and mowing services for residential and commercial properties">
-    <title>Friendly Telegram - Professional Lawn Care Services</title>
+    <title>AM Mowing - Professional Lawn Care Excellence</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
     <!-- Navigation -->
@@ -16,15 +16,14 @@
         <div class="container">
             <div class="nav-wrapper">
                 <div class="logo">
-                    <span class="logo-icon">🌱</span>
-                    <span class="logo-text">Friendly Telegram</span>
+                    <span class="logo-text">AM Mowing</span>
                 </div>
                 <ul class="nav-menu">
                     <li><a href="#home" class="nav-link">Home</a></li>
                     <li><a href="#services" class="nav-link">Services</a></li>
+                    <li><a href="#insights" class="nav-link">Insights</a></li>
                     <li><a href="#about" class="nav-link">About</a></li>
-                    <li><a href="#testimonials" class="nav-link">Testimonials</a></li>
-                    <li><a href="#contact" class="nav-link">Contact</a></li>
+                    <li><a href="#contact" class="nav-link btn-contact">Contact us</a></li>
                 </ul>
                 <button class="mobile-menu-toggle" aria-label="Toggle menu">
                     <span></span>
@@ -37,20 +36,57 @@
 
     <!-- Hero Section -->
     <section id="home" class="hero">
-        <div class="hero-background"></div>
+        <div class="hero-image-wrapper">
+            <img src="https://images.unsplash.com/photo-1558904541-efa843a96f01?w=1600&h=900&fit=crop" alt="Professional lawn care services" class="hero-image">
+            <div class="hero-overlay"></div>
+        </div>
         <div class="container">
             <div class="hero-content">
-                <h1 class="hero-title fade-in">Your Lawn, Our Passion</h1>
-                <p class="hero-subtitle fade-in-delay-1">Professional lawn care services that transform your outdoor space into a beautiful oasis</p>
-                <div class="hero-buttons fade-in-delay-2">
-                    <a href="#contact" class="btn btn-primary">Get Free Quote</a>
-                    <a href="#services" class="btn btn-secondary">Our Services</a>
+                <h1 class="hero-title">Excellence in Lawn Care</h1>
+                <p class="hero-subtitle">Transforming outdoor spaces with precision, expertise, and sustainable practices</p>
+                <div class="hero-buttons">
+                    <a href="#contact" class="btn btn-primary">Request consultation</a>
+                    <a href="#services" class="btn btn-secondary">Explore services</a>
                 </div>
             </div>
         </div>
-        <div class="scroll-indicator">
-            <span>Scroll Down</span>
-            <div class="scroll-arrow"></div>
+    </section>
+
+    <!-- Featured Section -->
+    <section class="featured">
+        <div class="container">
+            <div class="featured-grid">
+                <div class="featured-card">
+                    <div class="featured-image">
+                        <img src="https://images.unsplash.com/photo-1592595896551-12b371d546d5?w=600&h=400&fit=crop" alt="Residential lawn care">
+                    </div>
+                    <div class="featured-content">
+                        <h3>Residential Excellence</h3>
+                        <p>Tailored lawn care solutions for your home's unique needs</p>
+                        <a href="#services" class="link-arrow">Learn more →</a>
+                    </div>
+                </div>
+                <div class="featured-card">
+                    <div class="featured-image">
+                        <img src="https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&h=400&fit=crop" alt="Commercial lawn maintenance">
+                    </div>
+                    <div class="featured-content">
+                        <h3>Commercial Solutions</h3>
+                        <p>Professional property maintenance for businesses</p>
+                        <a href="#services" class="link-arrow">Learn more →</a>
+                    </div>
+                </div>
+                <div class="featured-card">
+                    <div class="featured-image">
+                        <img src="https://images.unsplash.com/photo-1587091771682-7c0cd8be5538?w=600&h=400&fit=crop" alt="Sustainable landscaping">
+                    </div>
+                    <div class="featured-content">
+                        <h3>Sustainable Practices</h3>
+                        <p>Eco-friendly approaches to landscape management</p>
+                        <a href="#services" class="link-arrow">Learn more →</a>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -59,68 +95,137 @@
         <div class="container">
             <div class="section-header">
                 <h2 class="section-title">Our Services</h2>
-                <p class="section-subtitle">Comprehensive lawn care solutions tailored to your needs</p>
+                <p class="section-subtitle">Comprehensive lawn care solutions delivered with precision and expertise</p>
             </div>
             <div class="services-grid">
                 <div class="service-card">
-                    <div class="service-icon">🌿</div>
-                    <h3 class="service-title">Lawn Mowing</h3>
-                    <p class="service-description">Regular, professional mowing to keep your lawn healthy and beautiful year-round.</p>
+                    <div class="service-number">01</div>
+                    <h3 class="service-title">Professional Lawn Mowing</h3>
+                    <p class="service-description">Precision cutting techniques tailored to your lawn's specific requirements, ensuring optimal health and aesthetic appeal year-round.</p>
                     <ul class="service-features">
                         <li>Weekly or bi-weekly schedules</li>
-                        <li>Edge trimming included</li>
-                        <li>Grass clipping removal</li>
+                        <li>Professional edge trimming</li>
+                        <li>Grass clipping management</li>
+                        <li>Height optimization</li>
                     </ul>
                 </div>
                 <div class="service-card">
-                    <div class="service-icon">✂️</div>
-                    <h3 class="service-title">Hedge Trimming</h3>
-                    <p class="service-description">Expert trimming and shaping of hedges, bushes, and shrubs for a polished look.</p>
-                    <ul class="service-features">
-                        <li>Precision cutting techniques</li>
-                        <li>Seasonal shaping</li>
-                        <li>Debris cleanup</li>
-                    </ul>
-                </div>
-                <div class="service-card">
-                    <div class="service-icon">🍂</div>
-                    <h3 class="service-title">Seasonal Cleanup</h3>
-                    <p class="service-description">Spring and fall cleanup services to maintain your property's pristine appearance.</p>
-                    <ul class="service-features">
-                        <li>Leaf removal</li>
-                        <li>Garden bed preparation</li>
-                        <li>Winterization services</li>
-                    </ul>
-                </div>
-                <div class="service-card">
-                    <div class="service-icon">💧</div>
-                    <h3 class="service-title">Lawn Treatment</h3>
-                    <p class="service-description">Professional fertilization and weed control to promote lush, healthy grass.</p>
-                    <ul class="service-features">
-                        <li>Custom treatment plans</li>
-                        <li>Eco-friendly options</li>
-                        <li>Weed prevention</li>
-                    </ul>
-                </div>
-                <div class="service-card">
-                    <div class="service-icon">🌻</div>
-                    <h3 class="service-title">Garden Design</h3>
-                    <p class="service-description">Creative landscaping and garden design to enhance your outdoor living space.</p>
+                    <div class="service-number">02</div>
+                    <h3 class="service-title">Landscape Design</h3>
+                    <p class="service-description">Strategic landscape planning and implementation that enhances property value while maintaining environmental sustainability.</p>
                     <ul class="service-features">
                         <li>Custom design consultation</li>
-                        <li>Planting services</li>
-                        <li>Mulching and edging</li>
+                        <li>Native plant selection</li>
+                        <li>Irrigation planning</li>
+                        <li>Seasonal color programs</li>
                     </ul>
                 </div>
                 <div class="service-card">
-                    <div class="service-icon">🏡</div>
-                    <h3 class="service-title">Property Maintenance</h3>
-                    <p class="service-description">Complete property upkeep for residential and commercial spaces.</p>
+                    <div class="service-number">03</div>
+                    <h3 class="service-title">Seasonal Maintenance</h3>
+                    <p class="service-description">Comprehensive seasonal programs designed to maintain your landscape's health and appearance throughout the year.</p>
                     <ul class="service-features">
-                        <li>Year-round maintenance</li>
-                        <li>Customized schedules</li>
-                        <li>Commercial services available</li>
+                        <li>Spring preparation</li>
+                        <li>Summer maintenance</li>
+                        <li>Fall cleanup</li>
+                        <li>Winter protection</li>
                     </ul>
+                </div>
+                <div class="service-card">
+                    <div class="service-number">04</div>
+                    <h3 class="service-title">Lawn Treatment Programs</h3>
+                    <p class="service-description">Science-based fertilization and pest management programs that promote sustainable lawn health.</p>
+                    <ul class="service-features">
+                        <li>Soil analysis</li>
+                        <li>Custom fertilization</li>
+                        <li>Weed control</li>
+                        <li>Pest management</li>
+                    </ul>
+                </div>
+                <div class="service-card">
+                    <div class="service-number">05</div>
+                    <h3 class="service-title">Hedge & Shrub Care</h3>
+                    <p class="service-description">Expert trimming and maintenance services that enhance the beauty and health of your landscape features.</p>
+                    <ul class="service-features">
+                        <li>Precision trimming</li>
+                        <li>Shape optimization</li>
+                        <li>Health monitoring</li>
+                        <li>Debris removal</li>
+                    </ul>
+                </div>
+                <div class="service-card">
+                    <div class="service-number">06</div>
+                    <h3 class="service-title">Property Management</h3>
+                    <p class="service-description">Complete property care solutions for residential and commercial clients seeking comprehensive outdoor management.</p>
+                    <ul class="service-features">
+                        <li>Year-round programs</li>
+                        <li>Customized schedules</li>
+                        <li>Quality assurance</li>
+                        <li>Emergency response</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Insights Section (McKinsey-style) -->
+    <section id="insights" class="insights">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Insights & Expertise</h2>
+                <p class="section-subtitle">Industry knowledge and best practices</p>
+            </div>
+            <div class="insights-grid">
+                <div class="insight-card">
+                    <div class="insight-image">
+                        <img src="https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=800&h=600&fit=crop" alt="Lawn care insights">
+                    </div>
+                    <div class="insight-category">Best Practices</div>
+                    <h3 class="insight-title">The Science of Sustainable Lawn Care</h3>
+                    <p class="insight-excerpt">How modern techniques and eco-friendly approaches deliver superior results while protecting the environment.</p>
+                    <a href="#" class="link-arrow">Read more →</a>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-image">
+                        <img src="https://images.unsplash.com/photo-1597633544424-bffe992c6bae?w=800&h=600&fit=crop" alt="Property value">
+                    </div>
+                    <div class="insight-category">Industry Report</div>
+                    <h3 class="insight-title">Impact of Professional Landscaping on Property Values</h3>
+                    <p class="insight-excerpt">Research-backed analysis of how quality lawn care enhances residential and commercial property worth.</p>
+                    <a href="#" class="link-arrow">Read more →</a>
+                </div>
+                <div class="insight-card">
+                    <div class="insight-image">
+                        <img src="https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=800&h=600&fit=crop" alt="Seasonal care">
+                    </div>
+                    <div class="insight-category">Seasonal Guide</div>
+                    <h3 class="insight-title">Year-Round Lawn Maintenance Calendar</h3>
+                    <p class="insight-excerpt">A comprehensive guide to maintaining your lawn's health and beauty through every season.</p>
+                    <a href="#" class="link-arrow">Read more →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-number">15+</div>
+                    <div class="stat-label">Years of Excellence</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">2,500+</div>
+                    <div class="stat-label">Properties Maintained</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">98%</div>
+                    <div class="stat-label">Client Satisfaction</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">50+</div>
+                    <div class="stat-label">Team Professionals</div>
                 </div>
             </div>
         </div>
@@ -131,79 +236,69 @@
         <div class="container">
             <div class="about-content">
                 <div class="about-text">
-                    <h2 class="section-title">About Friendly Telegram</h2>
+                    <h2 class="section-title">About AM Mowing</h2>
                     <p class="about-description">
-                        With over a decade of experience in professional lawn care, Friendly Telegram has been transforming outdoor spaces into beautiful, healthy landscapes. Our dedicated team of experts is committed to providing exceptional service that exceeds your expectations.
+                        Founded on principles of excellence and sustainability, AM Mowing has established itself as a leader in professional lawn care services. Our team combines decades of experience with the latest industry innovations to deliver exceptional results.
                     </p>
                     <p class="about-description">
-                        We believe that every property deserves the highest quality care. That's why we use state-of-the-art equipment, eco-friendly products, and proven techniques to ensure your lawn looks its absolute best throughout the year.
+                        We believe that every property deserves meticulous care. Our commitment to quality, environmental responsibility, and client satisfaction drives everything we do. From residential lawns to commercial landscapes, we apply the same rigorous standards and attention to detail.
                     </p>
-                    <div class="about-stats">
-                        <div class="stat-item">
-                            <div class="stat-number">10+</div>
-                            <div class="stat-label">Years Experience</div>
+                    <div class="about-values">
+                        <div class="value-item">
+                            <h4>Excellence</h4>
+                            <p>Uncompromising quality in every service</p>
                         </div>
-                        <div class="stat-item">
-                            <div class="stat-number">500+</div>
-                            <div class="stat-label">Happy Clients</div>
+                        <div class="value-item">
+                            <h4>Sustainability</h4>
+                            <p>Environmental stewardship in all practices</p>
                         </div>
-                        <div class="stat-item">
-                            <div class="stat-number">100%</div>
-                            <div class="stat-label">Satisfaction Rate</div>
+                        <div class="value-item">
+                            <h4>Innovation</h4>
+                            <p>Leading-edge techniques and technology</p>
                         </div>
                     </div>
                 </div>
                 <div class="about-image">
-                    <div class="image-placeholder">
-                        <span class="image-icon">🌳</span>
-                        <p>Professional Lawn Care Excellence</p>
-                    </div>
+                    <img src="https://images.unsplash.com/photo-1621600411688-4be93cd68504?w=800&h=1000&fit=crop" alt="AM Mowing team">
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Testimonials Section -->
-    <section id="testimonials" class="testimonials">
+    <section class="testimonials">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">What Our Clients Say</h2>
-                <p class="section-subtitle">Real experiences from satisfied customers</p>
+                <h2 class="section-title">Client Testimonials</h2>
+                <p class="section-subtitle">What our clients say about our services</p>
             </div>
             <div class="testimonials-grid">
                 <div class="testimonial-card">
-                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
-                    <p class="testimonial-text">"Friendly Telegram has been taking care of my lawn for three years now. They're always on time, professional, and my yard has never looked better!"</p>
+                    <p class="testimonial-text">"AM Mowing has transformed our corporate campus. Their professionalism and attention to detail are exceptional. Our grounds have never looked better."</p>
                     <div class="testimonial-author">
-                        <div class="author-avatar">JD</div>
                         <div class="author-info">
-                            <div class="author-name">John Doe</div>
-                            <div class="author-title">Homeowner</div>
+                            <div class="author-name">Robert Chen</div>
+                            <div class="author-title">Facilities Director, TechCorp Inc.</div>
                         </div>
                     </div>
                 </div>
                 <div class="testimonial-card">
-                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
-                    <p class="testimonial-text">"Outstanding service! They transformed our overgrown property into a beautiful landscape. Highly recommend their seasonal cleanup services."</p>
+                    <p class="testimonial-text">"The level of expertise and service quality is remarkable. They've helped us maintain our property value while implementing sustainable practices."</p>
                     <div class="testimonial-author">
-                        <div class="author-avatar">SM</div>
                         <div class="author-info">
-                            <div class="author-name">Sarah Miller</div>
-                            <div class="author-title">Business Owner</div>
+                            <div class="author-name">Jennifer Martinez</div>
+                            <div class="author-title">Property Manager, Greenfield Estates</div>
                         </div>
                     </div>
                 </div>
                 <div class="testimonial-card">
-                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
-                    <p class="testimonial-text">"Professional, reliable, and affordable. The team at Friendly Telegram goes above and beyond every single time. Best lawn care service in town!"</p>
+                    <p class="testimonial-text">"Outstanding service and reliability. AM Mowing brings a level of professionalism to lawn care that is truly industry-leading."</p>
                     <div class="testimonial-author">
-                        <div class="author-avatar">RJ</div>
                         <div class="author-info">
-                            <div class="author-name">Robert Johnson</div>
-                            <div class="author-title">Property Manager</div>
+                            <div class="author-name">David Thompson</div>
+                            <div class="author-title">Homeowner, Oak Ridge</div>
                         </div>
                     </div>
-                </div>
             </div>
         </div>
     </section>
@@ -211,76 +306,64 @@
     <!-- Contact Section -->
     <section id="contact" class="contact">
         <div class="container">
-            <div class="contact-content">
+            <div class="contact-wrapper">
                 <div class="contact-info">
-                    <h2 class="section-title">Get In Touch</h2>
-                    <p class="contact-description">Ready to transform your outdoor space? Contact us today for a free consultation and quote.</p>
+                    <h2 class="section-title">Get in Touch</h2>
+                    <p class="contact-description">Connect with our team to discuss how we can enhance your property's landscape.</p>
                     <div class="contact-details">
                         <div class="contact-item">
-                            <div class="contact-icon">📞</div>
-                            <div class="contact-text">
-                                <div class="contact-label">Phone</div>
-                                <div class="contact-value">(555) 123-4567</div>
-                            </div>
+                            <div class="contact-label">Phone</div>
+                            <div class="contact-value">(555) 123-4567</div>
                         </div>
                         <div class="contact-item">
-                            <div class="contact-icon">📧</div>
-                            <div class="contact-text">
-                                <div class="contact-label">Email</div>
-                                <div class="contact-value">info@friendlytelegram.com</div>
-                            </div>
+                            <div class="contact-label">Email</div>
+                            <div class="contact-value">contact@ammowing.com</div>
                         </div>
                         <div class="contact-item">
-                            <div class="contact-icon">📍</div>
-                            <div class="contact-text">
-                                <div class="contact-label">Address</div>
-                                <div class="contact-value">123 Green Street, Lawn City, LC 12345</div>
-                            </div>
+                            <div class="contact-label">Office</div>
+                            <div class="contact-value">123 Green Street, Lawn City, LC 12345</div>
                         </div>
                         <div class="contact-item">
-                            <div class="contact-icon">🕐</div>
-                            <div class="contact-text">
-                                <div class="contact-label">Business Hours</div>
-                                <div class="contact-value">Mon-Sat: 7AM - 7PM</div>
-                            </div>
+                            <div class="contact-label">Business Hours</div>
+                            <div class="contact-value">Monday - Saturday: 7:00 AM - 7:00 PM</div>
                         </div>
                     </div>
                 </div>
                 <div class="contact-form-wrapper">
                     <form class="contact-form" id="contactForm">
                         <div class="form-group">
-                            <label for="name">Full Name</label>
-                            <input type="text" id="name" name="name" required placeholder="Enter your name">
+                            <label for="name">Full Name *</label>
+                            <input type="text" id="name" name="name" required>
                         </div>
                         <div class="form-group">
-                            <label for="email">Email Address</label>
-                            <input type="email" id="email" name="email" required placeholder="your.email@example.com">
+                            <label for="email">Email Address *</label>
+                            <input type="email" id="email" name="email" required>
                         </div>
                         <div class="form-group">
                             <label for="phone">Phone Number</label>
-                            <input type="tel" id="phone" name="phone" placeholder="(555) 123-4567">
+                            <input type="tel" id="phone" name="phone">
                         </div>
                         <div class="form-group">
-                            <label for="service">Service Interested In</label>
+                            <label for="service">Service of Interest</label>
                             <select id="service" name="service">
                                 <option value="">Select a service</option>
                                 <option value="mowing">Lawn Mowing</option>
-                                <option value="trimming">Hedge Trimming</option>
-                                <option value="cleanup">Seasonal Cleanup</option>
+                                <option value="design">Landscape Design</option>
+                                <option value="seasonal">Seasonal Maintenance</option>
                                 <option value="treatment">Lawn Treatment</option>
-                                <option value="design">Garden Design</option>
-                                <option value="maintenance">Property Maintenance</option>
-                                <option value="other">Other</option>
+                                <option value="hedge">Hedge & Shrub Care</option>
+                                <option value="property">Property Management</option>
+                                <option value="consultation">General Consultation</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label for="message">Message</label>
-                            <textarea id="message" name="message" rows="4" placeholder="Tell us about your project..."></textarea>
+                            <textarea id="message" name="message" rows="4"></textarea>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-full">Send Message</button>
+                        <button type="submit" class="btn btn-primary btn-full">Submit Inquiry</button>
                     </form>
                     <div id="formSuccess" class="form-message success" style="display: none;">
-                        Thank you for your message! We'll get back to you soon.
+                        Thank you for your inquiry. We'll contact you within 24 hours.
                     </div>
                 </div>
             </div>
@@ -293,41 +376,44 @@
             <div class="footer-content">
                 <div class="footer-section">
                     <div class="footer-logo">
-                        <span class="logo-icon">🌱</span>
-                        <span class="logo-text">Friendly Telegram</span>
+                        <span class="logo-text">AM Mowing</span>
                     </div>
-                    <p class="footer-tagline">Your Lawn, Our Passion</p>
-                </div>
-                <div class="footer-section">
-                    <h4 class="footer-title">Quick Links</h4>
-                    <ul class="footer-links">
-                        <li><a href="#home">Home</a></li>
-                        <li><a href="#services">Services</a></li>
-                        <li><a href="#about">About</a></li>
-                        <li><a href="#contact">Contact</a></li>
-                    </ul>
+                    <p class="footer-tagline">Excellence in Lawn Care</p>
                 </div>
                 <div class="footer-section">
                     <h4 class="footer-title">Services</h4>
                     <ul class="footer-links">
                         <li><a href="#services">Lawn Mowing</a></li>
-                        <li><a href="#services">Hedge Trimming</a></li>
-                        <li><a href="#services">Seasonal Cleanup</a></li>
-                        <li><a href="#services">Garden Design</a></li>
+                        <li><a href="#services">Landscape Design</a></li>
+                        <li><a href="#services">Seasonal Maintenance</a></li>
+                        <li><a href="#services">Property Management</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
-                    <h4 class="footer-title">Connect With Us</h4>
-                    <div class="social-links">
-                        <a href="#" class="social-link" aria-label="Facebook">📘</a>
-                        <a href="#" class="social-link" aria-label="Instagram">📷</a>
-                        <a href="#" class="social-link" aria-label="Twitter">🐦</a>
-                        <a href="#" class="social-link" aria-label="LinkedIn">💼</a>
-                    </div>
+                    <h4 class="footer-title">Company</h4>
+                    <ul class="footer-links">
+                        <li><a href="#about">About Us</a></li>
+                        <li><a href="#insights">Insights</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                        <li><a href="#">Careers</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-title">Connect</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">LinkedIn</a></li>
+                        <li><a href="#">Facebook</a></li>
+                        <li><a href="#">Instagram</a></li>
+                        <li><a href="#">Twitter</a></li>
+                    </ul>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; <span id="currentYear"></span> Friendly Telegram. All rights reserved.</p>
+                <p>&copy; <span id="currentYear"></span> AM Mowing. All rights reserved.</p>
+                <div class="footer-legal">
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                </div>
             </div>
         </div>
     </footer>
