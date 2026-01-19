@@ -70,8 +70,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Phone validation (basic)
         const phoneRegex = /^[\d\s\-\+\(\)]+$/;
-        if (!phoneRegex.test(phone) || phone.length < 10) {
-            alert('Please enter a valid phone number.');
+        const digitCount = phone.replace(/\D/g, '').length;
+        if (!phoneRegex.test(phone) || digitCount < 10) {
+            alert('Please enter a valid phone number with at least 10 digits.');
             document.getElementById('phone').focus();
             return false;
         }
