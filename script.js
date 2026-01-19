@@ -32,7 +32,6 @@ navLinks.forEach(link => {
 
 // Navbar scroll effect
 const navbar = document.querySelector('.navbar');
-let lastScroll = 0;
 
 window.addEventListener('scroll', () => {
     const currentScroll = window.pageYOffset;
@@ -42,8 +41,6 @@ window.addEventListener('scroll', () => {
     } else {
         navbar.classList.remove('scrolled');
     }
-    
-    lastScroll = currentScroll;
 });
 
 // Smooth scroll for anchor links
@@ -130,13 +127,20 @@ contactForm.addEventListener('submit', (e) => {
     }, 5000);
 });
 
-// Add parallax effect to hero section
+// Add parallax effect to hero section (throttled for performance)
+let ticking = false;
 window.addEventListener('scroll', () => {
-    const scrolled = window.pageYOffset;
-    const heroBackground = document.querySelector('.hero-background');
-    
-    if (heroBackground) {
-        heroBackground.style.transform = `translateY(${scrolled * 0.5}px)`;
+    if (!ticking) {
+        window.requestAnimationFrame(() => {
+            const scrolled = window.pageYOffset;
+            const heroBackground = document.querySelector('.hero-background');
+            
+            if (heroBackground) {
+                heroBackground.style.transform = `translateY(${scrolled * 0.5}px)`;
+            }
+            ticking = false;
+        });
+        ticking = true;
     }
 });
 
@@ -287,6 +291,12 @@ document.addEventListener('DOMContentLoaded', () => {
             heroContent.style.transition = 'opacity 1s ease-in';
             heroContent.style.opacity = '1';
         }, 100);
+    }
+    
+    // Set current year in footer
+    const currentYearElement = document.getElementById('currentYear');
+    if (currentYearElement) {
+        currentYearElement.textContent = new Date().getFullYear();
     }
     
     console.log('Friendly Telegram website loaded successfully!');
