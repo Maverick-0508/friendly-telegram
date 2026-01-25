@@ -11,8 +11,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="skip-to-content">Skip to main content</a>
+    
+    <!-- Scroll Progress Indicator -->
+    <div class="scroll-progress" role="progressbar" aria-label="Page scroll progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+    
     <!-- Navigation -->
-    <nav class="navbar">
+    <nav class="navbar" role="navigation" aria-label="Main navigation">
         <div class="container">
             <div class="nav-wrapper">
                 <div class="logo">
@@ -25,17 +31,18 @@
                     <li><a href="#about" class="nav-link">About</a></li>
                     <li><a href="#contact" class="nav-link btn-contact">Contact us</a></li>
                 </ul>
-                <button class="mobile-menu-toggle" aria-label="Toggle menu">
-                    <span></span>
-                    <span></span>
-                    <span></span>
+                <button class="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
                 </button>
             </div>
         </div>
     </nav>
 
     <!-- Hero Section -->
-    <section id="home" class="hero">
+    <main id="main-content">
+    <section id="home" class="hero" aria-label="Welcome section">
         <div class="hero-image-wrapper">
             <img src="https://images.unsplash.com/photo-1558904541-efa843a96f01?w=1600&h=900&fit=crop" alt="Professional lawn care services" class="hero-image">
             <div class="hero-overlay"></div>
@@ -330,18 +337,21 @@
                     </div>
                 </div>
                 <div class="contact-form-wrapper">
-                    <form class="contact-form" id="contactForm">
+                    <form class="contact-form" id="contactForm" novalidate>
                         <div class="form-group">
                             <label for="name">Full Name *</label>
-                            <input type="text" id="name" name="name" required>
+                            <input type="text" id="name" name="name" required aria-required="true" aria-describedby="name-error">
+                            <span class="error-message" id="name-error">Please enter your full name</span>
                         </div>
                         <div class="form-group">
                             <label for="email">Email Address *</label>
-                            <input type="email" id="email" name="email" required>
+                            <input type="email" id="email" name="email" required aria-required="true" aria-describedby="email-error">
+                            <span class="error-message" id="email-error">Please enter a valid email address</span>
                         </div>
                         <div class="form-group">
                             <label for="phone">Phone Number</label>
-                            <input type="tel" id="phone" name="phone">
+                            <input type="tel" id="phone" name="phone" aria-describedby="phone-help">
+                            <span class="error-message" id="phone-error">Please enter a valid phone number</span>
                         </div>
                         <div class="form-group">
                             <label for="service">Service of Interest</label>
@@ -362,7 +372,7 @@
                         </div>
                         <button type="submit" class="btn btn-primary btn-full">Submit Inquiry</button>
                     </form>
-                    <div id="formSuccess" class="form-message success" style="display: none;">
+                    <div id="formSuccess" class="form-message success" role="status" aria-live="polite">
                         Thank you for your inquiry. We'll contact you within 24 hours.
                     </div>
                 </div>
@@ -417,6 +427,7 @@
             </div>
         </div>
     </footer>
+    </main>
 
     <script src="script.js"></script>
 </body>
