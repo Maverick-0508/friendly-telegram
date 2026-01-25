@@ -3,11 +3,14 @@ const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
 const navMenu = document.querySelector('.nav-menu');
 
 mobileMenuToggle.addEventListener('click', () => {
-    navMenu.classList.toggle('active');
+    const isExpanded = navMenu.classList.toggle('active');
+    
+    // Update ARIA attribute for accessibility
+    mobileMenuToggle.setAttribute('aria-expanded', isExpanded);
     
     // Animate hamburger menu
     const spans = mobileMenuToggle.querySelectorAll('span');
-    if (navMenu.classList.contains('active')) {
+    if (isExpanded) {
         spans[0].style.transform = 'rotate(45deg) translate(5px, 5px)';
         spans[1].style.opacity = '0';
         spans[2].style.transform = 'rotate(-45deg) translate(7px, -6px)';
@@ -23,12 +26,28 @@ const navLinks = document.querySelectorAll('.nav-link');
 navLinks.forEach(link => {
     link.addEventListener('click', () => {
         navMenu.classList.remove('active');
+        mobileMenuToggle.setAttribute('aria-expanded', 'false');
         const spans = mobileMenuToggle.querySelectorAll('span');
         spans[0].style.transform = 'none';
         spans[1].style.opacity = '1';
         spans[2].style.transform = 'none';
     });
 });
+
+// Scroll Progress Indicator
+const scrollProgress = document.querySelector('.scroll-progress');
+
+function updateScrollProgress() {
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    const scrollPercent = (scrollTop / scrollHeight) * 100;
+    
+    scrollProgress.style.width = scrollPercent + '%';
+    scrollProgress.setAttribute('aria-valuenow', Math.round(scrollPercent));
+}
+
+window.addEventListener('scroll', updateScrollProgress);
+updateScrollProgress(); // Initialize
 
 // Navbar scroll effect
 const navbar = document.querySelector('.navbar');
@@ -100,30 +119,113 @@ animatedElements.forEach(el => observer.observe(el));
 const contactForm = document.getElementById('contactForm');
 const formSuccess = document.getElementById('formSuccess');
 
+// Form validation helpers
+function validateEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+}
+
+function validatePhone(phone) {
+    if (!phone) return true; // Phone is optional
+    const re = /^[\d\s\-\+\(\)]+$/;
+    return re.test(phone) && phone.replace(/\D/g, '').length >= 10;
+}
+
+function showError(inputId, errorId, show = true) {
+    const input = document.getElementById(inputId);
+    const error = document.getElementById(errorId);
+    
+    if (show) {
+        input.classList.add('error');
+        error.classList.add('visible');
+    } else {
+        input.classList.remove('error');
+        error.classList.remove('visible');
+    }
+}
+
+// Real-time validation
+document.getElementById('email').addEventListener('blur', function() {
+    const email = this.value.trim();
+    if (email && !validateEmail(email)) {
+        showError('email', 'email-error', true);
+    } else {
+        showError('email', 'email-error', false);
+    }
+});
+
+document.getElementById('phone').addEventListener('blur', function() {
+    const phone = this.value.trim();
+    if (phone && !validatePhone(phone)) {
+        showError('phone', 'phone-error', true);
+    } else {
+        showError('phone', 'phone-error', false);
+    }
+});
+
+document.getElementById('name').addEventListener('blur', function() {
+    const name = this.value.trim();
+    if (name && name.length < 2) {
+        showError('name', 'name-error', true);
+    } else {
+        showError('name', 'name-error', false);
+    }
+});
+
 contactForm.addEventListener('submit', (e) => {
     e.preventDefault();
     
     // Get form data
-    const formData = {
-        name: document.getElementById('name').value,
-        email: document.getElementById('email').value,
-        phone: document.getElementById('phone').value,
-        service: document.getElementById('service').value,
-        message: document.getElementById('message').value
-    };
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const service = document.getElementById('service').value;
+    const message = document.getElementById('message').value.trim();
+    
+    let isValid = true;
+    
+    // Validate name
+    if (!name || name.length < 2) {
+        showError('name', 'name-error', true);
+        isValid = false;
+    } else {
+        showError('name', 'name-error', false);
+    }
+    
+    // Validate email
+    if (!email || !validateEmail(email)) {
+        showError('email', 'email-error', true);
+        isValid = false;
+    } else {
+        showError('email', 'email-error', false);
+    }
+    
+    // Validate phone (if provided)
+    if (phone && !validatePhone(phone)) {
+        showError('phone', 'phone-error', true);
+        isValid = false;
+    } else {
+        showError('phone', 'phone-error', false);
+    }
+    
+    if (!isValid) {
+        return;
+    }
+    
+    const formData = { name, email, phone, service, message };
     
     // Simulate form submission (in production, this would send to a server)
     console.log('Form submitted:', formData);
     
     // Show success message
     contactForm.style.display = 'none';
-    formSuccess.style.display = 'block';
+    formSuccess.classList.add('visible');
     
     // Reset form and hide success message after 5 seconds
     setTimeout(() => {
         contactForm.reset();
         contactForm.style.display = 'flex';
-        formSuccess.style.display = 'none';
+        formSuccess.classList.remove('visible');
     }, 5000);
 });
 
