@@ -5,14 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Professional lawn care and mowing services for residential and commercial properties">
     <title>AM Mowing - Professional Lawn Care Excellence</title>
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ammowing.com/">
+    <meta property="og:title" content="AM Mowing - Professional Lawn Care Excellence">
+    <meta property="og:description" content="Transforming outdoor spaces with precision, expertise, and sustainable practices. 15+ years of professional lawn care services.">
+    <meta property="og:image" content="https://images.unsplash.com/photo-1558904541-efa843a96f01?w=1200&h=630&fit=crop">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://ammowing.com/">
+    <meta property="twitter:title" content="AM Mowing - Professional Lawn Care Excellence">
+    <meta property="twitter:description" content="Transforming outdoor spaces with precision, expertise, and sustainable practices.">
+    <meta property="twitter:image" content="https://images.unsplash.com/photo-1558904541-efa843a96f01?w=1200&h=630&fit=crop">
+    
+    <!-- Preload critical assets -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" as="style">
+    <link rel="preload" href="https://images.unsplash.com/photo-1558904541-efa843a96f01?w=1600&h=900&fit=crop" as="image">
+    
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Skip to content link for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Scroll Progress Indicator -->
+    <div class="scroll-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+    
     <!-- Navigation -->
-    <nav class="navbar">
+    <nav class="navbar" role="navigation" aria-label="Main navigation">
         <div class="container">
             <div class="nav-wrapper">
                 <div class="logo">
@@ -25,7 +50,7 @@
                     <li><a href="#about" class="nav-link">About</a></li>
                     <li><a href="#contact" class="nav-link btn-contact">Contact us</a></li>
                 </ul>
-                <button class="mobile-menu-toggle" aria-label="Toggle menu">
+                <button class="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
                     <span></span>
                     <span></span>
                     <span></span>
@@ -36,8 +61,9 @@
 
     <!-- Hero Section -->
     <section id="home" class="hero">
+        <main id="main-content">
         <div class="hero-image-wrapper">
-            <img src="https://images.unsplash.com/photo-1558904541-efa843a96f01?w=1600&h=900&fit=crop" alt="Professional lawn care services" class="hero-image">
+            <img src="https://images.unsplash.com/photo-1558904541-efa843a96f01?w=1600&h=900&fit=crop" alt="Professional lawn care services showing well-maintained green lawn" class="hero-image">
             <div class="hero-overlay"></div>
         </div>
         <div class="container">
@@ -58,7 +84,7 @@
             <div class="featured-grid">
                 <div class="featured-card">
                     <div class="featured-image">
-                        <img src="https://images.unsplash.com/photo-1592595896551-12b371d546d5?w=600&h=400&fit=crop" alt="Residential lawn care">
+                        <img loading="lazy" src="https://images.unsplash.com/photo-1592595896551-12b371d546d5?w=600&h=400&fit=crop" alt="Residential lawn care showing beautiful home garden">
                     </div>
                     <div class="featured-content">
                         <h3>Residential Excellence</h3>
@@ -68,7 +94,7 @@
                 </div>
                 <div class="featured-card">
                     <div class="featured-image">
-                        <img src="https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&h=400&fit=crop" alt="Commercial lawn maintenance">
+                        <img loading="lazy" src="https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&h=400&fit=crop" alt="Commercial lawn maintenance for business properties">
                     </div>
                     <div class="featured-content">
                         <h3>Commercial Solutions</h3>
@@ -78,7 +104,7 @@
                 </div>
                 <div class="featured-card">
                     <div class="featured-image">
-                        <img src="https://images.unsplash.com/photo-1587091771682-7c0cd8be5538?w=600&h=400&fit=crop" alt="Sustainable landscaping">
+                        <img loading="lazy" src="https://images.unsplash.com/photo-1587091771682-7c0cd8be5538?w=600&h=400&fit=crop" alt="Sustainable landscaping practices with eco-friendly approach">
                     </div>
                     <div class="featured-content">
                         <h3>Sustainable Practices</h3>
@@ -108,6 +134,7 @@
                         <li>Grass clipping management</li>
                         <li>Height optimization</li>
                     </ul>
+                    <a href="#contact" class="btn btn-service">Get Quote</a>
                 </div>
                 <div class="service-card">
                     <div class="service-number">02</div>
@@ -119,6 +146,7 @@
                         <li>Irrigation planning</li>
                         <li>Seasonal color programs</li>
                     </ul>
+                    <a href="#contact" class="btn btn-service">Get Quote</a>
                 </div>
                 <div class="service-card">
                     <div class="service-number">03</div>
@@ -130,6 +158,7 @@
                         <li>Fall cleanup</li>
                         <li>Winter protection</li>
                     </ul>
+                    <a href="#contact" class="btn btn-service">Get Quote</a>
                 </div>
                 <div class="service-card">
                     <div class="service-number">04</div>
@@ -141,6 +170,7 @@
                         <li>Weed control</li>
                         <li>Pest management</li>
                     </ul>
+                    <a href="#contact" class="btn btn-service">Get Quote</a>
                 </div>
                 <div class="service-card">
                     <div class="service-number">05</div>
@@ -152,6 +182,7 @@
                         <li>Health monitoring</li>
                         <li>Debris removal</li>
                     </ul>
+                    <a href="#contact" class="btn btn-service">Get Quote</a>
                 </div>
                 <div class="service-card">
                     <div class="service-number">06</div>
@@ -163,6 +194,7 @@
                         <li>Quality assurance</li>
                         <li>Emergency response</li>
                     </ul>
+                    <a href="#contact" class="btn btn-service">Get Quote</a>
                 </div>
             </div>
         </div>
@@ -178,7 +210,7 @@
             <div class="insights-grid">
                 <div class="insight-card">
                     <div class="insight-image">
-                        <img src="https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=800&h=600&fit=crop" alt="Lawn care insights">
+                        <img loading="lazy" src="https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=800&h=600&fit=crop" alt="Lawn care insights and sustainable practices">
                     </div>
                     <div class="insight-category">Best Practices</div>
                     <h3 class="insight-title">The Science of Sustainable Lawn Care</h3>
@@ -187,7 +219,7 @@
                 </div>
                 <div class="insight-card">
                     <div class="insight-image">
-                        <img src="https://images.unsplash.com/photo-1597633544424-bffe992c6bae?w=800&h=600&fit=crop" alt="Property value">
+                        <img loading="lazy" src="https://images.unsplash.com/photo-1597633544424-bffe992c6bae?w=800&h=600&fit=crop" alt="Property value and landscaping impact">
                     </div>
                     <div class="insight-category">Industry Report</div>
                     <h3 class="insight-title">Impact of Professional Landscaping on Property Values</h3>
@@ -196,7 +228,7 @@
                 </div>
                 <div class="insight-card">
                     <div class="insight-image">
-                        <img src="https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=800&h=600&fit=crop" alt="Seasonal care">
+                        <img loading="lazy" src="https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=800&h=600&fit=crop" alt="Seasonal care and maintenance calendar">
                     </div>
                     <div class="insight-category">Seasonal Guide</div>
                     <h3 class="insight-title">Year-Round Lawn Maintenance Calendar</h3>
@@ -227,6 +259,10 @@
                     <div class="stat-number">50+</div>
                     <div class="stat-label">Team Professionals</div>
                 </div>
+            </div>
+            <div class="stats-cta">
+                <h3>Ready to transform your outdoor space?</h3>
+                <a href="#contact" class="btn btn-primary btn-cta">Get Your Free Quote Today</a>
             </div>
         </div>
     </section>
@@ -259,7 +295,7 @@
                     </div>
                 </div>
                 <div class="about-image">
-                    <img src="https://images.unsplash.com/photo-1621600411688-4be93cd68504?w=800&h=1000&fit=crop" alt="AM Mowing team">
+                    <img loading="lazy" src="https://images.unsplash.com/photo-1621600411688-4be93cd68504?w=800&h=1000&fit=crop" alt="AM Mowing professional team providing lawn care services">
                 </div>
             </div>
         </div>
@@ -299,6 +335,7 @@
                             <div class="author-title">Homeowner, Oak Ridge</div>
                         </div>
                     </div>
+                </div>
             </div>
         </div>
     </section>
@@ -313,11 +350,11 @@
                     <div class="contact-details">
                         <div class="contact-item">
                             <div class="contact-label">Phone</div>
-                            <div class="contact-value">(555) 123-4567</div>
+                            <a href="tel:+15551234567" class="contact-value contact-link">(555) 123-4567</a>
                         </div>
                         <div class="contact-item">
                             <div class="contact-label">Email</div>
-                            <div class="contact-value">contact@ammowing.com</div>
+                            <a href="mailto:contact@ammowing.com" class="contact-value contact-link">contact@ammowing.com</a>
                         </div>
                         <div class="contact-item">
                             <div class="contact-label">Office</div>
@@ -327,21 +364,28 @@
                             <div class="contact-label">Business Hours</div>
                             <div class="contact-value">Monday - Saturday: 7:00 AM - 7:00 PM</div>
                         </div>
+                        <div class="contact-item">
+                            <div class="contact-label">Service Area</div>
+                            <div class="contact-value">Serving Greater Lawn City and surrounding areas within 30 miles</div>
+                        </div>
                     </div>
                 </div>
                 <div class="contact-form-wrapper">
-                    <form class="contact-form" id="contactForm">
+                    <form class="contact-form" id="contactForm" novalidate>
                         <div class="form-group">
-                            <label for="name">Full Name *</label>
-                            <input type="text" id="name" name="name" required>
+                            <label for="name">Full Name <span class="required-indicator" aria-label="required">*</span></label>
+                            <input type="text" id="name" name="name" required aria-required="true" aria-describedby="name-error">
+                            <span class="error-message" id="name-error" role="alert"></span>
                         </div>
                         <div class="form-group">
-                            <label for="email">Email Address *</label>
-                            <input type="email" id="email" name="email" required>
+                            <label for="email">Email Address <span class="required-indicator" aria-label="required">*</span></label>
+                            <input type="email" id="email" name="email" required aria-required="true" aria-describedby="email-error">
+                            <span class="error-message" id="email-error" role="alert"></span>
                         </div>
                         <div class="form-group">
                             <label for="phone">Phone Number</label>
-                            <input type="tel" id="phone" name="phone">
+                            <input type="tel" id="phone" name="phone" pattern="[0-9\s\(\)\-\+]+" aria-describedby="phone-error">
+                            <span class="error-message" id="phone-error" role="alert"></span>
                         </div>
                         <div class="form-group">
                             <label for="service">Service of Interest</label>
@@ -358,18 +402,149 @@
                         </div>
                         <div class="form-group">
                             <label for="message">Message</label>
-                            <textarea id="message" name="message" rows="4"></textarea>
+                            <textarea id="message" name="message" rows="4" aria-describedby="message-error"></textarea>
+                            <span class="error-message" id="message-error" role="alert"></span>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-full">Submit Inquiry</button>
+                        <button type="submit" class="btn btn-primary btn-full">
+                            <span class="btn-text">Submit Inquiry</span>
+                            <span class="btn-loader" style="display: none;"></span>
+                        </button>
                     </form>
-                    <div id="formSuccess" class="form-message success" style="display: none;">
-                        Thank you for your inquiry. We'll contact you within 24 hours.
+                    <div id="formSuccess" class="form-message success" style="display: none;" role="status" aria-live="polite">
+                        <svg class="success-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Thank you for your inquiry. We'll contact you within 24 hours.</span>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
+    <!-- FAQ Section -->
+    <section id="faq" class="faq">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Frequently Asked Questions</h2>
+                <p class="section-subtitle">Get answers to common questions about our lawn care services</p>
+            </div>
+            <div class="faq-grid">
+                <div class="faq-item">
+                    <button class="faq-question" aria-expanded="false">
+                        <span>How often should I schedule lawn mowing services?</span>
+                        <svg class="faq-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>We recommend weekly mowing during peak growing season (spring and early summer) and bi-weekly during slower growth periods. Our team will assess your lawn's specific needs and create a customized schedule for optimal results.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" aria-expanded="false">
+                        <span>Do you offer organic or eco-friendly lawn care options?</span>
+                        <svg class="faq-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Yes! We prioritize sustainable practices and offer comprehensive organic lawn care programs. Our eco-friendly treatments use natural fertilizers and integrated pest management techniques that are safe for your family, pets, and the environment.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" aria-expanded="false">
+                        <span>What makes your service different from other lawn care companies?</span>
+                        <svg class="faq-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>With 15+ years of experience, our team combines professional expertise with cutting-edge techniques. We provide personalized service, use commercial-grade equipment, and maintain a 98% client satisfaction rate. Every property receives individualized attention and care.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" aria-expanded="false">
+                        <span>How quickly can you start service?</span>
+                        <svg class="faq-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Most clients can be scheduled within 3-5 business days. For urgent requests or emergency services, we offer expedited scheduling. Contact us today for a free consultation and we'll work with you to find the best start date.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" aria-expanded="false">
+                        <span>Do you provide services for commercial properties?</span>
+                        <svg class="faq-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Absolutely! We serve both residential and commercial clients. Our commercial services include office complexes, retail spaces, HOAs, and industrial properties. We offer flexible scheduling to minimize disruption to your business operations.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question" aria-expanded="false">
+                        <span>What is included in your satisfaction guarantee?</span>
+                        <svg class="faq-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <div class="faq-answer">
+                        <p>We stand behind our work with a 100% satisfaction guarantee. If you're not completely satisfied with any service, we'll return within 24 hours to address any concerns at no additional cost. Your satisfaction is our top priority.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trust Indicators Section -->
+    <section class="trust-indicators">
+        <div class="container">
+            <div class="trust-grid">
+                <div class="trust-item">
+                    <svg class="trust-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="var(--blue-accent)"/>
+                    </svg>
+                    <h4>Licensed & Insured</h4>
+                    <p>Fully certified professionals with comprehensive liability coverage</p>
+                </div>
+                <div class="trust-item">
+                    <svg class="trust-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 11L12 14L22 4M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16" stroke="var(--blue-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <h4>Satisfaction Guaranteed</h4>
+                    <p>100% satisfaction guarantee on all our services</p>
+                </div>
+                <div class="trust-item">
+                    <svg class="trust-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="var(--blue-accent)" stroke-width="2"/>
+                        <path d="M12 6V12L16 14" stroke="var(--blue-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <h4>15+ Years Experience</h4>
+                    <p>Over a decade of proven excellence in lawn care</p>
+                </div>
+                <div class="trust-item">
+                    <svg class="trust-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 7.61305 3.94821 5.32387 5.63604 3.63604C7.32387 1.94821 9.61305 1 12 1C14.3869 1 16.6761 1.94821 18.364 3.63604C20.0518 5.32387 21 7.61305 21 10Z" stroke="var(--blue-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M12 13C13.6569 13 15 11.6569 15 10C15 8.34315 13.6569 7 12 7C10.3431 7 9 8.34315 9 10C9 11.6569 10.3431 13 12 13Z" stroke="var(--blue-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <h4>Local Expertise</h4>
+                    <p>Deep knowledge of local soil, climate, and vegetation</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Floating CTA Button -->
+    <a href="#contact" class="floating-cta" aria-label="Get free quote">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Get Quote</span>
+    </a>
+    
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
@@ -401,10 +576,10 @@
                 <div class="footer-section">
                     <h4 class="footer-title">Connect</h4>
                     <ul class="footer-links">
-                        <li><a href="#">LinkedIn</a></li>
-                        <li><a href="#">Facebook</a></li>
-                        <li><a href="#">Instagram</a></li>
-                        <li><a href="#">Twitter</a></li>
+                        <li><a href="#" aria-label="Visit our LinkedIn page">LinkedIn</a></li>
+                        <li><a href="#" aria-label="Visit our Facebook page">Facebook</a></li>
+                        <li><a href="#" aria-label="Visit our Instagram page">Instagram</a></li>
+                        <li><a href="#" aria-label="Visit our Twitter page">Twitter</a></li>
                     </ul>
                 </div>
             </div>
@@ -417,6 +592,7 @@
             </div>
         </div>
     </footer>
+    </main>
 
     <script src="script.js"></script>
 </body>

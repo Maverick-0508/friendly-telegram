@@ -16,6 +16,8 @@
     --bg-light: #f8f9fa;
     --bg-lighter: #fafbfc;
     --border-light: #e0e0e0;
+    --error-color: #dc3545;
+    --success-color: #28a745;
     --transition: all 0.3s ease;
 }
 
@@ -34,6 +36,35 @@ body {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 40px;
+}
+
+/* Skip to content link for accessibility */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--navy-primary);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    text-decoration: none;
+    z-index: 10000;
+    border-radius: 0 0 4px 0;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* Scroll Progress Indicator */
+.scroll-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0%;
+    height: 3px;
+    background: linear-gradient(90deg, var(--blue-accent), var(--navy-primary));
+    z-index: 9999;
+    transition: width 0.1s ease;
 }
 
 /* Navigation - Clean McKinsey Style */
@@ -81,6 +112,33 @@ body {
     color: var(--blue-accent);
 }
 
+/* Focus states for accessibility */
+.nav-link:focus,
+.btn:focus,
+button:focus,
+input:focus,
+select:focus,
+textarea:focus,
+a:focus {
+    outline: 2px solid var(--blue-accent);
+    outline-offset: 2px;
+}
+
+.nav-link.active {
+    color: var(--blue-accent);
+    font-weight: 500;
+}
+
+.nav-link.active::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--blue-accent);
+}
+
 .nav-link.btn-contact {
     background: var(--navy-primary);
     color: white;
@@ -112,7 +170,7 @@ body {
 /* Hero Section - McKinsey Image Style */
 .hero {
     position: relative;
-    height: 85vh;
+    height: 90vh;
     display: flex;
     align-items: center;
     margin-top: 80px;
@@ -278,7 +336,7 @@ body {
 
 /* Section Styling */
 section {
-    padding: 5rem 0;
+    padding: 6rem 0;
 }
 
 .section-header {
@@ -315,13 +373,16 @@ section {
 
 .service-card {
     background: white;
-    padding: 2.5rem;
+    padding: 3rem;
     border-top: 3px solid var(--navy-primary);
     transition: var(--transition);
+    display: flex;
+    flex-direction: column;
 }
 
 .service-card:hover {
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    transform: translateY(-5px);
 }
 
 .service-number {
@@ -362,6 +423,22 @@ section {
     left: 0;
     color: var(--blue-accent);
     font-weight: bold;
+}
+
+/* Service Card Button */
+.btn-service {
+    margin-top: auto;
+    padding: 0.75rem 1.5rem;
+    background: var(--navy-primary);
+    color: white;
+    text-align: center;
+    border: 2px solid var(--navy-primary);
+}
+
+.btn-service:hover {
+    background: white;
+    color: var(--navy-primary);
+    transform: translateY(0);
 }
 
 /* Insights Section - McKinsey Style */
@@ -453,6 +530,26 @@ section {
     font-size: 0.95rem;
     opacity: 0.9;
     font-weight: 300;
+}
+
+/* Stats CTA */
+.stats-cta {
+    text-align: center;
+    margin-top: 3rem;
+    padding-top: 3rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stats-cta h3 {
+    color: white;
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+}
+
+.btn-cta {
+    font-size: 1.05rem;
+    padding: 1rem 2.5rem;
 }
 
 /* About Section */
@@ -584,6 +681,18 @@ section {
     font-size: 1.05rem;
 }
 
+/* Contact Links */
+.contact-link {
+    color: var(--navy-primary);
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+.contact-link:hover {
+    color: var(--blue-accent);
+    text-decoration: underline;
+}
+
 /* Contact Form */
 .contact-form {
     display: flex;
@@ -627,6 +736,56 @@ section {
     min-height: 120px;
 }
 
+/* Form Validation Styles */
+.required-indicator {
+    color: var(--error-color);
+}
+
+.error-message {
+    color: var(--error-color);
+    font-size: 0.85rem;
+    display: none;
+    margin-top: 0.25rem;
+}
+
+.error-message.show {
+    display: block;
+}
+
+.form-group.error input,
+.form-group.error textarea,
+.form-group.error select {
+    border-color: var(--error-color);
+}
+
+.form-group.success input,
+.form-group.success textarea {
+    border-color: var(--success-color);
+}
+
+/* Button Loading State */
+.btn-loader {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.btn.loading .btn-text {
+    display: none;
+}
+
+.btn.loading .btn-loader {
+    display: inline-block;
+}
+
 .form-message {
     padding: 1rem;
     border-radius: 2px;
@@ -638,6 +797,144 @@ section {
     background: #d4edda;
     color: #155724;
     border: 1px solid #c3e6cb;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.success-icon {
+    flex-shrink: 0;
+}
+
+/* FAQ Section */
+.faq {
+    background: var(--bg-white);
+}
+
+.faq-grid {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.faq-item {
+    background: white;
+    border: 1px solid var(--border-light);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.faq-question {
+    width: 100%;
+    padding: 1.5rem;
+    background: none;
+    border: none;
+    text-align: left;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--navy-primary);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    transition: var(--transition);
+}
+
+.faq-question:hover {
+    background: var(--bg-lighter);
+}
+
+.faq-icon {
+    flex-shrink: 0;
+    transition: transform 0.3s ease;
+}
+
+.faq-question[aria-expanded="true"] .faq-icon {
+    transform: rotate(180deg);
+}
+
+.faq-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+.faq-answer.active {
+    max-height: 500px;
+    padding: 0 1.5rem 1.5rem;
+}
+
+.faq-answer p {
+    color: var(--text-medium);
+    line-height: 1.7;
+}
+
+/* Trust Indicators Section */
+.trust-indicators {
+    background: var(--bg-lighter);
+}
+
+.trust-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3rem;
+    text-align: center;
+}
+
+.trust-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.trust-icon {
+    margin-bottom: 0.5rem;
+}
+
+.trust-item h4 {
+    font-size: 1.1rem;
+    color: var(--navy-primary);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.trust-item p {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+/* Floating CTA Button */
+.floating-cta {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--blue-accent);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 50px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 600;
+    box-shadow: 0 4px 20px rgba(0, 102, 204, 0.3);
+    transition: var(--transition);
+    z-index: 999;
+}
+
+.floating-cta:hover {
+    background: var(--navy-primary);
+    box-shadow: 0 6px 30px rgba(0, 31, 63, 0.4);
+    transform: translateY(-2px);
+}
+
+.floating-cta svg {
+    flex-shrink: 0;
 }
 
 /* Footer */
@@ -714,6 +1011,18 @@ section {
 }
 
 /* Responsive Design */
+
+/* Tablet Breakpoint */
+@media (max-width: 1024px) {
+    .services-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .trust-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 @media (max-width: 968px) {
     .container {
         padding: 0 20px;
@@ -739,24 +1048,31 @@ section {
 
     .mobile-menu-toggle {
         display: flex;
+        /* Increase touch target for mobile */
+        min-width: 44px;
+        min-height: 44px;
+        justify-content: center;
     }
 
     .hero {
-        height: 70vh;
+        height: 80vh;
     }
 
     .hero-title {
-        font-size: 2.5rem;
+        font-size: 2.8rem;
     }
 
     .hero-subtitle {
-        font-size: 1.1rem;
+        font-size: 1.15rem;
     }
 
     .featured-grid,
-    .services-grid,
     .insights-grid,
     .testimonials-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .services-grid {
         grid-template-columns: 1fr;
     }
 
@@ -784,11 +1100,22 @@ section {
         gap: 1rem;
         text-align: center;
     }
+    
+    .trust-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+    
+    .floating-cta {
+        bottom: 1rem;
+        right: 1rem;
+        padding: 0.875rem 1.25rem;
+    }
 }
 
 @media (max-width: 640px) {
     .hero-title {
-        font-size: 2rem;
+        font-size: 2.2rem;
     }
 
     .section-title {
@@ -807,5 +1134,24 @@ section {
     .btn {
         width: 100%;
         text-align: center;
+        /* Ensure minimum touch target on mobile */
+        min-height: 44px;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        /* Better spacing for mobile */
+        padding: 1rem;
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+    
+    .floating-cta span {
+        display: none;
+    }
+    
+    .floating-cta {
+        padding: 1rem;
+        border-radius: 50%;
     }
 }

@@ -4,6 +4,8 @@ const navMenu = document.querySelector('.nav-menu');
 
 mobileMenuToggle.addEventListener('click', () => {
     navMenu.classList.toggle('active');
+    const isExpanded = navMenu.classList.contains('active');
+    mobileMenuToggle.setAttribute('aria-expanded', isExpanded);
     
     // Animate hamburger menu
     const spans = mobileMenuToggle.querySelectorAll('span');
@@ -23,12 +25,26 @@ const navLinks = document.querySelectorAll('.nav-link');
 navLinks.forEach(link => {
     link.addEventListener('click', () => {
         navMenu.classList.remove('active');
+        mobileMenuToggle.setAttribute('aria-expanded', 'false');
         const spans = mobileMenuToggle.querySelectorAll('span');
         spans[0].style.transform = 'none';
         spans[1].style.opacity = '1';
         spans[2].style.transform = 'none';
     });
 });
+
+// Scroll Progress Indicator
+const scrollProgress = document.querySelector('.scroll-progress');
+
+function updateScrollProgress() {
+    const windowHeight = window.innerHeight;
+    const documentHeight = document.documentElement.scrollHeight - windowHeight;
+    const scrolled = window.pageYOffset;
+    const progress = (scrolled / documentHeight) * 100;
+    
+    scrollProgress.style.width = progress + '%';
+    scrollProgress.setAttribute('aria-valuenow', Math.round(progress));
+}
 
 // Navbar scroll effect
 const navbar = document.querySelector('.navbar');
@@ -41,6 +57,9 @@ window.addEventListener('scroll', () => {
     } else {
         navbar.classList.remove('scrolled');
     }
+    
+    // Update scroll progress
+    updateScrollProgress();
 });
 
 // Smooth scroll for anchor links
@@ -96,35 +115,168 @@ const observer = new IntersectionObserver((entries) => {
 const animatedElements = document.querySelectorAll('.service-card, .testimonial-card, .about-content, .contact-content');
 animatedElements.forEach(el => observer.observe(el));
 
-// Contact Form Handling
+// Contact Form Handling with Validation
 const contactForm = document.getElementById('contactForm');
 const formSuccess = document.getElementById('formSuccess');
+
+// Validation functions
+function validateEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+}
+
+function validatePhone(phone) {
+    // Allow empty or valid phone format
+    if (!phone) return true;
+    const re = /^[\d\s\(\)\-\+]+$/;
+    return re.test(phone) && phone.replace(/\D/g, '').length >= 10;
+}
+
+function showError(input, message) {
+    const formGroup = input.parentElement;
+    const errorMessage = formGroup.querySelector('.error-message');
+    
+    formGroup.classList.add('error');
+    formGroup.classList.remove('success');
+    errorMessage.textContent = message;
+    errorMessage.classList.add('show');
+}
+
+function showSuccess(input) {
+    const formGroup = input.parentElement;
+    const errorMessage = formGroup.querySelector('.error-message');
+    
+    formGroup.classList.remove('error');
+    formGroup.classList.add('success');
+    errorMessage.textContent = '';
+    errorMessage.classList.remove('show');
+}
+
+function clearValidation(input) {
+    const formGroup = input.parentElement;
+    const errorMessage = formGroup.querySelector('.error-message');
+    
+    formGroup.classList.remove('error');
+    formGroup.classList.remove('success');
+    if (errorMessage) {
+        errorMessage.textContent = '';
+        errorMessage.classList.remove('show');
+    }
+}
+
+// Inline validation
+const nameInput = document.getElementById('name');
+const emailInput = document.getElementById('email');
+const phoneInput = document.getElementById('phone');
+const messageInput = document.getElementById('message');
+
+nameInput.addEventListener('blur', () => {
+    if (nameInput.value.trim() === '') {
+        showError(nameInput, 'Name is required');
+    } else if (nameInput.value.trim().length < 2) {
+        showError(nameInput, 'Name must be at least 2 characters');
+    } else {
+        showSuccess(nameInput);
+    }
+});
+
+nameInput.addEventListener('input', () => {
+    if (nameInput.value.trim().length >= 2) {
+        clearValidation(nameInput);
+    }
+});
+
+emailInput.addEventListener('blur', () => {
+    if (emailInput.value.trim() === '') {
+        showError(emailInput, 'Email is required');
+    } else if (!validateEmail(emailInput.value)) {
+        showError(emailInput, 'Please enter a valid email address');
+    } else {
+        showSuccess(emailInput);
+    }
+});
+
+emailInput.addEventListener('input', () => {
+    if (validateEmail(emailInput.value)) {
+        clearValidation(emailInput);
+    }
+});
+
+phoneInput.addEventListener('blur', () => {
+    if (phoneInput.value && !validatePhone(phoneInput.value)) {
+        showError(phoneInput, 'Please enter a valid phone number');
+    } else {
+        clearValidation(phoneInput);
+    }
+});
 
 contactForm.addEventListener('submit', (e) => {
     e.preventDefault();
     
+    // Validate all fields
+    let isValid = true;
+    
+    if (nameInput.value.trim() === '') {
+        showError(nameInput, 'Name is required');
+        isValid = false;
+    } else if (nameInput.value.trim().length < 2) {
+        showError(nameInput, 'Name must be at least 2 characters');
+        isValid = false;
+    }
+    
+    if (emailInput.value.trim() === '') {
+        showError(emailInput, 'Email is required');
+        isValid = false;
+    } else if (!validateEmail(emailInput.value)) {
+        showError(emailInput, 'Please enter a valid email address');
+        isValid = false;
+    }
+    
+    if (phoneInput.value && !validatePhone(phoneInput.value)) {
+        showError(phoneInput, 'Please enter a valid phone number');
+        isValid = false;
+    }
+    
+    if (!isValid) {
+        return;
+    }
+    
+    // Show loading state
+    const submitBtn = contactForm.querySelector('button[type="submit"]');
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
+    
     // Get form data
     const formData = {
-        name: document.getElementById('name').value,
-        email: document.getElementById('email').value,
-        phone: document.getElementById('phone').value,
+        name: nameInput.value,
+        email: emailInput.value,
+        phone: phoneInput.value,
         service: document.getElementById('service').value,
-        message: document.getElementById('message').value
+        message: messageInput.value
     };
     
     // Simulate form submission (in production, this would send to a server)
     console.log('Form submitted:', formData);
     
-    // Show success message
-    contactForm.style.display = 'none';
-    formSuccess.style.display = 'block';
-    
-    // Reset form and hide success message after 5 seconds
+    // Simulate network delay
     setTimeout(() => {
-        contactForm.reset();
-        contactForm.style.display = 'flex';
-        formSuccess.style.display = 'none';
-    }, 5000);
+        // Remove loading state
+        submitBtn.classList.remove('loading');
+        submitBtn.disabled = false;
+        
+        // Show success message
+        contactForm.style.display = 'none';
+        formSuccess.style.display = 'flex';
+        
+        // Reset form and hide success message after 5 seconds
+        setTimeout(() => {
+            contactForm.reset();
+            // Clear all validation states
+            [nameInput, emailInput, phoneInput, messageInput].forEach(clearValidation);
+            contactForm.style.display = 'flex';
+            formSuccess.style.display = 'none';
+        }, 5000);
+    }, 1500);
 });
 
 // Add parallax effect to hero section (throttled for performance)
@@ -297,6 +449,48 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentYearElement = document.getElementById('currentYear');
     if (currentYearElement) {
         currentYearElement.textContent = new Date().getFullYear();
+    }
+    
+    // FAQ Accordion functionality
+    const faqQuestions = document.querySelectorAll('.faq-question');
+    
+    faqQuestions.forEach(question => {
+        question.addEventListener('click', () => {
+            const isExpanded = question.getAttribute('aria-expanded') === 'true';
+            const answer = question.nextElementSibling;
+            
+            // Close all other FAQs
+            faqQuestions.forEach(q => {
+                if (q !== question) {
+                    q.setAttribute('aria-expanded', 'false');
+                    q.nextElementSibling.classList.remove('active');
+                }
+            });
+            
+            // Toggle current FAQ
+            question.setAttribute('aria-expanded', !isExpanded);
+            answer.classList.toggle('active');
+        });
+    });
+    
+    // Hide floating CTA on contact section
+    const floatingCta = document.querySelector('.floating-cta');
+    const contactSection = document.getElementById('contact');
+    
+    if (floatingCta && contactSection) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    floatingCta.style.opacity = '0';
+                    floatingCta.style.pointerEvents = 'none';
+                } else {
+                    floatingCta.style.opacity = '1';
+                    floatingCta.style.pointerEvents = 'auto';
+                }
+            });
+        }, { threshold: 0.1 });
+        
+        observer.observe(contactSection);
     }
     
     console.log('Friendly Telegram website loaded successfully!');
