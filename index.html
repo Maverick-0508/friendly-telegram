@@ -28,6 +28,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
+          crossorigin=""/>
 </head>
 <body>
     <!-- Skip to content link for accessibility -->
@@ -48,6 +53,7 @@
                     <li><a href="#services" class="nav-link">Services</a></li>
                     <li><a href="#insights" class="nav-link">Insights</a></li>
                     <li><a href="#about" class="nav-link">About</a></li>
+                    <li><a href="#service-area" class="nav-link">Service Area</a></li>
                     <li><a href="#contact" class="nav-link btn-contact">Contact us</a></li>
                 </ul>
                 <button class="mobile-menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
@@ -379,6 +385,51 @@
         </div>
     </section>
 
+    <!-- Service Area Section -->
+    <section id="service-area" class="service-area">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Check Our Service Area</h2>
+                <p class="section-subtitle">Find out if we service your location around Ikigai, Baraton Estate, and Kitisuru Road</p>
+            </div>
+            <div class="service-area-layout">
+                <div class="service-area-map-wrapper">
+                    <div id="service-area-map" class="service-area-map" role="application" aria-label="Service area map centered on Ikigai, Nairobi"></div>
+                    <p class="service-area-helper">Use the map to see our service coverage area. Your location is not stored.</p>
+                </div>
+                <div class="service-area-controls">
+                    <div class="service-area-control-group">
+                        <h3 class="control-group-title">Use Your Location</h3>
+                        <p class="control-group-description">Automatically check if you're in our service area</p>
+                        <button id="use-location" class="btn btn-primary" type="button">
+                            Use my location
+                        </button>
+                    </div>
+                    <div class="divider">
+                        <span class="divider-text">or</span>
+                    </div>
+                    <div class="service-area-control-group">
+                        <h3 class="control-group-title">Enter Your Estate or Postal Code</h3>
+                        <p class="control-group-description">Check by entering your estate name or postal code</p>
+                        <div class="zip-input-group">
+                            <input 
+                                type="text" 
+                                id="zip-input" 
+                                class="zip-input" 
+                                placeholder="e.g., Baraton Estate, Kitisuru, 00621"
+                                aria-label="Estate name or postal code"
+                            />
+                            <button id="check-zip" class="btn btn-secondary" type="button">
+                                Check
+                            </button>
+                        </div>
+                    </div>
+                    <div id="service-area-status" class="service-area-status" aria-live="polite" role="status"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Contact Section -->
     <section id="contact" class="contact">
         <div class="container">
@@ -634,6 +685,10 @@
         </div>
     </footer>
 
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" 
+            crossorigin=""></script>
     <script src="script.js"></script>
 </body>
 </html>
