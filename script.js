@@ -219,6 +219,19 @@ contactForm.addEventListener('submit', (e) => {
     }
     
     if (!isValid) {
+        let firstInvalidField = null;
+
+        if (!name) {
+            firstInvalidField = document.getElementById('name');
+        } else if (!email || !validateEmail(email)) {
+            firstInvalidField = document.getElementById('email');
+        } else if (phone && !validatePhone(phone)) {
+            firstInvalidField = document.getElementById('phone');
+        }
+
+        if (firstInvalidField && typeof firstInvalidField.focus === 'function') {
+            firstInvalidField.focus();
+        }
         return;
     }
     
