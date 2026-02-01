@@ -46,7 +46,8 @@
                 <ul class="nav-menu">
                     <li><a href="#home" class="nav-link">Home</a></li>
                     <li><a href="#services" class="nav-link">Services</a></li>
-                    <li><a href="#insights" class="nav-link">Insights</a></li>
+                    <li><a href="#blog" class="nav-link">Blog</a></li>
+                    <li><a href="#reviews" class="nav-link">Reviews</a></li>
                     <li><a href="#about" class="nav-link">About</a></li>
                     <li><a href="#contact" class="nav-link btn-contact">Contact us</a></li>
                 </ul>
@@ -214,7 +215,7 @@
                     <span class="showcase-title-bottom">From Real Lawns</span>
                 </h2>
             </div>
-            <div class="showcase-gallery">
+            <div id="showcaseGallery" class="showcase-gallery">
                 <div class="showcase-image showcase-image-1">
                     <!-- TODO: Replace with your lawn care project photo -->
                     <img src="images/your-project-1.jpg" alt="Lawn care project showcase 1" loading="lazy">
@@ -235,6 +236,23 @@
                     <!-- TODO: Replace with your lawn care project photo -->
                     <img src="images/your-project-5.jpg" alt="Lawn care project showcase 5" loading="lazy">
                 </div>
+            </div>
+            
+            <!-- Gallery Pagination Controls -->
+            <div class="pagination">
+                <button id="galleryPrev" aria-label="Previous gallery page">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                    Previous
+                </button>
+                <span id="galleryPageInfo" class="pagination-info">1 / 1</span>
+                <button id="galleryNext" aria-label="Next gallery page">
+                    Next
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
             </div>
         </div>
     </section>
@@ -274,6 +292,48 @@
                     <p class="insight-excerpt">A comprehensive guide to maintaining your lawn's health and beauty through every season.</p>
                     <a href="#" class="link-arrow">Read more →</a>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Blog Section -->
+    <section id="blog" class="blog">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Latest Insights</h2>
+                <p class="section-subtitle">Expert tips, seasonal advice, and lawn care best practices</p>
+            </div>
+            
+            <!-- Layout Toggle -->
+            <div class="layout-toggle">
+                <button data-layout-toggle="grid" data-target=".blog-grid" class="active" aria-label="Grid view">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    <span>Grid</span>
+                </button>
+                <button data-layout-toggle="list" data-target=".blog-grid" aria-label="List view">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                    <span>List</span>
+                </button>
+            </div>
+            
+            <div id="blogGrid" class="blog-grid layout-grid">
+                <!-- Blog posts will be dynamically rendered here -->
+            </div>
+            
+            <div class="blog-load-more">
+                <a href="#" id="blogLoadMore" class="btn btn-primary">Load More Articles</a>
             </div>
         </div>
     </section>
@@ -374,6 +434,109 @@
                             <div class="author-title">Homeowner, Oak Ridge</div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Reviews Section -->
+    <section id="reviews" class="reviews">
+        <div class="container">
+            <div class="reviews-container">
+                <div class="reviews-widget">
+                    <div class="reviews-header">
+                        <h2 class="section-title">Customer Reviews</h2>
+                        <div class="reviews-rating">
+                            <span class="reviews-stars">★★★★★</span>
+                            <span class="reviews-score">4.9</span>
+                        </div>
+                        <p class="reviews-count">Based on 250+ Google Reviews</p>
+                    </div>
+                    
+                    <div class="reviews-grid">
+                        <div class="review-card">
+                            <div class="review-header">
+                                <span class="review-author">Sarah Johnson</span>
+                                <span class="review-stars">★★★★★</span>
+                            </div>
+                            <p class="review-text">"Exceptional service! The crew is always on time, professional, and my lawn has never looked better. Highly recommend AM Mowing!"</p>
+                            <span class="review-date">2 weeks ago</span>
+                        </div>
+                        
+                        <div class="review-card">
+                            <div class="review-header">
+                                <span class="review-author">Michael Brown</span>
+                                <span class="review-stars">★★★★★</span>
+                            </div>
+                            <p class="review-text">"Best lawn care service I've used. They're detail-oriented, responsive, and truly care about the quality of their work."</p>
+                            <span class="review-date">1 month ago</span>
+                        </div>
+                        
+                        <div class="review-card">
+                            <div class="review-header">
+                                <span class="review-author">Emily Davis</span>
+                                <span class="review-stars">★★★★★</span>
+                            </div>
+                            <p class="review-text">"Professional, reliable, and affordable. AM Mowing has transformed our yard into something we're proud to show off!"</p>
+                            <span class="review-date">1 month ago</span>
+                        </div>
+                        
+                        <div class="review-card">
+                            <div class="review-header">
+                                <span class="review-author">James Wilson</span>
+                                <span class="review-stars">★★★★★</span>
+                            </div>
+                            <p class="review-text">"Great communication and excellent results. They go above and beyond on every visit. Couldn't be happier!"</p>
+                            <span class="review-date">2 months ago</span>
+                        </div>
+                    </div>
+                    
+                    <div class="reviews-cta">
+                        <p>See all our reviews on Google</p>
+                        <a href="https://www.google.com/search?q=AM+Mowing" target="_blank" rel="noopener noreferrer" class="btn btn-primary">View All Reviews</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Service Area Section -->
+    <section id="service-area" class="service-area">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Service Area</h2>
+                <p class="section-subtitle">Check if we service your location</p>
+            </div>
+            
+            <div class="service-area-content">
+                <div class="map-container">
+                    <div class="map-placeholder">
+                        <svg width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        <p>Map will be integrated here</p>
+                    </div>
+                </div>
+                
+                <div class="zip-checker">
+                    <h3>Check Your ZIP Code</h3>
+                    <p>Enter your ZIP code to see if we service your area. We're continuously expanding our coverage!</p>
+                    
+                    <form id="zipCheckForm" class="zip-form">
+                        <input 
+                            type="text" 
+                            id="zipCodeInput" 
+                            placeholder="Enter ZIP code" 
+                            maxlength="5" 
+                            pattern="[0-9]{5}"
+                            aria-label="ZIP code"
+                            required
+                        >
+                        <button type="submit" class="btn btn-primary">Check Availability</button>
+                    </form>
+                    
+                    <div id="zipCheckResult" role="region" aria-live="polite"></div>
                 </div>
             </div>
         </div>
@@ -576,15 +739,89 @@
         </div>
     </section>
 
+    <!-- Newsletter Section -->
+    <section class="newsletter-inline">
+        <div class="container">
+            <div class="newsletter-content">
+                <h2>Stay Updated with Lawn Care Tips</h2>
+                <p>Get expert advice, seasonal tips, and exclusive offers delivered to your inbox</p>
+                
+                <form id="newsletterForm" class="newsletter-form">
+                    <input 
+                        type="email" 
+                        id="newsletterEmail" 
+                        placeholder="Enter your email address" 
+                        required
+                        aria-label="Email address for newsletter"
+                    >
+                    <button type="submit">
+                        <span class="btn-text">Subscribe</span>
+                        <span class="btn-loader" style="display: none;"></span>
+                    </button>
+                </form>
+                
+                <div id="newsletterResult" role="region" aria-live="polite"></div>
+            </div>
+        </div>
+    </section>
+
     </main>
 
-    <!-- Floating CTA Button -->
-    <a href="#contact" class="floating-cta" aria-label="Get free quote">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <span>Get Quote</span>
-    </a>
+    <!-- Floating CTA Buttons -->
+    <div class="floating-cta-group">
+        <a href="#" id="openNewsletterModal" class="floating-btn secondary" aria-label="Subscribe to newsletter">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+            <span>Subscribe</span>
+        </a>
+        <a href="#contact" class="floating-btn" aria-label="Get free quote">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z"></path>
+            </svg>
+            <span>Get Quote</span>
+        </a>
+    </div>
+    
+    <!-- Blog Post Modal -->
+    <div id="blogModal" class="blog-modal" role="dialog" aria-labelledby="modalPostTitle" aria-modal="true">
+        <div class="blog-modal-content">
+            <div class="blog-modal-header">
+                <button id="blogModalClose" class="blog-modal-close" aria-label="Close blog post">×</button>
+                <span id="modalPostCategory" class="blog-category"></span>
+                <h2 id="modalPostTitle" class="blog-title"></h2>
+                <span id="modalPostDate" class="blog-date"></span>
+            </div>
+            <div id="modalPostContent" class="blog-modal-body">
+                <!-- Blog post content will be dynamically inserted here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Newsletter Modal -->
+    <div id="newsletterModal" class="newsletter-modal" role="dialog" aria-labelledby="newsletterModalTitle" aria-modal="true">
+        <div class="newsletter-modal-content">
+            <button id="newsletterModalClose" class="newsletter-modal-close" aria-label="Close newsletter signup">×</button>
+            <h2 id="newsletterModalTitle">Subscribe to Our Newsletter</h2>
+            <p>Get expert lawn care tips and seasonal advice delivered to your inbox</p>
+            
+            <form id="newsletterModalForm" class="newsletter-form" style="margin-top: 2rem;">
+                <input 
+                    type="email" 
+                    placeholder="Enter your email address" 
+                    required
+                    aria-label="Email address for newsletter"
+                >
+                <button type="submit">
+                    <span class="btn-text">Subscribe</span>
+                    <span class="btn-loader" style="display: none;"></span>
+                </button>
+            </form>
+            
+            <div role="region" aria-live="polite"></div>
+        </div>
+    </div>
     
     <!-- Footer -->
     <footer class="footer">
