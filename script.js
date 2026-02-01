@@ -38,9 +38,11 @@ navLinks.forEach(link => {
 const scrollProgress = document.querySelector('.scroll-progress');
 
 function updateScrollProgress() {
+    if (!scrollProgress) return; // Guard against missing element
+    
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-    const scrollPercent = (scrollTop / scrollHeight) * 100;
+    const scrollPercent = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
     
     scrollProgress.style.width = scrollPercent + '%';
     scrollProgress.setAttribute('aria-valuenow', Math.round(scrollPercent));
@@ -157,7 +159,7 @@ function showError(inputId, errorId, show = true) {
 // Real-time validation
 document.getElementById('email').addEventListener('blur', function() {
     const email = this.value.trim();
-    if (email && !validateEmail(email)) {
+    if (!email || !validateEmail(email)) {
         showError('email', 'email-error', true);
     } else {
         showError('email', 'email-error', false);
@@ -175,7 +177,7 @@ document.getElementById('phone').addEventListener('blur', function() {
 
 document.getElementById('name').addEventListener('blur', function() {
     const name = this.value.trim();
-    if (name && name.length < 2) {
+    if (!name || name.length < 2) {
         showError('name', 'name-error', true);
     } else {
         showError('name', 'name-error', false);
@@ -237,8 +239,8 @@ contactForm.addEventListener('submit', (e) => {
     
     const formData = { name, email, phone, service, message };
     
-    // Simulate form submission (in production, this would send to a server)
-    console.log('Form submitted:', formData);
+    // TODO: Submit formData to a backend endpoint using fetch or similar.
+    // Note: Form data should be submitted to a server, not logged to console
     
     // Show success message
     contactForm.style.display = 'none';
@@ -247,6 +249,12 @@ contactForm.addEventListener('submit', (e) => {
     // Reset form and hide success message after 5 seconds
     setTimeout(() => {
         contactForm.reset();
+        
+        // Clear any previous error states so form is fresh when shown again
+        showError('name', 'name-error', false);
+        showError('email', 'email-error', false);
+        showError('phone', 'phone-error', false);
+        
         contactForm.style.display = 'flex';
         formSuccess.classList.remove('visible');
     }, 5000);
