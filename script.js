@@ -123,7 +123,17 @@ const formSuccess = document.getElementById('formSuccess');
 
 // Form validation helpers
 function validateEmail(email) {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Prefer native HTML5 email validation when available
+    const emailInput = document.createElement('input');
+    emailInput.type = 'email';
+    emailInput.value = email;
+
+    if (typeof emailInput.checkValidity === 'function') {
+        return emailInput.checkValidity();
+    }
+
+    // Fallback to a more robust regex if native validation is unavailable
+    const re = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/;
     return re.test(email);
 }
 
@@ -211,13 +221,18 @@ contactForm.addEventListener('submit', (e) => {
     }
     
     if (!isValid) {
-        // Focus on first invalid field for better accessibility
-        if (!name || name.length < 2) {
-            document.getElementById('name').focus();
+        let firstInvalidField = null;
+
+        if (!name) {
+            firstInvalidField = document.getElementById('name');
         } else if (!email || !validateEmail(email)) {
-            document.getElementById('email').focus();
+            firstInvalidField = document.getElementById('email');
         } else if (phone && !validatePhone(phone)) {
-            document.getElementById('phone').focus();
+            firstInvalidField = document.getElementById('phone');
+        }
+
+        if (firstInvalidField && typeof firstInvalidField.focus === 'function') {
+            firstInvalidField.focus();
         }
         return;
     }
