@@ -9,7 +9,6 @@
     --navy-primary: #001f3f;
     --navy-secondary: #003366;
     --blue-accent: #0066cc;
-    --blue-accent-hover: #0052a3;
     --text-dark: #1a1a1a;
     --text-medium: #4a4a4a;
     --text-light: #6b6b6b;
@@ -25,7 +24,6 @@
     --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     --success-color: #10b981;
     --error-color: #ef4444;
-    --warning-color: #f59e0b;
 }
 
 html {
@@ -289,11 +287,12 @@ body {
     background: rgba(255, 255, 255, 0.3);
     transform: translate(-50%, -50%);
     transition: width 0.6s, height 0.6s;
+    z-index: -1;
 }
 
 .btn:active::before {
-    width: 300px;
-    height: 300px;
+    width: 220%;
+    height: 220%;
 }
 
 .btn-primary {
