@@ -434,6 +434,171 @@ const highlightNavigation = () => {
 window.addEventListener('scroll', highlightNavigation);
 
 // Initialize
+// Service Area Map and Geolocation Feature
+function initServiceAreaMap() {
+    const mapElement = document.getElementById('service-area-map');
+    const useLocationBtn = document.getElementById('use-location');
+    const checkZipBtn = document.getElementById('check-zip');
+    const zipInput = document.getElementById('zip-input');
+    const statusElement = document.getElementById('service-area-status');
+    
+    // Early return if map element or Leaflet is not available
+    if (!mapElement || typeof L === 'undefined') {
+        return;
+    }
+    
+    // Constants
+    const HOME_LAT = -1.2433;
+    const HOME_LNG = 36.7788;
+    const SERVICE_RADIUS_METERS = 12000;
+    const SERVED_AREAS = [
+        'BARATON', 'BARATON ESTATE', 'KITISURU', 'KITISURU ROAD', 
+        'IKIGAI', 'SPRING VALLEY', 'GIGIRI', 'MUTHANGARI', 
+        'LAVINGTON', '00621'
+    ];
+    
+    // Initialize map
+    const map = L.map('service-area-map').setView([HOME_LAT, HOME_LNG], 13);
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+    }).addTo(map);
+    
+    // Add home location marker
+    const homeMarker = L.marker([HOME_LAT, HOME_LNG]).addTo(map);
+    homeMarker.bindPopup('AM Mowing – Main Office<br>Ikigai, Nairobi (Kitisuru area)');
+    
+    // Draw service radius circle
+    const serviceCircle = L.circle([HOME_LAT, HOME_LNG], {
+        color: '#0066cc',
+        fillColor: '#0066cc',
+        fillOpacity: 0.15,
+        radius: SERVICE_RADIUS_METERS
+    }).addTo(map);
+    
+    // User location marker (initially null)
+    let userMarker = null;
+    
+    // Helper function to set status message
+    function setStatus(message, type) {
+        if (!statusElement) return;
+        
+        statusElement.textContent = message;
+        statusElement.classList.remove('service-area-status--ok', 'service-area-status--warn');
+        
+        if (type === 'success') {
+            statusElement.classList.add('service-area-status--ok');
+        } else if (type === 'warning') {
+            statusElement.classList.add('service-area-status--warn');
+        }
+    }
+    
+    // Geolocation button handler
+    if (useLocationBtn) {
+        useLocationBtn.addEventListener('click', () => {
+            if (!navigator.geolocation) {
+                setStatus('Geolocation is not supported by your browser. Please use the estate/postal code input below.', 'warning');
+                return;
+            }
+            
+            setStatus('Getting your location...', '');
+            
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const userLat = position.coords.latitude;
+                    const userLng = position.coords.longitude;
+                    
+                    // Remove existing user marker if any
+                    if (userMarker) {
+                        map.removeLayer(userMarker);
+                    }
+                    
+                    // Add user location marker
+                    userMarker = L.marker([userLat, userLng], {
+                        icon: L.icon({
+                            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                            iconSize: [25, 41],
+                            iconAnchor: [12, 41],
+                            popupAnchor: [1, -34],
+                            shadowSize: [41, 41]
+                        })
+                    }).addTo(map);
+                    userMarker.bindPopup('Your Location').openPopup();
+                    
+                    // Center map on user location
+                    map.setView([userLat, userLng], 14);
+                    
+                    // Calculate distance from home to user
+                    const homeLatLng = L.latLng(HOME_LAT, HOME_LNG);
+                    const userLatLng = L.latLng(userLat, userLng);
+                    const distance = homeLatLng.distanceTo(userLatLng);
+                    
+                    // Check if within service area
+                    if (distance <= SERVICE_RADIUS_METERS) {
+                        setStatus('Great news! You are within our service area around Ikigai, Baraton Estate, and Kitisuru Road. You can book a service today.', 'success');
+                    } else {
+                        setStatus('You appear to be outside our standard service area. Please contact us to confirm if we can service your location.', 'warning');
+                    }
+                },
+                (error) => {
+                    let errorMessage = 'Unable to get your location. ';
+                    if (error.code === error.PERMISSION_DENIED) {
+                        errorMessage += 'Location access was denied. Please use the estate/postal code input below.';
+                    } else if (error.code === error.POSITION_UNAVAILABLE) {
+                        errorMessage += 'Location information is unavailable. Please use the estate/postal code input below.';
+                    } else if (error.code === error.TIMEOUT) {
+                        errorMessage += 'Location request timed out. Please try again or use the estate/postal code input below.';
+                    } else {
+                        errorMessage += 'Please use the estate/postal code input below.';
+                    }
+                    setStatus(errorMessage, 'warning');
+                }
+            );
+        });
+    }
+    
+    // Function to check estate/postal code
+    function checkAreaCode() {
+        if (!zipInput || !statusElement) return;
+        
+        const input = zipInput.value.trim();
+        
+        if (input === '') {
+            setStatus('Please enter your estate name or postal code.', 'warning');
+            return;
+        }
+        
+        // Normalize input: uppercase, collapse spaces
+        const normalizedInput = input.toUpperCase().replace(/\s+/g, ' ');
+        
+        // Check if input matches any served area
+        const isServed = SERVED_AREAS.some(area => normalizedInput.includes(area) || area.includes(normalizedInput));
+        
+        if (isServed) {
+            setStatus(`Great news! ${input} is in our service area. We'd be happy to serve you!`, 'success');
+        } else {
+            setStatus(`${input} is not in our standard listed areas, but we may still be able to help. Please contact us for a custom quote.`, 'warning');
+        }
+    }
+    
+    // Check button handler
+    if (checkZipBtn) {
+        checkZipBtn.addEventListener('click', checkAreaCode);
+    }
+    
+    // Enter key handler for input
+    if (zipInput) {
+        zipInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                checkAreaCode();
+            }
+        });
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Add fade-in animation to hero content on load
     const heroContent = document.querySelector('.hero-content');
@@ -492,6 +657,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         observer.observe(contactSection);
     }
+    
+    // Initialize service area map
+    initServiceAreaMap();
     
     console.log('Friendly Telegram website loaded successfully!');
 });
