@@ -1,7 +1,7 @@
 # FastAPI and Web Framework
-fastapi==0.109.0
+fastapi==0.115.0
 uvicorn[standard]==0.27.0
-python-multipart==0.0.6
+python-multipart==0.0.22
 
 # Database
 sqlalchemy==2.0.25
@@ -22,7 +22,7 @@ aiosmtplib==3.0.1
 email-validator==2.1.0
 
 # Image Processing
-pillow==10.2.0
+pillow==10.4.0
 
 # Utilities
 python-dateutil==2.8.2
