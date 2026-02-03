@@ -661,5 +661,5 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize service area map
     initServiceAreaMap();
     
-    console.log('Friendly Telegram website loaded successfully!');
+    console.log('AM Mowing website loaded successfully!');
 });
