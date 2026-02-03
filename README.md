@@ -4,13 +4,28 @@ A comprehensive lawn care platform combining a beautiful static website with a p
 
 ## 🌟 Project Structure
 
-This repository contains two main components:
+This repository contains two main components organized in separate directories:
+
+```
+friendly-telegram/
+├── frontend/          # Static website files
+│   ├── index.html
+│   ├── styles.css
+│   └── script.js
+├── backend/           # FastAPI backend
+│   ├── app/
+│   ├── requirements.txt
+│   └── ...
+└── README.md
+```
 
 ### Frontend (Static Website)
 A beautiful, modern website with smooth animations and responsive design.
+Located in the `frontend/` directory.
 
 ### Backend (FastAPI)
 A comprehensive REST API for managing lawn care business operations.
+Located in the `backend/` directory.
 
 ## Features
 
@@ -39,10 +54,11 @@ A comprehensive REST API for managing lawn care business operations.
 
 ### Frontend (Static Website)
 
-Simply open `index.html` in a web browser to view the website.
+Simply open `frontend/index.html` in a web browser to view the website.
 
 For development with live reload:
 ```bash
+cd frontend
 python3 -m http.server 8080
 ```
 
