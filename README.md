@@ -1,9 +1,20 @@
-# Friendly Telegram - Professional Lawn Care Website
+# AM Mowing - Professional Lawn Care Platform
 
-A beautiful, modern website for Friendly Telegram lawn care services that provides exceptional service to clients through an engaging online experience.
+A comprehensive lawn care platform combining a beautiful static website with a powerful FastAPI backend for AM Mowing services.
+
+## 🌟 Project Structure
+
+This repository contains two main components:
+
+### Frontend (Static Website)
+A beautiful, modern website with smooth animations and responsive design.
+
+### Backend (FastAPI)
+A comprehensive REST API for managing lawn care business operations.
 
 ## Features
 
+### Frontend Features
 - **Modern Design**: Beautiful gradient hero section with smooth animations
 - **Responsive Layout**: Mobile-first design that works on all devices
 - **Interactive Elements**: Smooth scrolling, hover effects, and dynamic animations
@@ -12,23 +23,21 @@ A beautiful, modern website for Friendly Telegram lawn care services that provid
 - **Customer Testimonials**: Social proof with 5-star reviews
 - **Performance Optimized**: Fast loading and smooth scroll performance
 
-## Sections
+### Backend Features
+- **Authentication & Authorization**: JWT-based auth with role-based access control
+- **Contact Form Management**: Handle and track customer inquiries
+- **Quote Request System**: Manage service quotes with status tracking
+- **Appointment Scheduling**: Book and manage service appointments
+- **Service Management**: CRUD operations for lawn care services
+- **Testimonial Management**: Customer reviews with approval workflow
+- **Admin Dashboard**: Comprehensive statistics and analytics
+- **Service Area Validation**: Geographic boundary checking
+- **Email Notifications**: Automated emails for key events
+- **API Documentation**: Auto-generated Swagger/OpenAPI docs
 
-1. **Hero Section** - Eye-catching introduction with call-to-action buttons
-2. **Services** - Six comprehensive lawn care services
-3. **About** - Company information with animated statistics
-4. **Testimonials** - Customer reviews and ratings
-5. **Contact** - Contact information and inquiry form
-6. **Footer** - Quick links and social media connections
+## Quick Start
 
-## Technologies Used
-
-- HTML5 - Semantic markup
-- CSS3 - Modern styling with animations
-- JavaScript (ES6+) - Interactive features
-- Google Fonts - Professional typography
-
-## Getting Started
+### Frontend (Static Website)
 
 Simply open `index.html` in a web browser to view the website.
 
@@ -39,6 +48,44 @@ python3 -m http.server 8080
 
 Then navigate to `http://localhost:8080`
 
+### Backend (FastAPI)
+
+See [backend/QUICKSTART.md](backend/QUICKSTART.md) for detailed setup instructions.
+
+Quick setup:
+```bash
+cd backend
+pip install -r requirements.txt
+cp .env.example .env
+# Edit .env and set SECRET_KEY
+uvicorn app.main:app --reload
+```
+
+API Documentation: http://localhost:8000/docs
+
+## Technologies Used
+
+### Frontend
+- HTML5 - Semantic markup
+- CSS3 - Modern styling with animations
+- JavaScript (ES6+) - Interactive features
+- Google Fonts - Professional typography
+- Leaflet - Interactive maps
+
+### Backend
+- **Framework**: FastAPI (Python)
+- **Database**: SQLAlchemy ORM with SQLite/PostgreSQL
+- **Authentication**: JWT with bcrypt password hashing
+- **Email**: Async SMTP with aiosmtplib
+- **Validation**: Pydantic schemas
+- **Documentation**: Auto-generated OpenAPI/Swagger
+
+## Documentation
+
+- **Backend Setup**: [backend/README.md](backend/README.md)
+- **Quick Start Guide**: [backend/QUICKSTART.md](backend/QUICKSTART.md)
+- **API Documentation**: http://localhost:8000/docs (when server is running)
+
 ## License
 
-© 2026 Friendly Telegram. All rights reserved.
+© 2026 AM Mowing. All rights reserved.
