@@ -11,7 +11,7 @@ def setup_cors(app):
     """
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.CORS_ORIGINS,
+        allow_origins=settings.get_cors_origins(),
         allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
         allow_methods=settings.CORS_ALLOW_METHODS.split(",") if isinstance(settings.CORS_ALLOW_METHODS, str) else ["*"],
         allow_headers=settings.CORS_ALLOW_HEADERS.split(",") if isinstance(settings.CORS_ALLOW_HEADERS, str) else ["*"],

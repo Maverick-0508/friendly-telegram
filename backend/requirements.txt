@@ -12,6 +12,7 @@ psycopg2-binary==2.9.9
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 pydantic[email]==2.5.3
+pydantic-settings==2.1.0
 
 # Environment & Configuration
 python-dotenv==1.0.0

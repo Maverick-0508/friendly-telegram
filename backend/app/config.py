@@ -34,11 +34,11 @@ class Settings(BaseSettings):
     CORS_ALLOW_METHODS: str = "*"
     CORS_ALLOW_HEADERS: str = "*"
     
-    @validator("CORS_ORIGINS", pre=True)
-    def assemble_cors_origins(cls, v: str) -> List[str]:
-        if isinstance(v, str):
-            return [i.strip() for i in v.split(",")]
-        return v
+    def get_cors_origins(self) -> List[str]:
+        """Parse CORS origins from comma-separated string"""
+        if isinstance(self.CORS_ORIGINS, str):
+            return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
+        return self.CORS_ORIGINS
     
     # Email
     SMTP_HOST: str = "smtp.gmail.com"
