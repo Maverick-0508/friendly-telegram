@@ -782,28 +782,33 @@ function subscribeNewsletter(email) {
 function initLayoutToggle() {
     const toggleButtons = document.querySelectorAll('[data-layout-toggle]');
     const savedLayout = localStorage.getItem('preferredLayout') || 'grid';
+
+    // Helper to apply layout for a specific button without simulating a click
+    function applyLayoutForButton(btn) {
+        const layout = btn.dataset.layoutToggle;
+        const container = document.querySelector(btn.dataset.target);
+
+        if (container) {
+            container.classList.remove('layout-grid', 'layout-list');
+            container.classList.add(`layout-${layout}`);
+
+            // Update button states
+            toggleButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Save preference
+            localStorage.setItem('preferredLayout', layout);
+        }
+    }
     
     toggleButtons.forEach(btn => {
         btn.addEventListener('click', () => {
-            const layout = btn.dataset.layoutToggle;
-            const container = document.querySelector(btn.dataset.target);
-            
-            if (container) {
-                container.classList.remove('layout-grid', 'layout-list');
-                container.classList.add(`layout-${layout}`);
-                
-                // Update button states
-                toggleButtons.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                
-                // Save preference
-                localStorage.setItem('preferredLayout', layout);
-            }
+            applyLayoutForButton(btn);
         });
         
-        // Apply saved layout
+        // Apply saved layout directly without triggering a click event
         if (btn.dataset.layoutToggle === savedLayout) {
-            btn.click();
+            applyLayoutForButton(btn);
         }
     });
 }
