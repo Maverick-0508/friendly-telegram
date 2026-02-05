@@ -872,7 +872,8 @@ function renderGalleryPage(page) {
     ensureGalleryHiddenClass();
     
     const galleryImages = galleryContainer.querySelectorAll('.showcase-image');
-    const totalPages = Math.ceil(galleryImages.length / itemsPerGalleryPage);
+    const imageCount = galleryImages.length;
+    const totalPages = imageCount > 0 ? Math.ceil(imageCount / itemsPerGalleryPage) : 0;
     
     // Hide all images
     galleryImages.forEach(img => img.classList.add('gallery-hidden'));
@@ -880,7 +881,7 @@ function renderGalleryPage(page) {
     // Show current page images
     const start = (page - 1) * itemsPerGalleryPage;
     const end = start + itemsPerGalleryPage;
-    for (let i = start; i < end && i < galleryImages.length; i++) {
+    for (let i = start; i < end && i < imageCount; i++) {
         galleryImages[i].classList.remove('gallery-hidden');
     }
     
@@ -889,9 +890,9 @@ function renderGalleryPage(page) {
     const nextBtn = document.getElementById('galleryNext');
     const pageInfo = document.getElementById('galleryPageInfo');
     
-    if (prevBtn) prevBtn.disabled = page === 1;
-    if (nextBtn) nextBtn.disabled = page === totalPages;
-    if (pageInfo) pageInfo.textContent = `${page} / ${totalPages}`;
+    if (prevBtn) prevBtn.disabled = page === 1 || totalPages === 0;
+    if (nextBtn) nextBtn.disabled = page >= totalPages || totalPages === 0;
+    if (pageInfo) pageInfo.textContent = totalPages > 0 ? `${page} / ${totalPages}` : '0 / 0';
 }
 
 // Initialize
@@ -1047,16 +1048,50 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Handle newsletter modal form submission
+    // Handle newsletter modal form submission  
     if (newsletterModalForm) {
         newsletterModalForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const emailField = document.getElementById('newsletterModalEmail');
-            const resultArea = document.getElementById('newsletterModalResult');
+            const emailInput = document.getElementById('newsletterModalEmail');
+            const resultContainer = document.getElementById('newsletterModalResult');
             
-            if (emailField && resultArea) {
-                handleNewsletterSubmit(emailField.value, resultArea, newsletterModalForm);
+            if (!emailInput || !resultContainer) return;
+            
+            const emailValue = emailInput.value.trim();
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            
+            if (!emailPattern.test(emailValue)) {
+                resultContainer.innerHTML = '<div class="form-message error" role="alert">Please enter a valid email address</div>';
+                return;
             }
+            
+            const submitButton = newsletterModalForm.querySelector('button[type="submit"]');
+            const loaderElement = submitButton.querySelector('.btn-loader');
+            const textElement = submitButton.querySelector('.btn-text');
+            
+            submitButton.disabled = true;
+            if (loaderElement) loaderElement.classList.remove('hidden');
+            if (textElement) textElement.classList.add('hidden');
+            
+            setTimeout(() => {
+                submitButton.disabled = false;
+                if (loaderElement) loaderElement.classList.add('hidden');
+                if (textElement) textElement.classList.remove('hidden');
+                
+                resultContainer.innerHTML = `
+                    <div class="form-message success" role="alert">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        <span>Successfully subscribed! Check your email for confirmation.</span>
+                    </div>
+                `;
+                
+                newsletterModalForm.reset();
+                
+                setTimeout(() => { resultContainer.innerHTML = ''; }, 5000);
+            }, 1500);
         });
     }
     
