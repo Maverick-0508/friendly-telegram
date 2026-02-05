@@ -841,21 +841,36 @@ function initLazyLoading() {
 let currentGalleryPage = 1;
 const itemsPerGalleryPage = 5;
 
+let galleryHiddenClassInitialized = false;
+
+function ensureGalleryHiddenClass() {
+    if (galleryHiddenClassInitialized) return;
+
+    const style = document.createElement('style');
+    style.type = 'text/css';
+    style.textContent = '.gallery-hidden { display: none !important; }';
+    document.head.appendChild(style);
+
+    galleryHiddenClassInitialized = true;
+}
+
 function renderGalleryPage(page) {
     const galleryContainer = document.getElementById('showcaseGallery');
     if (!galleryContainer) return;
+
+    ensureGalleryHiddenClass();
     
     const galleryImages = galleryContainer.querySelectorAll('.showcase-image');
     const totalPages = Math.ceil(galleryImages.length / itemsPerGalleryPage);
     
     // Hide all images
-    galleryImages.forEach(img => img.style.display = 'none');
+    galleryImages.forEach(img => img.classList.add('gallery-hidden'));
     
     // Show current page images
     const start = (page - 1) * itemsPerGalleryPage;
     const end = start + itemsPerGalleryPage;
     for (let i = start; i < end && i < galleryImages.length; i++) {
-        galleryImages[i].style.display = 'block';
+        galleryImages[i].classList.remove('gallery-hidden');
     }
     
     // Update pagination controls
