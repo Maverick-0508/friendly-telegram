@@ -649,6 +649,12 @@ function openBlogPost(postId) {
     
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
+    
+    // Accessibility: transfer keyboard focus to modal
+    requestAnimationFrame(() => {
+        const modalCloseBtn = modal.querySelector('#blogModalClose');
+        modalCloseBtn && modalCloseBtn.focus();
+    });
 }
 
 function closeBlogPost() {
@@ -692,7 +698,7 @@ function checkZipCode(zipCode) {
                 </svg>
                 <div>
                     <p><strong>Great news!</strong> We service your area.</p>
-                    <a href="#contact" class="btn btn-primary" style="margin-top: 1rem;">Get a Free Quote</a>
+                    <a href="#contact" class="btn btn-primary mt-1">Get a Free Quote</a>
                 </div>
             </div>
         `;
@@ -706,7 +712,7 @@ function checkZipCode(zipCode) {
                 </svg>
                 <div>
                     <p>You're close! We may be able to service your area.</p>
-                    <a href="#contact" class="btn btn-secondary" style="margin-top: 1rem;">Contact Us</a>
+                    <a href="#contact" class="btn btn-secondary mt-1">Contact Us</a>
                 </div>
             </div>
         `;
@@ -1025,25 +1031,56 @@ document.addEventListener('DOMContentLoaded', () => {
     const newsletterBtn = document.getElementById('openNewsletterModal');
     const newsletterModal = document.getElementById('newsletterModal');
     const newsletterModalClose = document.getElementById('newsletterModalClose');
+    const newsletterModalForm = document.getElementById('newsletterModalForm');
     
     if (newsletterBtn && newsletterModal) {
         newsletterBtn.addEventListener('click', (e) => {
             e.preventDefault();
             newsletterModal.classList.add('active');
             document.body.style.overflow = 'hidden';
+            
+            // Set focus to email input
+            requestAnimationFrame(() => {
+                const emailField = newsletterModal.querySelector('input[type="email"]');
+                emailField && emailField.focus();
+            });
+        });
+    }
+    
+    // Handle newsletter modal form submission
+    if (newsletterModalForm) {
+        newsletterModalForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const emailField = document.getElementById('newsletterModalEmail');
+            const resultArea = document.getElementById('newsletterModalResult');
+            
+            if (emailField && resultArea) {
+                handleNewsletterSubmit(emailField.value, resultArea, newsletterModalForm);
+            }
         });
     }
     
     if (newsletterModalClose && newsletterModal) {
-        newsletterModalClose.addEventListener('click', () => {
+        const closeNewsletterModal = () => {
             newsletterModal.classList.remove('active');
             document.body.style.overflow = '';
-        });
+        };
+        
+        newsletterModalClose.addEventListener('click', closeNewsletterModal);
         
         newsletterModal.addEventListener('click', (e) => {
             if (e.target === newsletterModal) {
-                newsletterModal.classList.remove('active');
-                document.body.style.overflow = '';
+                closeNewsletterModal();
+            }
+        });
+        
+        // Keyboard escape handler
+        document.addEventListener('keydown', (e) => {
+            const isEscapeKey = e.key === 'Escape' || e.key === 'Esc';
+            const modalIsVisible = newsletterModal.classList.contains('active');
+            
+            if (isEscapeKey && modalIsVisible) {
+                closeNewsletterModal();
             }
         });
     }
