@@ -756,7 +756,7 @@
                     >
                     <button type="submit">
                         <span class="btn-text">Subscribe</span>
-                        <span class="btn-loader" style="display: none;"></span>
+                        <span class="btn-loader hidden"></span>
                     </button>
                 </form>
                 
@@ -806,20 +806,21 @@
             <h2 id="newsletterModalTitle">Subscribe to Our Newsletter</h2>
             <p>Get expert lawn care tips and seasonal advice delivered to your inbox</p>
             
-            <form id="newsletterModalForm" class="newsletter-form" style="margin-top: 2rem;">
+            <form id="newsletterModalForm" class="newsletter-form mt-2">
                 <input 
-                    type="email" 
+                    type="email"
+                    id="newsletterModalEmail"
                     placeholder="Enter your email address" 
                     required
                     aria-label="Email address for newsletter"
                 >
                 <button type="submit">
                     <span class="btn-text">Subscribe</span>
-                    <span class="btn-loader" style="display: none;"></span>
+                    <span class="btn-loader hidden"></span>
                 </button>
             </form>
             
-            <div role="region" aria-live="polite"></div>
+            <div id="newsletterModalResult" role="region" aria-live="polite"></div>
         </div>
     </div>
     
