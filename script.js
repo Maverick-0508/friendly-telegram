@@ -146,6 +146,10 @@ function validatePhone(phone) {
 function showError(inputId, errorId, show = true) {
     const input = document.getElementById(inputId);
     const error = document.getElementById(errorId);
+
+    if (!input || !error) {
+        return;
+    }
     
     if (show) {
         input.classList.add('error');
