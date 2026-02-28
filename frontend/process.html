@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Learn how AM Mowing evaluates your property to determine the best lawn care approach — from observation to expert advice.">
+    <title>Our Property Evaluation Process | AM Mowing</title>
+
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <style>
+        /* ── Process page specific styles ── */
+        .process-hero {
+            background: linear-gradient(135deg, #1a3a1a 0%, #2d5a27 60%, #3a7a30 100%);
+            padding: 100px 0 60px;
+            text-align: center;
+            color: #fff;
+        }
+        .process-hero h1 {
+            font-size: clamp(2rem, 5vw, 3.2rem);
+            font-weight: 900;
+            margin-bottom: 1rem;
+        }
+        .process-hero p {
+            font-size: 1.15rem;
+            opacity: 0.88;
+            max-width: 640px;
+            margin: 0 auto 2rem;
+        }
+        .process-hero .btn-download {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            background: #fff;
+            color: #1a3a1a;
+            font-weight: 700;
+            padding: 0.85rem 2rem;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 1rem;
+            transition: background 0.2s, transform 0.2s;
+        }
+        .process-hero .btn-download:hover {
+            background: #e8f5e9;
+            transform: translateY(-2px);
+        }
+
+        /* Workflow steps */
+        .workflow {
+            padding: 70px 0;
+            background: #f9fafb;
+        }
+        .workflow .section-header { margin-bottom: 3rem; }
+        .steps-list {
+            display: grid;
+            gap: 1.5rem;
+            max-width: 860px;
+            margin: 0 auto;
+        }
+        .step-item {
+            display: flex;
+            gap: 1.5rem;
+            background: #fff;
+            border-radius: 8px;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            align-items: flex-start;
+        }
+        .step-number {
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            background: #2d5a27;
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 1.1rem;
+        }
+        .step-body h3 {
+            margin: 0 0 0.4rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1a3a1a;
+        }
+        .step-body p {
+            margin: 0;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        /* Decision guide */
+        .decision-guide {
+            padding: 70px 0;
+        }
+        .decision-table-wrap {
+            overflow-x: auto;
+        }
+        .decision-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+        .decision-table th {
+            background: #2d5a27;
+            color: #fff;
+            padding: 0.85rem 1.2rem;
+            text-align: left;
+            font-weight: 700;
+        }
+        .decision-table td {
+            padding: 0.75rem 1.2rem;
+            border-bottom: 1px solid #e5e7eb;
+            color: #374151;
+            vertical-align: top;
+        }
+        .decision-table tr:nth-child(even) td { background: #f3f7f1; }
+        .badge-diy {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1d4ed8;
+            border-radius: 12px;
+            padding: 0.2rem 0.7rem;
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+        .badge-expert {
+            display: inline-block;
+            background: #dcfce7;
+            color: #166534;
+            border-radius: 12px;
+            padding: 0.2rem 0.7rem;
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+
+        /* Pros & Cons */
+        .pros-cons {
+            padding: 70px 0;
+            background: #f9fafb;
+        }
+        .pros-cons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 900px;
+            margin: 2.5rem auto 0;
+        }
+        .pc-card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 2px 14px rgba(0,0,0,0.07);
+        }
+        .pc-card h3 {
+            font-size: 1.15rem;
+            font-weight: 800;
+            margin-bottom: 1.2rem;
+            color: #1a3a1a;
+        }
+        .pc-list { list-style: none; padding: 0; margin: 0 0 1.2rem; }
+        .pc-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+            margin-bottom: 0.6rem;
+            font-size: 0.95rem;
+            color: #374151;
+        }
+        .icon-pro { color: #16a34a; flex-shrink: 0; }
+        .icon-con { color: #dc2626; flex-shrink: 0; }
+
+        /* Expert CTA section */
+        .expert-cta {
+            padding: 70px 0;
+            text-align: center;
+            background: linear-gradient(135deg, #2d5a27 0%, #3a7a30 100%);
+            color: #fff;
+        }
+        .expert-cta h2 {
+            font-size: clamp(1.6rem, 4vw, 2.4rem);
+            font-weight: 900;
+            margin-bottom: 1rem;
+        }
+        .expert-cta p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 580px;
+            margin: 0 auto 2rem;
+        }
+        .expert-cta-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+        }
+        .btn-white {
+            background: #fff;
+            color: #1a3a1a;
+            font-weight: 700;
+            padding: 0.85rem 2rem;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 1rem;
+            transition: background 0.2s, transform 0.2s;
+        }
+        .btn-white:hover { background: #e8f5e9; transform: translateY(-2px); }
+        .btn-outline-white {
+            background: transparent;
+            color: #fff;
+            font-weight: 700;
+            padding: 0.85rem 2rem;
+            border-radius: 4px;
+            border: 2px solid #fff;
+            text-decoration: none;
+            font-size: 1rem;
+            transition: background 0.2s, transform 0.2s;
+        }
+        .btn-outline-white:hover { background: rgba(255,255,255,0.15); transform: translateY(-2px); }
+    </style>
+</head>
+<body>
+    <!-- Skip to content link for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <header id="main-header">
+        <div class="header-container">
+            <a href="index.html" class="logo-link">
+                <img src="../assets/images/lawn-craft.png" alt="Lawn Craft Logo" class="logo-image">
+                <span class="logo-text">Lawn Craft</span>
+            </a>
+            <div class="menu-toggle">
+                <i class="fa-solid fa-bars"></i>
+            </div>
+            <nav class="nav-menu">
+                <ul class="nav-links">
+                    <li><a href="index.html#home">Home</a></li>
+                    <li><a href="index.html#services">Services</a></li>
+                    <li><a href="index.html#insights">Insights</a></li>
+                    <li><a href="index.html#about">About Us</a></li>
+                    <li><a href="index.html#service-area">Service Area</a></li>
+                    <li><a href="process.html" class="active">Our Process</a></li>
+                    <li><a href="index.html#contact">Contact Us</a></li>
+                </ul>
+            </nav>
+            <div class="socials">
+                <a href="https://www.instagram.com/lawncraft_lawn_care" target="_blank" rel="noopener noreferrer" title="Visit our Instagram page"><i class="fa-brands fa-instagram"></i></a>
+                <a href="https://www.facebook.com/lawncraft_lawn_care" target="_blank" rel="noopener noreferrer" title="Visit our Facebook page"><i class="fa-brands fa-facebook"></i></a>
+                <a href="https://www.linkedin.com/company/lawn-craft-lawn-care" target="_blank" rel="noopener noreferrer" title="Visit our LinkedIn page"><i class="fa-brands fa-linkedin"></i></a>
+                <a href="https://www.tiktok.com/@lawncraft_lawn_care?is_from_webapp=1&sender_device=pc" target="_blank" rel="noopener noreferrer" title="Visit our TikTok page"><i class="fa-brands fa-tiktok"></i></a>
+            </div>
+        </div>
+    </header>
+
+    <main id="main-content">
+
+        <!-- Hero -->
+        <section class="process-hero">
+            <div class="container">
+                <h1>Our Property Evaluation Process</h1>
+                <p>Discover how we assess every property to decide the right care strategy — from a quick observation walk to calling in the experts.</p>
+                <a href="property-check-guide.docx" download="property-check-guide.docx" class="btn-download">
+                    <i class="fa-solid fa-file-word"></i>
+                    Download Property Check Guide (.docx)
+                </a>
+            </div>
+        </section>
+
+        <!-- Workflow -->
+        <section class="workflow">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-title">Evaluation Workflow</h2>
+                    <p class="section-subtitle">Five clear steps from first look to final decision</p>
+                </div>
+                <div class="steps-list">
+                    <div class="step-item">
+                        <div class="step-number">1</div>
+                        <div class="step-body">
+                            <h3>Observe</h3>
+                            <p>Walk the property and document visible conditions: grass height, bare patches, weed coverage, discolouration, drainage issues, and equipment accessibility. Use our downloadable checklist to record findings systematically.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">2</div>
+                        <div class="step-body">
+                            <h3>Assess Risk</h3>
+                            <p>Score each category (lawn health, pest activity, drainage, terrain difficulty, equipment suitability) on a 1–5 scale. A combined score above 17 is a strong signal that professional intervention is warranted.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">3</div>
+                        <div class="step-body">
+                            <h3>Consider Season &amp; Timing</h3>
+                            <p>Factor in the current season. Spring and early summer demand the most frequent attention; winter typically requires minimal mowing but heightened drainage and frost management. Timing heavily influences the best approach.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">4</div>
+                        <div class="step-body">
+                            <h3>DIY vs. Expert Decision</h3>
+                            <p>Based on your observations and risk score, weigh the DIY option against calling a professional. Consider property size, equipment on hand, time availability, and the desired quality of outcome before deciding.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">5</div>
+                        <div class="step-body">
+                            <h3>Recommended Actions</h3>
+                            <p>Act on your decision: schedule regular self-maintenance, book a one-time professional assessment, or request a full ongoing care programme. Review and repeat the evaluation cycle each season.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Decision Guide -->
+        <section class="decision-guide">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-title">Decision Guide</h2>
+                    <p class="section-subtitle">Quick rules to help you choose the right approach</p>
+                </div>
+                <div class="decision-table-wrap">
+                    <table class="decision-table" aria-label="DIY vs Expert decision guide">
+                        <thead>
+                            <tr>
+                                <th>Situation</th>
+                                <th>DIY</th>
+                                <th>Call an Expert</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Lawn area</td>
+                                <td><span class="badge-diy">Under 500 m²</span></td>
+                                <td><span class="badge-expert">Over 500 m² or complex layout</span></td>
+                            </tr>
+                            <tr>
+                                <td>Equipment available</td>
+                                <td><span class="badge-diy">Standard mower + trimmer</span></td>
+                                <td><span class="badge-expert">No suitable equipment</span></td>
+                            </tr>
+                            <tr>
+                                <td>Visible pests or disease</td>
+                                <td><span class="badge-diy">Minor, isolated spots</span></td>
+                                <td><span class="badge-expert">Widespread or recurring</span></td>
+                            </tr>
+                            <tr>
+                                <td>Terrain</td>
+                                <td><span class="badge-diy">Flat, unobstructed</span></td>
+                                <td><span class="badge-expert">Steep slopes or many obstacles</span></td>
+                            </tr>
+                            <tr>
+                                <td>Time available</td>
+                                <td><span class="badge-diy">Regular weekly window</span></td>
+                                <td><span class="badge-expert">Time-constrained schedule</span></td>
+                            </tr>
+                            <tr>
+                                <td>Desired outcome</td>
+                                <td><span class="badge-diy">Tidy and maintained</span></td>
+                                <td><span class="badge-expert">Show-quality or pristine</span></td>
+                            </tr>
+                            <tr>
+                                <td>Risk score (from checklist)</td>
+                                <td><span class="badge-diy">0 – 8</span></td>
+                                <td><span class="badge-expert">17 or higher</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pros & Cons -->
+        <section class="pros-cons">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="section-title">DIY vs. Professional Care</h2>
+                    <p class="section-subtitle">An honest comparison to help you decide</p>
+                </div>
+                <div class="pros-cons-grid">
+                    <!-- DIY -->
+                    <div class="pc-card">
+                        <h3><i class="fa-solid fa-screwdriver-wrench" style="margin-right:0.5rem;color:#2d5a27;"></i>DIY Lawn Care</h3>
+                        <p style="font-size:0.85rem;color:#6b7280;margin-bottom:1rem;">Pros</p>
+                        <ul class="pc-list">
+                            <li><i class="fa-solid fa-check icon-pro"></i> No labour costs</li>
+                            <li><i class="fa-solid fa-check icon-pro"></i> Flexible, on-demand scheduling</li>
+                            <li><i class="fa-solid fa-check icon-pro"></i> Personal satisfaction and control</li>
+                            <li><i class="fa-solid fa-check icon-pro"></i> Immediate response to issues</li>
+                        </ul>
+                        <p style="font-size:0.85rem;color:#6b7280;margin-bottom:1rem;">Cons</p>
+                        <ul class="pc-list">
+                            <li><i class="fa-solid fa-xmark icon-con"></i> Time-intensive each week</li>
+                            <li><i class="fa-solid fa-xmark icon-con"></i> Equipment purchase and upkeep costs</li>
+                            <li><i class="fa-solid fa-xmark icon-con"></i> Risk of incorrect mowing height or techniques</li>
+                            <li><i class="fa-solid fa-xmark icon-con"></i> Limited expertise for complex issues</li>
+                        </ul>
+                    </div>
+                    <!-- Professional -->
+                    <div class="pc-card">
+                        <h3><i class="fa-solid fa-star" style="margin-right:0.5rem;color:#2d5a27;"></i>Professional Lawn Care</h3>
+                        <p style="font-size:0.85rem;color:#6b7280;margin-bottom:1rem;">Pros</p>
+                        <ul class="pc-list">
+                            <li><i class="fa-solid fa-check icon-pro"></i> Expert knowledge and proven techniques</li>
+                            <li><i class="fa-solid fa-check icon-pro"></i> Commercial-grade equipment</li>
+                            <li><i class="fa-solid fa-check icon-pro"></i> Saves significant time and effort</li>
+                            <li><i class="fa-solid fa-check icon-pro"></i> Guaranteed results with service warranty</li>
+                            <li><i class="fa-solid fa-check icon-pro"></i> Ongoing maintenance plans available</li>
+                        </ul>
+                        <p style="font-size:0.85rem;color:#6b7280;margin-bottom:1rem;">Cons</p>
+                        <ul class="pc-list">
+                            <li><i class="fa-solid fa-xmark icon-con"></i> Higher recurring cost</li>
+                            <li><i class="fa-solid fa-xmark icon-con"></i> Scheduled visits (less spontaneous)</li>
+                            <li><i class="fa-solid fa-xmark icon-con"></i> Requires vetting and trusting a provider</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Expert CTA -->
+        <section class="expert-cta">
+            <div class="container">
+                <h2>Not Sure Which Path to Take?</h2>
+                <p>Our team is happy to evaluate your property for free. Get personalised advice and a transparent quote — no obligation.</p>
+                <div class="expert-cta-buttons">
+                    <a href="mailto:contact@ammowing.com?subject=Property%20Evaluation%20Request" class="btn-white">
+                        <i class="fa-solid fa-envelope" style="margin-right:0.5rem;"></i>
+                        Request Expert Advice
+                    </a>
+                    <a href="index.html#contact" class="btn-outline-white">
+                        Use Our Contact Form
+                    </a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer" id="main-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <span class="logo-text">AM Mowing</span>
+                    </div>
+                    <p class="footer-tagline">Excellence in Lawn Care</p>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-title">Services</h4>
+                    <ul class="footer-links">
+                        <li><a href="index.html#services">Lawn Mowing</a></li>
+                        <li><a href="index.html#services">Landscape Design</a></li>
+                        <li><a href="index.html#services">Seasonal Maintenance</a></li>
+                        <li><a href="index.html#services">Property Management</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-title">Company</h4>
+                    <ul class="footer-links">
+                        <li><a href="index.html#about">About Us</a></li>
+                        <li><a href="index.html#insights">Insights</a></li>
+                        <li><a href="process.html">Our Process</a></li>
+                        <li><a href="index.html#contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-title">Connect</h4>
+                    <ul class="footer-links">
+                        <li><a href="#" aria-label="Visit our LinkedIn page">LinkedIn</a></li>
+                        <li><a href="#" aria-label="Visit our Facebook page">Facebook</a></li>
+                        <li><a href="#" aria-label="Visit our Instagram page">Instagram</a></li>
+                        <li><a href="#" aria-label="Visit our Twitter page">Twitter</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; <span id="currentYear"></span> AM Mowing. All rights reserved.</p>
+                <div class="footer-legal">
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Font Awesome for icons (already loaded in head) -->
+    <!-- Inline script only for footer year -->
+    <script>
+        // Mobile menu toggle
+        const mobileMenuToggle = document.querySelector('.menu-toggle');
+        const navMenu = document.querySelector('.nav-menu');
+        if (mobileMenuToggle && navMenu) {
+            mobileMenuToggle.addEventListener('click', () => {
+                navMenu.classList.toggle('active');
+            });
+        }
+        // Footer year
+        const yearEl = document.getElementById('currentYear');
+        if (yearEl) yearEl.textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>
