@@ -1,6 +1,6 @@
 # AM Mowing - Frontend
 
-A beautiful, modern static website for AM Mowing professional lawn care services.
+A modern static multi-page website for AM Mowing professional lawn care services.
 
 ## Features
 
@@ -16,16 +16,22 @@ A beautiful, modern static website for AM Mowing professional lawn care services
 
 ```
 frontend/
-├── index.html    # Main HTML file with semantic markup
-├── styles.css    # Complete styling with animations
-└── script.js     # Interactive features and form handling
+├── index.html         # Home page
+├── services.html      # Services page
+├── insights.html      # Insights page
+├── about.html         # About page
+├── service-area.html  # Service area page (Leaflet map)
+├── process.html       # Property evaluation process page
+├── contact.html       # Contact page with form
+├── styles.css         # Shared styling with animations
+└── script.js          # Shared interactive behaviors
 ```
 
 ## Quick Start
 
 ### View Locally
 
-Simply open `index.html` in a web browser to view the website.
+Open `index.html` in a web browser and navigate between pages using the top navigation.
 
 ### Development Server
 
@@ -84,9 +90,12 @@ To connect the frontend to the backend:
 
 ### Updating Content
 
-- **Services**: Edit the services section in `index.html`
-- **Testimonials**: Update testimonial cards in `index.html`
-- **Contact Information**: Modify contact details in the footer
+- **Home content**: Edit `index.html`
+- **Service content**: Edit `services.html`
+- **Insights content**: Edit `insights.html`
+- **About and testimonials**: Edit `about.html`
+- **Service area map page**: Edit `service-area.html`
+- **Contact form page**: Edit `contact.html`
 
 ### Styling
 
