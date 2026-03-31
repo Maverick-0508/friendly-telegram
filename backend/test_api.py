@@ -43,7 +43,7 @@ def main():
         "email": "demo@ammowing.com",
         "password": "DemoPassword123!",
         "full_name": "Demo User",
-        "phone": "555-0123"
+        "phone": "+254 758827319"
     }
     response = requests.post(f"{API_URL}/auth/register", json=user_data)
     print_response("User Registration", response)
@@ -68,7 +68,7 @@ def main():
     contact_data = {
         "full_name": "Sarah Williams",
         "email": "sarah@example.com",
-        "phone": "555-1111",
+        "phone": "+254 758827319",
         "subject": "Service Inquiry",
         "service_type": "Lawn Mowing",
         "message": "I'm interested in your weekly lawn mowing service for my residential property."
@@ -81,7 +81,7 @@ def main():
     quote_data = {
         "full_name": "Michael Brown",
         "email": "michael@example.com",
-        "phone": "555-2222",
+        "phone": "+254 758827319",
         "address": "789 Park Lane, Sydney NSW 2000",
         "property_size": 750,
         "property_type": "residential",
@@ -98,7 +98,7 @@ def main():
     appointment_data = {
         "full_name": "Emma Davis",
         "email": "emma@example.com",
-        "phone": "555-3333",
+        "phone": "+254 758827319",
         "service_type": "Lawn Treatment",
         "address": "321 Garden Road, Sydney NSW 2000",
         "scheduled_date": future_date.isoformat(),
