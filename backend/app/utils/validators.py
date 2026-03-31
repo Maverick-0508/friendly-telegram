@@ -12,7 +12,7 @@ from app.config import settings
 def validate_phone_number(phone: str) -> bool:
     """
     Validate phone number format
-    Accepts various formats: +1234567890, (123) 456-7890, 123-456-7890, etc.
+    Example format: +254 758827319
     """
     # Remove common formatting characters
     cleaned = re.sub(r'[\s\(\)\-\.]', '', phone)
