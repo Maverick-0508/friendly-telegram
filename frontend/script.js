@@ -1,5 +1,5 @@
 // Mobile Menu Toggle
-const mobileMenuToggle = document.querySelector('.mobile-menu-toggle, .menu-toggle');
+const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
 const navMenu = document.querySelector('.nav-menu');
 
 if (mobileMenuToggle && navMenu) {
@@ -20,6 +20,39 @@ if (mobileMenuToggle && navMenu) {
                 spans[1].style.opacity = '1';
                 spans[2].style.transform = 'none';
             }
+        }
+    });
+}
+
+// Directory menu toggle (desktop and mobile)
+const directoryToggle = document.querySelector('.directory-toggle');
+const directoryPanel = document.querySelector('.directory-panel');
+const mainHeader = document.getElementById('main-header');
+
+function setDirectoryMenuState(open) {
+    if (!directoryToggle || !directoryPanel || !mainHeader) return;
+
+    mainHeader.classList.toggle('menu-open', open);
+    directoryToggle.setAttribute('aria-expanded', String(open));
+    directoryPanel.setAttribute('aria-hidden', String(!open));
+}
+
+if (directoryToggle && directoryPanel && mainHeader) {
+    directoryToggle.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const isOpen = mainHeader.classList.contains('menu-open');
+        setDirectoryMenuState(!isOpen);
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!mainHeader.contains(event.target)) {
+            setDirectoryMenuState(false);
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            setDirectoryMenuState(false);
         }
     });
 }
