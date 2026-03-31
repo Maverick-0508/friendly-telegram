@@ -235,20 +235,37 @@
                 <img src="../assets/images/lawn-craft.png" alt="Lawn Craft Logo" class="logo-image">
                 <span class="logo-text">Lawn Craft</span>
             </a>
-            <div class="menu-toggle">
-                <i class="fa-solid fa-bars"></i>
-            </div>
             <nav class="nav-menu">
                 <ul class="nav-links">
-                    <li><a href="index.html#home">Home</a></li>
-                    <li><a href="index.html#services">Services</a></li>
-                    <li><a href="index.html#insights">Insights</a></li>
-                    <li><a href="index.html#about">About Us</a></li>
-                    <li><a href="index.html#service-area">Service Area</a></li>
-                    <li><a href="process.html" class="active">Our Process</a></li>
-                    <li><a href="index.html#contact">Contact Us</a></li>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="services.html">Services</a></li>
+                    <li><a href="insights.html">Insights</a></li>
+                    <li><a href="contact.html">Contact Us</a></li>
                 </ul>
             </nav>
+            <button class="menu-toggle directory-toggle" type="button" aria-expanded="false" aria-controls="directory-panel" aria-label="Open menu">
+                <span>Menu</span>
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="directory-panel" id="directory-panel" aria-hidden="true">
+                <div class="directory-grid">
+                    <div class="directory-column">
+                        <h3>Company</h3>
+                        <a href="about.html">About Us</a>
+                        <a href="process.html" class="active">Our Process</a>
+                    </div>
+                    <div class="directory-column">
+                        <h3>Operations</h3>
+                        <a href="service-area.html">Service Area</a>
+                        <a href="contact.html">Book Consultation</a>
+                    </div>
+                    <div class="directory-column">
+                        <h3>Resources</h3>
+                        <a href="property-check-guide.docx" download="property-check-guide.docx">Property Check Guide</a>
+                        <a href="index.html#faq">FAQ</a>
+                    </div>
+                </div>
+            </div>
             <div class="socials">
                 <a href="https://www.instagram.com/lawncraft_lawn_care" target="_blank" rel="noopener noreferrer" title="Visit our Instagram page"><i class="fa-brands fa-instagram"></i></a>
                 <a href="https://www.facebook.com/lawncraft_lawn_care" target="_blank" rel="noopener noreferrer" title="Visit our Facebook page"><i class="fa-brands fa-facebook"></i></a>
@@ -435,7 +452,7 @@
                         <i class="fa-solid fa-envelope" style="margin-right:0.5rem;"></i>
                         Request Expert Advice
                     </a>
-                    <a href="index.html#contact" class="btn-outline-white">
+                    <a href="contact.html" class="btn-outline-white">
                         Use Our Contact Form
                     </a>
                 </div>
@@ -457,19 +474,19 @@
                 <div class="footer-section">
                     <h4 class="footer-title">Services</h4>
                     <ul class="footer-links">
-                        <li><a href="index.html#services">Lawn Mowing</a></li>
-                        <li><a href="index.html#services">Landscape Design</a></li>
-                        <li><a href="index.html#services">Seasonal Maintenance</a></li>
-                        <li><a href="index.html#services">Property Management</a></li>
+                        <li><a href="services.html">Lawn Mowing</a></li>
+                        <li><a href="services.html">Landscape Design</a></li>
+                        <li><a href="services.html">Seasonal Maintenance</a></li>
+                        <li><a href="services.html">Property Management</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
                     <h4 class="footer-title">Company</h4>
                     <ul class="footer-links">
-                        <li><a href="index.html#about">About Us</a></li>
-                        <li><a href="index.html#insights">Insights</a></li>
+                        <li><a href="about.html">About Us</a></li>
+                        <li><a href="insights.html">Insights</a></li>
                         <li><a href="process.html">Our Process</a></li>
-                        <li><a href="index.html#contact">Contact</a></li>
+                        <li><a href="contact.html">Contact</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
@@ -492,20 +509,6 @@
         </div>
     </footer>
 
-    <!-- Font Awesome for icons (already loaded in head) -->
-    <!-- Inline script only for footer year -->
-    <script>
-        // Mobile menu toggle
-        const mobileMenuToggle = document.querySelector('.menu-toggle');
-        const navMenu = document.querySelector('.nav-menu');
-        if (mobileMenuToggle && navMenu) {
-            mobileMenuToggle.addEventListener('click', () => {
-                navMenu.classList.toggle('active');
-            });
-        }
-        // Footer year
-        const yearEl = document.getElementById('currentYear');
-        if (yearEl) yearEl.textContent = new Date().getFullYear();
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
