@@ -10,6 +10,12 @@ This repository contains two main components organized in separate directories:
 friendly-telegram/
 ├── frontend/          # Static website files
 │   ├── index.html
+│   ├── services.html
+│   ├── insights.html
+│   ├── about.html
+│   ├── service-area.html
+│   ├── process.html
+│   ├── contact.html
 │   ├── styles.css
 │   └── script.js
 ├── backend/           # FastAPI backend
@@ -19,8 +25,8 @@ friendly-telegram/
 └── README.md
 ```
 
-### Frontend (Static Website)
-A beautiful, modern website with smooth animations and responsive design.
+### Frontend (Static Multi-Page Website)
+A modern multi-page website with responsive layouts and shared styling/scripts.
 Located in the `frontend/` directory.
 
 ### Backend (FastAPI)
@@ -54,7 +60,7 @@ Located in the `backend/` directory.
 
 ### Frontend (Static Website)
 
-Simply open `frontend/index.html` in a web browser to view the website.
+Open `frontend/index.html` in a web browser to start from the home page and navigate to dedicated pages for services, insights, about, service area, process, and contact.
 
 For development with live reload:
 ```bash
