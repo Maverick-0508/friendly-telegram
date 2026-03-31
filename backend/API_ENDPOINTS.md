@@ -20,7 +20,7 @@ Register a new user account.
   "email": "user@example.com",
   "password": "SecurePass123!",
   "full_name": "John Doe",
-  "phone": "1234567890"
+  "phone": "+254 758827319"
 }
 ```
 
@@ -30,7 +30,7 @@ Register a new user account.
   "id": 1,
   "email": "user@example.com",
   "full_name": "John Doe",
-  "phone": "1234567890",
+  "phone": "+254 758827319",
   "role": "customer",
   "is_active": true,
   "is_verified": false,
@@ -216,7 +216,7 @@ Submit a quote request.
 {
   "full_name": "Jane Smith",
   "email": "jane@example.com",
-  "phone": "555-5678",
+  "phone": "+254 758827319",
   "address": "123 Main St, Sydney NSW 2000",
   "property_size": 500,
   "property_type": "residential",
@@ -234,7 +234,7 @@ Submit a quote request.
   "user_id": null,
   "full_name": "Jane Smith",
   "email": "jane@example.com",
-  "phone": "555-5678",
+  "phone": "+254 758827319",
   "address": "123 Main St, Sydney NSW 2000",
   "property_size": 500.0,
   "property_type": "residential",
@@ -333,7 +333,7 @@ Book a new appointment.
 {
   "full_name": "Bob Johnson",
   "email": "bob@example.com",
-  "phone": "555-9999",
+  "phone": "+254 758827319",
   "service_type": "Lawn Maintenance",
   "address": "456 Oak Ave, Sydney NSW 2000",
   "scheduled_date": "2026-02-15T10:00:00",
@@ -414,7 +414,7 @@ Submit a contact form.
 {
   "full_name": "John Doe",
   "email": "john@example.com",
-  "phone": "555-1234",
+  "phone": "+254 758827319",
   "subject": "Lawn Mowing Inquiry",
   "service_type": "Lawn Mowing",
   "message": "I would like to inquire about your services."
