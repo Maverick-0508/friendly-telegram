@@ -109,7 +109,7 @@ curl -X POST http://localhost:8000/api/auth/register \
     "email": "user@example.com",
     "password": "SecurePassword123!",
     "full_name": "John Doe",
-    "phone": "1234567890"
+    "phone": "+254 758827319"
   }'
 ```
 
@@ -130,7 +130,7 @@ curl -X POST http://localhost:8000/api/contact \
   -d '{
     "full_name": "Jane Smith",
     "email": "jane@example.com",
-    "phone": "555-1234",
+    "phone": "+254 758827319",
     "subject": "Inquiry",
     "service_type": "Lawn Mowing",
     "message": "I would like to know more about your services."
@@ -144,7 +144,7 @@ curl -X POST http://localhost:8000/api/quotes \
   -d '{
     "full_name": "Bob Johnson",
     "email": "bob@example.com",
-    "phone": "555-5678",
+    "phone": "+254 758827319",
     "address": "123 Main St, Sydney NSW 2000",
     "property_size": 500,
     "service_type": "Lawn Mowing",
