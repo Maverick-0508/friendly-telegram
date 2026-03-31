@@ -24,7 +24,7 @@ def create_admin_user(db):
             email=admin_email,
             hashed_password=get_password_hash("Admin123!"),
             full_name="Admin User",
-            phone="555-0000",
+            phone="+254 758827319",
             role=UserRole.ADMIN,
             is_active=True,
             is_verified=True
