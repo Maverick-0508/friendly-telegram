@@ -1,6 +1,6 @@
-# AM Mowing - FastAPI Backend
+# Lawn Craft - FastAPI Backend
 
-A comprehensive FastAPI backend for the AM Mowing professional lawn care website, providing all essential functionalities for managing a lawn care business.
+A comprehensive FastAPI backend for the Lawn Craft professional lawn care website, providing all essential functionalities for managing a lawn care business.
 
 ## Features
 
@@ -330,4 +330,4 @@ For issues or questions:
 
 ## License
 
-© 2026 AM Mowing. All rights reserved.
+© 2026 Lawn Craft. All rights reserved.

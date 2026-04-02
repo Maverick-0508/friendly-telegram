@@ -1,6 +1,6 @@
-# AM Mowing - Professional Lawn Care Platform
+# Lawn Craft - Professional Lawn Care Platform
 
-A comprehensive lawn care platform combining a beautiful static website with a powerful FastAPI backend for AM Mowing services.
+A comprehensive lawn care platform combining a beautiful static website with a powerful FastAPI backend for Lawn Craft services.
 
 ## 🌟 Project Structure
 
@@ -110,4 +110,4 @@ API Documentation: http://localhost:8000/docs
 
 ## License
 
-© 2026 AM Mowing. All rights reserved.
+© 2026 Lawn Craft. All rights reserved.

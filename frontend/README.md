@@ -1,6 +1,6 @@
-# AM Mowing - Frontend
+# Lawn Craft - Frontend
 
-A modern static multi-page website for AM Mowing professional lawn care services.
+A modern static multi-page website for Lawn Craft professional lawn care services.
 
 ## Features
 
@@ -120,4 +120,4 @@ The website is optimized for performance:
 
 ## License
 
-© 2026 AM Mowing. All rights reserved.
+© 2026 Lawn Craft. All rights reserved.
