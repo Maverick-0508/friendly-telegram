@@ -855,15 +855,24 @@ section {
     border-radius: 24px;
     overflow: hidden;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    transform: var(--showcase-transform);
     transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1), 
                 box-shadow 0.75s cubic-bezier(0.22, 1, 0.36, 1),
-                z-index 0.75s;
+                z-index 0.75s,
+                opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+                filter 0.75s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .showcase-image:hover {
-    transform: scale(1.03) !important;
+    transform: var(--showcase-transform) scale(1.03) !important;
     box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
     z-index: 10 !important;
+}
+
+.showcase-gallery:has(.showcase-image:hover) .showcase-image:not(:hover) {
+    transform: var(--showcase-transform) translateX(var(--focus-nudge-x, 0px)) scale(0.96);
+    opacity: 0.8;
+    filter: saturate(0.82);
 }
 
 .showcase-image img {
@@ -879,7 +888,8 @@ section {
     height: 380px;
     left: 1%;
     top: 50%;
-    transform: translateY(-50%) rotate(-12deg);
+    --showcase-transform: translateY(-50%) rotate(-12deg);
+    --focus-nudge-x: -28px;
     z-index: 3;
 }
 
@@ -888,7 +898,8 @@ section {
     height: 400px;
     left: 15%;
     top: 20%;
-    transform: rotate(6deg);
+    --showcase-transform: rotate(6deg);
+    --focus-nudge-x: -18px;
     z-index: 2;
 }
 
@@ -897,7 +908,8 @@ section {
     height: 480px;
     left: 50%;
     top: 50%;
-    transform: translate(-50%, -50%) rotate(0deg);
+    --showcase-transform: translate(-50%, -50%) rotate(0deg);
+    --focus-nudge-x: 0px;
     z-index: 5;
     border: 6px solid #FFD700;
     box-shadow: 0 0 0 2px #fff;
@@ -908,7 +920,8 @@ section {
     height: 400px;
     right: 15%;
     top: 15%;
-    transform: rotate(10deg);
+    --showcase-transform: rotate(10deg);
+    --focus-nudge-x: 18px;
     z-index: 2;
 }
 
@@ -917,7 +930,8 @@ section {
     height: 360px;
     right: 1%;
     top: 50%;
-    transform: translateY(-50%) rotate(-7deg);
+    --showcase-transform: translateY(-50%) rotate(-7deg);
+    --focus-nudge-x: 28px;
     z-index: 3;
 }
 
@@ -976,7 +990,8 @@ section {
         height: 220px;
         left: 0;
         top: 10%;
-        transform: rotate(-12deg);
+        --showcase-transform: rotate(-12deg);
+        --focus-nudge-x: -12px;
     }
 
     .showcase-image-2 {
@@ -984,7 +999,8 @@ section {
         height: 240px;
         left: 22%;
         top: 5%;
-        transform: rotate(6deg);
+        --showcase-transform: rotate(6deg);
+        --focus-nudge-x: -8px;
     }
 
     .showcase-image-3 {
@@ -992,7 +1008,8 @@ section {
         height: 280px;
         left: 50%;
         top: 45%;
-        transform: translate(-50%, -50%) rotate(0deg);
+        --showcase-transform: translate(-50%, -50%) rotate(0deg);
+        --focus-nudge-x: 0px;
     }
 
     .showcase-image-4 {
@@ -1000,7 +1017,8 @@ section {
         height: 230px;
         right: 22%;
         top: 60%;
-        transform: rotate(10deg);
+        --showcase-transform: rotate(10deg);
+        --focus-nudge-x: 8px;
     }
 
     .showcase-image-5 {
@@ -1008,7 +1026,8 @@ section {
         height: 220px;
         right: 0;
         top: 70%;
-        transform: rotate(-7deg);
+        --showcase-transform: rotate(-7deg);
+        --focus-nudge-x: 12px;
     }
 }
 
