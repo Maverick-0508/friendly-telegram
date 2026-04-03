@@ -60,7 +60,7 @@ Located in the `backend/` directory.
 
 ### Frontend (Static Website)
 
-Open `frontend/index.html` in a web browser to start from the home page and navigate to dedicated pages for services, insights, about, service area, process, and contact.
+From a local server, open `/home` (or `/`) in a web browser to start from the home page and navigate to dedicated pages for services, insights, about, service area, process, and contact.
 
 For development with live reload:
 ```bash
