@@ -10,6 +10,16 @@ import json
 from datetime import datetime
 
 FRONTEND_DIR = Path(__file__).parent / "frontend"
+if not FRONTEND_DIR.is_dir():
+    raise RuntimeError(f"Frontend directory not found: {FRONTEND_DIR}")
+
+
+def _page(filename: str) -> FileResponse:
+    """Return a FileResponse for a frontend HTML page, or raise 404 if missing."""
+    path = FRONTEND_DIR / filename
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Page not found")
+    return FileResponse(str(path))
 
 app = FastAPI(
     title="Friendly Telegram API",
@@ -46,31 +56,31 @@ contacts = []
 # Page routes
 @app.get("/")
 def index_page():
-    return FileResponse(str(FRONTEND_DIR / "index.html"))
+    return _page("index.html")
 
 @app.get("/services")
 def services_page():
-    return FileResponse(str(FRONTEND_DIR / "services.html"))
+    return _page("services.html")
 
 @app.get("/insights")
 def insights_page():
-    return FileResponse(str(FRONTEND_DIR / "insights.html"))
+    return _page("insights.html")
 
 @app.get("/contact")
 def contact_page():
-    return FileResponse(str(FRONTEND_DIR / "contact.html"))
+    return _page("contact.html")
 
 @app.get("/process")
 def process_page():
-    return FileResponse(str(FRONTEND_DIR / "process.html"))
+    return _page("process.html")
 
 @app.get("/about")
 def about_page():
-    return FileResponse(str(FRONTEND_DIR / "about.html"))
+    return _page("about.html")
 
 @app.get("/service-area")
 def service_area_page():
-    return FileResponse(str(FRONTEND_DIR / "service-area.html"))
+    return _page("service-area.html")
 
 @app.get("/api/services", response_model=list[Service])
 def get_services():
