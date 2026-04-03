@@ -1,0 +1,14 @@
+[project]
+name = "friendly-telegram-api"
+version = "0.1.0"
+description = "FastAPI backend for Friendly Telegram lawn care services"
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "python-multipart>=0.0.6",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
