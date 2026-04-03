@@ -31,7 +31,7 @@ frontend/
 
 ### View Locally
 
-Open `index.html` in a web browser and navigate between pages using the top navigation.
+Open `/home` (or `/`) in a web browser and navigate between pages using the top navigation.
 
 ### Development Server
 
