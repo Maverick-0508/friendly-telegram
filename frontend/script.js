@@ -517,7 +517,7 @@ function initServiceAreaMap() {
     
     // Add home location marker
     const homeMarker = L.marker([HOME_LAT, HOME_LNG]).addTo(map);
-    homeMarker.bindPopup('AM Mowing – Main Office<br>Ikigai, Nairobi (Kitisuru area)');
+    homeMarker.bindPopup('Lawn Craft – Main Office<br>Ikigai, Nairobi (Kitisuru area)');
     
     // Draw service radius circle
     const serviceCircle = L.circle([HOME_LAT, HOME_LNG], {
@@ -710,5 +710,5 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize service area map
     initServiceAreaMap();
     
-    console.log('AM Mowing website loaded successfully!');
+    console.log('Lawn Craft website loaded successfully!');
 });
