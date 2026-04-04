@@ -29,30 +29,37 @@ frontend/
 
 ## Quick Start
 
-### View Locally
+### Recommended: Local Dev with Vercel CLI
 
-Open `/home` (or `/`) in a web browser and navigate between pages using the top navigation.
+The site uses `vercel.json` rewrite rules to map clean URLs (e.g. `/`, `/about`) to the
+HTML files in `frontend/`. A plain file server does **not** honour these rules, so assets
+and pages may 404. Use the [Vercel CLI](https://vercel.com/docs/cli) instead:
 
-### Development Server
+```bash
+# Install once (requires Node.js)
+npm i -g vercel
 
-For development with live reload:
+# From the repository root
+vercel dev
+```
+
+Then open `http://localhost:3000`. The rewrite rules in `vercel.json` are applied
+automatically, so every clean URL resolves correctly.
+
+### Alternative: Serve the Frontend Folder Directly
+
+If you only need to browse the site and are happy to use `.html` file URLs, you can
+serve the `frontend/` directory with any static server:
 
 ```bash
 cd frontend
 python3 -m http.server 8080
+# Then open http://localhost:8080/index.html
 ```
 
-Then navigate to `http://localhost:8080`
-
-Alternatively, you can use any static file server:
-
-```bash
-# Using Node.js http-server
-npx http-server -p 8080
-
-# Using PHP
-php -S localhost:8080
-```
+> **Note:** With this approach the root `vercel.json` rewrites are **not** applied, so
+> navigating to bare paths like `http://localhost:8080/about` will return a 404.  Always
+> use `vercel dev` (above) for full URL routing support.
 
 ## Technologies Used
 
