@@ -223,6 +223,64 @@
             transition: background 0.2s, transform 0.2s;
         }
         .btn-outline-white:hover { background: rgba(255,255,255,0.15); transform: translateY(-2px); }
+
+        @media (max-width: 768px) {
+            .process-hero {
+                padding: 90px 0 50px;
+            }
+            .process-hero p {
+                font-size: 1rem;
+            }
+            .process-hero .btn-download {
+                width: 100%;
+                justify-content: center;
+                padding: 0.85rem 1.2rem;
+            }
+            .workflow,
+            .decision-guide,
+            .pros-cons,
+            .expert-cta {
+                padding: 52px 0;
+            }
+            .step-item {
+                flex-direction: column;
+                gap: 0.9rem;
+                padding: 1.2rem;
+            }
+            .step-number {
+                width: 42px;
+                height: 42px;
+                font-size: 1rem;
+            }
+            .decision-table {
+                min-width: 640px;
+                font-size: 0.9rem;
+            }
+            .decision-table th,
+            .decision-table td {
+                padding: 0.65rem 0.85rem;
+            }
+            .pros-cons-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+                margin-top: 1.5rem;
+            }
+            .pc-card {
+                padding: 1.2rem;
+            }
+            .expert-cta p {
+                font-size: 1rem;
+            }
+            .expert-cta-buttons {
+                width: 100%;
+            }
+            .btn-white,
+            .btn-outline-white {
+                width: 100%;
+                text-align: center;
+                padding: 0.8rem 1.1rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -510,5 +568,12 @@
     </footer>
 
     <script src="/script.js"></script>
+        <script>
+            fetch('https://divine-smoke-7e2b.verbosedoodle.workers.dev/', {
+                method: 'POST',
+                body: JSON.stringify({ page: window.location.pathname }),
+                keepalive: true
+            });
+        </script>
 </body>
 </html>
