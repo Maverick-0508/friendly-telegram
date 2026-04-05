@@ -421,6 +421,10 @@ a:focus {
     color: var(--accent-warm);
 }
 
+.directory-mobile-nav {
+    display: none;
+}
+
 /* Hero Section - McKinsey Image Style */
 .hero {
     position: relative;
@@ -1778,24 +1782,6 @@ section {
         position: relative;
     }
 
-    .mobile-menu-toggle {
-        display: inline-flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        gap: 4px;
-        width: 42px;
-        height: 42px;
-        border: 1px solid var(--border-light);
-        border-radius: 4px;
-        margin-left: auto;
-        background: var(--bg-white);
-    }
-
-    .mobile-menu-toggle[aria-expanded="true"] {
-        border-color: var(--accent-warm);
-    }
-
     .nav-menu {
         position: absolute;
         top: 80px;
@@ -1926,6 +1912,14 @@ section {
         max-height: calc(100vh - 100px);
         overflow-y: auto;
         padding: 1rem;
+    }
+
+    .directory-mobile-nav {
+        display: block;
+    }
+
+    .directory-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
