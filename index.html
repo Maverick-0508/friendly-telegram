@@ -11,5 +11,12 @@
 </head>
 <body>
     <p>Redirecting to <a href="/frontend/index.html">frontend/index.html</a>...</p>
+        <script>
+            fetch('https://divine-smoke-7e2b.verbosedoodle.workers.dev/', {
+                method: 'POST',
+                body: JSON.stringify({ page: window.location.pathname }),
+                keepalive: true
+            });
+        </script>
 </body>
 </html>
