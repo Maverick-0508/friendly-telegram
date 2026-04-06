@@ -751,5 +751,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize service area map
     initServiceAreaMap();
     
+    // Get performance timing
+    const [perf] = performance.getEntriesByType("navigation");
+    
+    // Send performance and hardware analytics
+    if (perf) {
+        fetch('https://dash.cloudflare.com/e81c2b492502fc5e4fe0cd0b992c7c8c/workers/services/view/divine-smoke-7e2b/production', {
+            method: 'POST',
+            body: JSON.stringify({ 
+                page: window.location.pathname,
+                referrer: document.referrer || "Direct",
+                // Performance data in seconds
+                loadTime: (perf.loadEventEnd / 1000).toFixed(2) + "s",
+                // Connection speed
+                effectiveType: navigator.connection ? navigator.connection.effectiveType : "unknown",
+                // Device Memory (RAM) in GB
+                memory: navigator.deviceMemory || "unknown",
+            }),
+            keepalive: true 
+        }).catch(error => {
+            console.log('Analytics sent (keepalive mode):', error);
+        });
+    }
+    
     console.log('Lawn Craft website loaded successfully!');
 });
