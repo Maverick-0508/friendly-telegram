@@ -293,7 +293,7 @@ if (contactForm && nameInput && emailInput && phoneInput && messageInput) {
 
     phoneInput.addEventListener('blur', () => {
         if (phoneInput.value.trim() === '') {
-            showError(phoneInput, 'Phone number is required');
+            clearValidation(phoneInput); // required check fires on submit
         } else if (!validatePhone(phoneInput.value)) {
             showError(phoneInput, 'Please enter a valid phone number');
         } else {
@@ -341,14 +341,18 @@ if (contactForm && nameInput && emailInput && phoneInput && messageInput) {
         submitBtn.disabled = true;
         
         // Get form data
+        function getOptionalFieldValue(id) {
+            const el = document.getElementById(id);
+            return el ? el.value : '';
+        }
         const formData = {
             name: nameInput.value,
             email: emailInput.value,
             phone: phoneInput.value,
-            address: (document.getElementById('address') || {}).value || '',
-            service: (document.getElementById('service') || {}).value || '',
-            propertyType: (document.getElementById('property-type') || {}).value || '',
-            preferredDate: (document.getElementById('preferred-date') || {}).value || '',
+            address: getOptionalFieldValue('address'),
+            service: getOptionalFieldValue('service'),
+            propertyType: getOptionalFieldValue('property-type'),
+            preferredDate: getOptionalFieldValue('preferred-date'),
             message: messageInput.value
         };
         
