@@ -427,7 +427,7 @@
         <div class="container">
             <div class="section-header">
                 <h2 class="section-title">Check Our Service Area</h2>
-                <p class="section-subtitle">Find out if we service your location around Ikigai, Baraton Estate, and Kitisuru Road</p>
+                <p class="section-subtitle">Find out if we service your location — we now cover Nairobi and surrounding areas up to 25 km from our base</p>
             </div>
             <div class="service-area-layout">
                 <div class="service-area-map-wrapper">
@@ -453,7 +453,7 @@
                                 type="text" 
                                 id="zip-input" 
                                 class="zip-input" 
-                                placeholder="e.g., Baraton Estate, Kitisuru, 00621"
+                                placeholder="e.g., Ruiru, Karen, Syokimau, Westlands, 00621"
                                 aria-label="Estate name or postal code"
                             />
                             <button id="check-zip" class="btn btn-secondary" type="button">
@@ -502,47 +502,72 @@
                         </div>
                         <div class="contact-item">
                             <div class="contact-label">Service Area</div>
-                            <div class="contact-value">Serving Nairobi and surrounding areas within 12 km of Ikigai</div>
+                            <div class="contact-value">Nairobi and surrounding areas within 25 km — including Westlands, Ruiru, Karen, Syokimau and more</div>
                         </div>
                     </div>
                 </div>
                 <div class="contact-form-wrapper">
                     <form class="contact-form" id="contactForm" novalidate>
-                        <div class="form-group">
-                            <label for="name">Full Name <span class="required-indicator" aria-label="required">*</span></label>
-                            <input type="text" id="name" name="name" required aria-required="true" aria-describedby="name-error">
-                            <span class="error-message" id="name-error" role="alert"></span>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="name">Full Name <span class="required-indicator" aria-label="required">*</span></label>
+                                <input type="text" id="name" name="name" placeholder="e.g. Jane Wanjiku" required aria-required="true" aria-describedby="name-error">
+                                <span class="error-message" id="name-error" role="alert"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="phone">Phone Number <span class="required-indicator" aria-label="required">*</span></label>
+                                <input type="tel" id="phone" name="phone" placeholder="e.g. 0712 345 678" pattern="[0-9\s\(\)\-\+]+" required aria-required="true" aria-describedby="phone-error">
+                                <span class="error-message" id="phone-error" role="alert"></span>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="email">Email Address <span class="required-indicator" aria-label="required">*</span></label>
-                            <input type="email" id="email" name="email" required aria-required="true" aria-describedby="email-error">
+                            <input type="email" id="email" name="email" placeholder="e.g. jane@example.com" required aria-required="true" aria-describedby="email-error">
                             <span class="error-message" id="email-error" role="alert"></span>
                         </div>
                         <div class="form-group">
-                            <label for="phone">Phone Number</label>
-                            <input type="tel" id="phone" name="phone" pattern="[0-9\s\(\)\-\+]+" aria-describedby="phone-error">
-                            <span class="error-message" id="phone-error" role="alert"></span>
+                            <label for="address">Property Location / Estate</label>
+                            <input type="text" id="address" name="address" placeholder="e.g. Baraton Estate, Kitisuru" aria-describedby="address-hint">
+                            <span class="form-hint" id="address-hint">Helps us confirm you are in our service area</span>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="service">Service of Interest</label>
+                                <select id="service" name="service">
+                                    <option value="">Select a service</option>
+                                    <option value="mowing">Lawn Mowing</option>
+                                    <option value="design">Landscape Design</option>
+                                    <option value="seasonal">Seasonal Maintenance</option>
+                                    <option value="treatment">Lawn Treatment</option>
+                                    <option value="hedge">Hedge &amp; Shrub Care</option>
+                                    <option value="property">Property Management</option>
+                                    <option value="consultation">General Consultation</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="property-type">Property Type</label>
+                                <select id="property-type" name="property-type">
+                                    <option value="">Select type</option>
+                                    <option value="residential">Residential (Home)</option>
+                                    <option value="rental">Rental / Compound</option>
+                                    <option value="commercial">Commercial / Office</option>
+                                    <option value="estate">Gated Estate / HOA</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="form-group">
-                            <label for="service">Service of Interest</label>
-                            <select id="service" name="service">
-                                <option value="">Select a service</option>
-                                <option value="mowing">Lawn Mowing</option>
-                                <option value="design">Landscape Design</option>
-                                <option value="seasonal">Seasonal Maintenance</option>
-                                <option value="treatment">Lawn Treatment</option>
-                                <option value="hedge">Hedge & Shrub Care</option>
-                                <option value="property">Property Management</option>
-                                <option value="consultation">General Consultation</option>
-                            </select>
+                            <label for="preferred-date">Preferred Start Date</label>
+                            <input type="date" id="preferred-date" name="preferred-date" aria-describedby="date-hint">
+                            <span class="form-hint" id="date-hint">Optional — we will confirm availability when we contact you</span>
                         </div>
                         <div class="form-group">
-                            <label for="message">Message</label>
-                            <textarea id="message" name="message" rows="4" aria-describedby="message-error"></textarea>
+                            <label for="message">Additional Details</label>
+                            <textarea id="message" name="message" rows="3" placeholder="Tell us anything helpful — lawn size, frequency, special requirements…" aria-describedby="message-error"></textarea>
                             <span class="error-message" id="message-error" role="alert"></span>
                         </div>
                         <button type="submit" class="btn btn-primary btn-full">
-                            <span class="btn-text">Submit Inquiry</span>
+                            <span class="btn-text">Book Consultation</span>
                             <span class="btn-loader"></span>
                         </button>
                     </form>
@@ -550,7 +575,7 @@
                         <svg class="success-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
-                        <span>Thank you for your inquiry. We'll contact you within 24 hours.</span>
+                        <span>Thank you! We'll be in touch within 24 hours to confirm your booking.</span>
                     </div>
                 </div>
             </div>

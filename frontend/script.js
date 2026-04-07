@@ -292,10 +292,12 @@ if (contactForm && nameInput && emailInput && phoneInput && messageInput) {
     });
 
     phoneInput.addEventListener('blur', () => {
-        if (phoneInput.value && !validatePhone(phoneInput.value)) {
+        if (phoneInput.value.trim() === '') {
+            showError(phoneInput, 'Phone number is required');
+        } else if (!validatePhone(phoneInput.value)) {
             showError(phoneInput, 'Please enter a valid phone number');
         } else {
-            clearValidation(phoneInput);
+            showSuccess(phoneInput);
         }
     });
 
@@ -321,7 +323,10 @@ if (contactForm && nameInput && emailInput && phoneInput && messageInput) {
             isValid = false;
         }
         
-        if (phoneInput.value && !validatePhone(phoneInput.value)) {
+        if (phoneInput.value.trim() === '') {
+            showError(phoneInput, 'Phone number is required');
+            isValid = false;
+        } else if (!validatePhone(phoneInput.value)) {
             showError(phoneInput, 'Please enter a valid phone number');
             isValid = false;
         }
@@ -340,7 +345,10 @@ if (contactForm && nameInput && emailInput && phoneInput && messageInput) {
             name: nameInput.value,
             email: emailInput.value,
             phone: phoneInput.value,
-            service: document.getElementById('service').value,
+            address: (document.getElementById('address') || {}).value || '',
+            service: (document.getElementById('service') || {}).value || '',
+            propertyType: (document.getElementById('property-type') || {}).value || '',
+            preferredDate: (document.getElementById('preferred-date') || {}).value || '',
             message: messageInput.value
         };
         
@@ -540,15 +548,20 @@ function initServiceAreaMap() {
     // Constants
     const HOME_LAT = -1.2433;
     const HOME_LNG = 36.7788;
-    const SERVICE_RADIUS_METERS = 12000;
+    const SERVICE_RADIUS_METERS = 25000;
     const SERVED_AREAS = [
-        'BARATON', 'BARATON ESTATE', 'KITISURU', 'KITISURU ROAD', 
-        'IKIGAI', 'SPRING VALLEY', 'GIGIRI', 'MUTHANGARI', 
-        'LAVINGTON', '00621'
+        'BARATON', 'BARATON ESTATE', 'KITISURU', 'KITISURU ROAD',
+        'IKIGAI', 'SPRING VALLEY', 'GIGIRI', 'MUTHANGARI',
+        'LAVINGTON', 'WESTLANDS', 'PARKLANDS', 'RUNDA', 'MUTHAIGA',
+        'KIAMBU ROAD', 'RUIRU', 'RUIRU ESTATE', 'THIKA ROAD',
+        'KASARANI', 'ROYSAMBU', 'KAHAWA', 'MEMBLEY',
+        'SYOKIMAU', 'MLOLONGO', 'ATHI RIVER',
+        'NGONG ROAD', 'LANGATA', 'KAREN', 'RONGAI',
+        '00621', '00100', '00200', '00300', '00606'
     ];
     
     // Initialize map
-    const map = L.map('service-area-map').setView([HOME_LAT, HOME_LNG], 13);
+    const map = L.map('service-area-map').setView([HOME_LAT, HOME_LNG], 11);
     
     // Add OpenStreetMap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -628,9 +641,9 @@ function initServiceAreaMap() {
                     
                     // Check if within service area
                     if (distance <= SERVICE_RADIUS_METERS) {
-                        setStatus('Great news! You are within our service area around Ikigai, Baraton Estate, and Kitisuru Road. You can book a service today.', 'success');
+                        setStatus('Great news! You are within our service area. We cover Nairobi and surrounding areas up to 25 km from our base. You can book a service today.', 'success');
                     } else {
-                        setStatus('You appear to be outside our standard service area. Please contact us to confirm if we can service your location.', 'warning');
+                        setStatus('You appear to be outside our standard service area. Please contact us to confirm — we may still be able to arrange a visit for your location.', 'warning');
                     }
                 },
                 (error) => {
