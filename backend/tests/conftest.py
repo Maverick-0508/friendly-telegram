@@ -62,7 +62,7 @@ def create_tables():
 
 @pytest.fixture(autouse=True)
 def clean_db():
-    """Truncate all tables before each test for isolation."""
+    """Truncate all tables after each test for isolation."""
     yield
     db = TestingSessionLocal()
     try:
