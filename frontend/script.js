@@ -536,6 +536,106 @@ const highlightNavigation = () => {
 window.addEventListener('scroll', highlightNavigation);
 
 // Initialize
+// Service Area — shared constants used by both the map and the chip panel
+const SERVICE_AREA_CONFIG = {
+    HOME_LAT: -1.2433,
+    HOME_LNG: 36.7788,
+    SERVICE_RADIUS_METERS: 25000,
+    SERVED_AREAS: [
+        'BARATON', 'BARATON ESTATE', 'KITISURU', 'KITISURU ROAD',
+        'IKIGAI', 'SPRING VALLEY', 'GIGIRI', 'MUTHANGARI',
+        'LAVINGTON', 'WESTLANDS', 'PARKLANDS', 'RUNDA', 'MUTHAIGA',
+        'KIAMBU ROAD', 'RUIRU', 'RUIRU ESTATE', 'THIKA ROAD',
+        'KASARANI', 'ROYSAMBU', 'KAHAWA', 'MEMBLEY',
+        'SYOKIMAU', 'MLOLONGO', 'ATHI RIVER',
+        'NGONG ROAD', 'LANGATA', 'KAREN', 'RONGAI',
+        'KILIMANI', 'KILELESHWA', 'HURLINGHAM', 'UPPER HILL',
+        'NAIROBI CBD', 'CBD', 'CITY CENTRE', 'RIDGEWAYS',
+        'GARDEN ESTATE', 'ZIMMERMANN', 'SOUTH B', 'SOUTH C',
+        'LIMURU ROAD', 'BANANA', 'WANGIGE', 'RUAKA',
+        'IMARA DAIMA', 'PIPELINE', 'EMBAKASI', 'DONHOLM',
+        'KOMAROCK', 'FEDHA ESTATE', 'GREENSPAN',
+        'KIAMBU', 'THIKA', 'JUJA',
+        '00621', '00100', '00200', '00300', '00606', '00400', '00502', '00515', '00600'
+    ],
+    PROMINENT_AREAS: [
+        { name: 'Westlands',    lat: -1.2634, lng: 36.8119 },
+        { name: 'Parklands',    lat: -1.2638, lng: 36.8226 },
+        { name: 'Lavington',    lat: -1.2878, lng: 36.7696 },
+        { name: 'Karen',        lat: -1.3194, lng: 36.6875 },
+        { name: 'Runda',        lat: -1.2065, lng: 36.8052 },
+        { name: 'Muthaiga',     lat: -1.2296, lng: 36.8296 },
+        { name: 'Gigiri',       lat: -1.2201, lng: 36.8085 },
+        { name: 'Spring Valley',lat: -1.2482, lng: 36.7822 },
+        { name: 'Ruiru',        lat: -1.1459, lng: 36.9610 },
+        { name: 'Syokimau',     lat: -1.3582, lng: 36.9043 },
+        { name: 'Kasarani',     lat: -1.2196, lng: 36.8971 },
+        { name: 'Langata',      lat: -1.3333, lng: 36.7500 },
+        { name: 'Kilimani',     lat: -1.2908, lng: 36.7830 },
+        { name: 'Kileleshwa',   lat: -1.2733, lng: 36.7717 },
+        { name: 'Ridgeways',    lat: -1.1825, lng: 36.8230 },
+        { name: 'South C',      lat: -1.3228, lng: 36.8235 },
+        { name: 'South B',      lat: -1.3100, lng: 36.8380 },
+        { name: 'Kahawa',       lat: -1.1904, lng: 36.9196 },
+        { name: 'Roysambu',     lat: -1.2082, lng: 36.9003 },
+        { name: 'Ruaka',        lat: -1.2070, lng: 36.7450 },
+    ]
+};
+
+// Area chip panel — works independently of Leaflet
+function initAreaChips() {
+    const zipInput = document.getElementById('zip-input');
+    const statusElement = document.getElementById('service-area-status');
+    const areaChips = document.querySelectorAll('.area-chip');
+
+    if (!areaChips.length) return;
+
+    function setChipStatus(message, type) {
+        if (!statusElement) return;
+        statusElement.textContent = message;
+        statusElement.classList.remove('service-area-status--ok', 'service-area-status--warn');
+        if (type === 'success') {
+            statusElement.classList.add('service-area-status--ok');
+        } else if (type === 'warning') {
+            statusElement.classList.add('service-area-status--warn');
+        }
+    }
+
+    areaChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+            const areaName = chip.dataset.area;
+            if (zipInput) {
+                zipInput.value = areaName;
+            }
+
+            // Highlight the selected chip
+            areaChips.forEach(c => c.classList.remove('area-chip--active'));
+            chip.classList.add('area-chip--active');
+
+            // Pan the map to the matching prominent area (if Leaflet map is available)
+            if (window._serviceAreaMap) {
+                const match = SERVICE_AREA_CONFIG.PROMINENT_AREAS.find(
+                    a => a.name.toLowerCase() === areaName.toLowerCase()
+                );
+                if (match) {
+                    window._serviceAreaMap.setView([match.lat, match.lng], 14);
+                }
+            }
+
+            // Show coverage status
+            const normalizedName = areaName.toUpperCase().replace(/\s+/g, ' ');
+            const isServed = SERVICE_AREA_CONFIG.SERVED_AREAS.some(
+                area => normalizedName.includes(area) || area.includes(normalizedName)
+            );
+            if (isServed) {
+                setChipStatus(`Great news! ${areaName} is in our service area. We'd be happy to serve you!`, 'success');
+            } else {
+                setChipStatus(`${areaName} is not in our standard listed areas, but we may still be able to help. Please contact us for a custom quote.`, 'warning');
+            }
+        });
+    });
+}
+
 // Service Area Map and Geolocation Feature
 function initServiceAreaMap() {
     const mapElement = document.getElementById('service-area-map');
@@ -549,20 +649,12 @@ function initServiceAreaMap() {
         return;
     }
     
-    // Constants
-    const HOME_LAT = -1.2433;
-    const HOME_LNG = 36.7788;
-    const SERVICE_RADIUS_METERS = 25000;
-    const SERVED_AREAS = [
-        'BARATON', 'BARATON ESTATE', 'KITISURU', 'KITISURU ROAD',
-        'IKIGAI', 'SPRING VALLEY', 'GIGIRI', 'MUTHANGARI',
-        'LAVINGTON', 'WESTLANDS', 'PARKLANDS', 'RUNDA', 'MUTHAIGA',
-        'KIAMBU ROAD', 'RUIRU', 'RUIRU ESTATE', 'THIKA ROAD',
-        'KASARANI', 'ROYSAMBU', 'KAHAWA', 'MEMBLEY',
-        'SYOKIMAU', 'MLOLONGO', 'ATHI RIVER',
-        'NGONG ROAD', 'LANGATA', 'KAREN', 'RONGAI',
-        '00621', '00100', '00200', '00300', '00606'
-    ];
+    // Unpack constants from shared config
+    const HOME_LAT = SERVICE_AREA_CONFIG.HOME_LAT;
+    const HOME_LNG = SERVICE_AREA_CONFIG.HOME_LNG;
+    const SERVICE_RADIUS_METERS = SERVICE_AREA_CONFIG.SERVICE_RADIUS_METERS;
+    const SERVED_AREAS = SERVICE_AREA_CONFIG.SERVED_AREAS;
+    const PROMINENT_AREAS = SERVICE_AREA_CONFIG.PROMINENT_AREAS;
     
     // Initialize map
     const map = L.map('service-area-map').setView([HOME_LAT, HOME_LNG], 11);
@@ -584,7 +676,26 @@ function initServiceAreaMap() {
         fillOpacity: 0.15,
         radius: SERVICE_RADIUS_METERS
     }).addTo(map);
-    
+
+    // Add labeled markers for prominent areas within the coverage circle
+    PROMINENT_AREAS.forEach(area => {
+        const areaIcon = L.divIcon({
+            className: 'area-label-marker',
+            html: `<span class="area-label-text">${area.name}</span>`,
+            iconAnchor: [0, 0]
+        });
+        const marker = L.marker([area.lat, area.lng], { icon: areaIcon }).addTo(map);
+        marker.bindPopup(
+            `<strong>${area.name}</strong><br>Within our service area. <a href="contact.html">Book a service</a>.`
+        );
+        marker.on('click', () => {
+            if (zipInput) {
+                zipInput.value = area.name;
+            }
+            setStatus(`Great news! ${area.name} is in our service area. We'd be happy to serve you!`, 'success');
+        });
+    });
+
     // User location marker (initially null)
     let userMarker = null;
     
@@ -704,6 +815,9 @@ function initServiceAreaMap() {
             }
         });
     }
+
+    // Wire the area chip panel to the Leaflet map so chips also pan the map
+    window._serviceAreaMap = map;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -765,7 +879,10 @@ document.addEventListener('DOMContentLoaded', () => {
         observer.observe(contactSection);
     }
     
-    // Initialize service area map
+    // Initialize area chip panel (works without Leaflet — Leaflet map adds map-panning enhancement)
+    initAreaChips();
+
+    // Initialize service area map (adds labeled area markers and stores map ref for chip panning)
     initServiceAreaMap();
     
     console.log('Lawn Craft website loaded successfully!');

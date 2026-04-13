@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Check if Lawn Craft serves your area around Ikigai, Baraton Estate, and Kitisuru Road.">
+    <meta name="description" content="Check if Lawn Craft serves your area across Nairobi — Westlands, Karen, Kilimani, Ruiru, Syokimau, Kasarani and more within a 25 km radius.">
     <title>Service Area | Lawn Craft</title>
 
     <link rel="stylesheet" href="/styles.css">
@@ -81,7 +81,7 @@
             <div class="container">
                 <div class="section-header">
                     <h2 class="section-title">Check Our Service Area</h2>
-                    <p class="section-subtitle">Coverage across Nairobi and surrounding areas — including Westlands, Ruiru, Karen, Syokimau and more</p>
+                    <p class="section-subtitle">Coverage across Nairobi and surrounding areas — including Westlands, Lavington, Kilimani, Karen, Runda, Ruiru, Syokimau, Kasarani, Ridgeways and more</p>
                 </div>
                 <div class="service-area-layout">
                     <div class="service-area-map-wrapper">
@@ -101,8 +101,37 @@
                             <h3 class="control-group-title">Enter Estate or Postal Code</h3>
                             <p class="control-group-description">Search by estate name or postal code.</p>
                             <div class="zip-input-group">
-                                <input type="text" id="zip-input" class="zip-input" placeholder="e.g., Ruiru, Karen, Syokimau, Westlands, 00621" aria-label="Estate name or postal code">
+                                <input type="text" id="zip-input" class="zip-input" placeholder="e.g., Kilimani, Karen, Westlands, Ruiru, 00100" aria-label="Estate name or postal code">
                                 <button id="check-zip" class="btn btn-secondary" type="button">Check</button>
+                            </div>
+                        </div>
+                        <div class="divider">
+                            <span class="divider-text">or browse areas</span>
+                        </div>
+                        <div class="service-area-control-group">
+                            <h3 class="control-group-title">Notable Areas We Cover</h3>
+                            <p class="control-group-description">Click an area below to instantly confirm coverage — no location access needed.</p>
+                            <div class="area-chips" aria-label="Notable covered areas">
+                                <button class="area-chip" type="button" data-area="Westlands">Westlands</button>
+                                <button class="area-chip" type="button" data-area="Lavington">Lavington</button>
+                                <button class="area-chip" type="button" data-area="Kilimani">Kilimani</button>
+                                <button class="area-chip" type="button" data-area="Kileleshwa">Kileleshwa</button>
+                                <button class="area-chip" type="button" data-area="Karen">Karen</button>
+                                <button class="area-chip" type="button" data-area="Runda">Runda</button>
+                                <button class="area-chip" type="button" data-area="Muthaiga">Muthaiga</button>
+                                <button class="area-chip" type="button" data-area="Gigiri">Gigiri</button>
+                                <button class="area-chip" type="button" data-area="Parklands">Parklands</button>
+                                <button class="area-chip" type="button" data-area="Ridgeways">Ridgeways</button>
+                                <button class="area-chip" type="button" data-area="Kasarani">Kasarani</button>
+                                <button class="area-chip" type="button" data-area="Roysambu">Roysambu</button>
+                                <button class="area-chip" type="button" data-area="Kahawa">Kahawa</button>
+                                <button class="area-chip" type="button" data-area="Ruiru">Ruiru</button>
+                                <button class="area-chip" type="button" data-area="Syokimau">Syokimau</button>
+                                <button class="area-chip" type="button" data-area="Langata">Langata</button>
+                                <button class="area-chip" type="button" data-area="South C">South C</button>
+                                <button class="area-chip" type="button" data-area="South B">South B</button>
+                                <button class="area-chip" type="button" data-area="Ruaka">Ruaka</button>
+                                <button class="area-chip" type="button" data-area="Spring Valley">Spring Valley</button>
                             </div>
                         </div>
                         <div id="service-area-status" class="service-area-status" aria-live="polite" role="status"></div>
