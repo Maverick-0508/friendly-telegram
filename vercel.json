@@ -12,6 +12,9 @@
     { "source": "/insights", "destination": "/frontend/insights.html" },
     { "source": "/process", "destination": "/frontend/process.html" },
     { "source": "/service-area", "destination": "/frontend/service-area.html" },
+    { "source": "/dashboard", "destination": "/frontend/dashboard.html" },
+    { "source": "/dashboard.css", "destination": "/frontend/dashboard.css" },
+    { "source": "/dashboard.js", "destination": "/frontend/dashboard.js" },
     { "source": "/services", "destination": "/frontend/services.html" }
   ],
   "redirects": [

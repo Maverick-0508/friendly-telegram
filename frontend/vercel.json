@@ -9,7 +9,8 @@
 		{ "source": "/process", "destination": "/process.html" },
 		{ "source": "/service-area", "destination": "/service-area.html" },
 		{ "source": "/services", "destination": "/services.html" },
-		{ "source": "/privacy-policy", "destination": "/privacy-policy.html" }
+		{ "source": "/privacy-policy", "destination": "/privacy-policy.html" },
+		{ "source": "/dashboard", "destination": "/dashboard.html" }
 	],
 	"redirects": [
 		{ "source": "/home", "destination": "/", "permanent": true },

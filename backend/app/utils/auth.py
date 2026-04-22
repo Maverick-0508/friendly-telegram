@@ -115,6 +115,21 @@ async def get_current_admin_user(
     return current_user
 
 
+async def get_current_supervisor_or_admin_user(
+    current_user: User = Depends(get_current_user)
+) -> User:
+    """Get current authenticated supervisor or admin user"""
+    from app.models.user import UserRole
+
+    if current_user.role not in (UserRole.SUPERVISOR, UserRole.ADMIN):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Supervisor or admin access required"
+        )
+
+    return current_user
+
+
 def authenticate_user(db: Session, email: str, password: str) -> Optional[User]:
     """Authenticate a user"""
     user = db.query(User).filter(User.email == email).first()

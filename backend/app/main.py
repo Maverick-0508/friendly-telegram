@@ -17,6 +17,12 @@ from app.routers import (
     contact,
     testimonials,
     admin,
+    work_orders,
+    task_items,
+    field_logs,
+    resource_plans,
+    issue_notes,
+    supervisor,
 )
 
 # Create database tables
@@ -91,6 +97,12 @@ app.include_router(appointments.router, prefix=settings.API_V1_STR)
 app.include_router(contact.router, prefix=settings.API_V1_STR)
 app.include_router(testimonials.router, prefix=settings.API_V1_STR)
 app.include_router(admin.router, prefix=settings.API_V1_STR)
+app.include_router(work_orders.router, prefix=settings.API_V1_STR)
+app.include_router(task_items.router, prefix=settings.API_V1_STR)
+app.include_router(field_logs.router, prefix=settings.API_V1_STR)
+app.include_router(resource_plans.router, prefix=settings.API_V1_STR)
+app.include_router(issue_notes.router, prefix=settings.API_V1_STR)
+app.include_router(supervisor.router, prefix=settings.API_V1_STR)
 
 
 if __name__ == "__main__":
