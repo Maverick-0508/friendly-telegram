@@ -24,6 +24,7 @@ const API_BASE = (typeof window !== 'undefined' && window.DASHBOARD_API_BASE)
 let currentUser = null;
 let currentView = 'overview';
 let workOrderDetailId = null;
+let modalLastFocusedElement = null;
 
 // ─── Auth helpers ─────────────────────────────────────────────────────────────
 
@@ -121,6 +122,36 @@ function logout() {
   clearToken();
   currentUser = null;
   showLogin();
+}
+
+function isDashboardRoleAllowed(user) {
+  const role = String(user?.role || '').toLowerCase();
+  return role === 'supervisor' || role === 'admin';
+}
+
+function clearLoginMessages() {
+  document.getElementById('login-error').classList.remove('visible');
+  document.getElementById('login-info').classList.remove('visible');
+}
+
+function showLoginError(message) {
+  const errorEl = document.getElementById('login-error');
+  errorEl.textContent = message;
+  errorEl.classList.add('visible');
+}
+
+function showLoginInfo(message) {
+  const infoEl = document.getElementById('login-info');
+  infoEl.textContent = message;
+  infoEl.classList.add('visible');
+}
+
+function handleUnauthorizedDashboardAccess() {
+  clearToken();
+  currentUser = null;
+  showLogin();
+  clearLoginMessages();
+  showLoginInfo('Access restricted: Supervisor and Admin accounts only.');
 }
 
 // ─── Toast notifications ──────────────────────────────────────────────────────
@@ -499,7 +530,9 @@ async function searchProperty() {
 async function openWorkOrderDetail(id) {
   workOrderDetailId = id;
   const overlay = document.getElementById('wo-modal');
+  modalLastFocusedElement = document.activeElement;
   overlay.classList.add('open');
+  overlay.setAttribute('aria-hidden', 'false');
 
   const body = document.getElementById('modal-body-content');
   body.innerHTML = `<div class="alert alert-info"><span class="spinner"></span> Loading…</div>`;
@@ -507,6 +540,8 @@ async function openWorkOrderDetail(id) {
   try {
     const wo = await apiFetch(`/work-orders/${id}`);
     renderWorkOrderModal(wo);
+    const closeBtn = document.getElementById('modal-close-btn');
+    if (closeBtn) closeBtn.focus();
   } catch (err) {
     body.innerHTML = `<div class="alert alert-danger">${err.message}</div>`;
   }
@@ -606,8 +641,49 @@ async function saveStatusUpdate(id) {
 }
 
 function closeModal() {
-  document.getElementById('wo-modal').classList.remove('open');
+  const overlay = document.getElementById('wo-modal');
+  overlay.classList.remove('open');
+  overlay.setAttribute('aria-hidden', 'true');
   workOrderDetailId = null;
+  if (modalLastFocusedElement && typeof modalLastFocusedElement.focus === 'function') {
+    modalLastFocusedElement.focus();
+  }
+  modalLastFocusedElement = null;
+}
+
+function getModalFocusableElements() {
+  const modal = document.querySelector('#wo-modal .modal');
+  if (!modal) return [];
+
+  return [...modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')]
+    .filter(el => !el.disabled && el.offsetParent !== null);
+}
+
+function handleModalKeydown(e) {
+  const overlay = document.getElementById('wo-modal');
+  if (!overlay.classList.contains('open')) return;
+
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    closeModal();
+    return;
+  }
+
+  if (e.key !== 'Tab') return;
+
+  const focusable = getModalFocusableElements();
+  if (focusable.length === 0) return;
+
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+
+  if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault();
+    first.focus();
+  }
 }
 
 // ─── Mobile sidebar ───────────────────────────────────────────────────────────
@@ -661,21 +737,23 @@ async function init() {
     e.preventDefault();
     const email    = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value;
-    const errorEl  = document.getElementById('login-error');
     const btn      = e.target.querySelector('button[type=submit]');
 
-    errorEl.classList.remove('visible');
+    clearLoginMessages();
     btn.disabled = true;
     btn.textContent = 'Signing in…';
 
     try {
       await login(email, password);
-      await loadCurrentUser();
+      const user = await loadCurrentUser();
+      if (!isDashboardRoleAllowed(user)) {
+        handleUnauthorizedDashboardAccess();
+        return;
+      }
       showApp();
       navigate('overview');
     } catch (err) {
-      errorEl.textContent = err.message;
-      errorEl.classList.add('visible');
+      showLoginError(err.message);
     } finally {
       btn.disabled = false;
       btn.textContent = 'Sign In';
@@ -705,6 +783,7 @@ async function init() {
   document.getElementById('wo-modal').addEventListener('click', e => {
     if (e.target === document.getElementById('wo-modal')) closeModal();
   });
+  document.getElementById('wo-modal').addEventListener('keydown', handleModalKeydown);
 
   // KPI period select
   document.getElementById('report-days-select').addEventListener('change', e => {
@@ -728,7 +807,11 @@ async function init() {
   // Check for existing session
   if (getToken()) {
     try {
-      await loadCurrentUser();
+      const user = await loadCurrentUser();
+      if (!isDashboardRoleAllowed(user)) {
+        handleUnauthorizedDashboardAccess();
+        return;
+      }
       showApp();
       navigate('overview');
     } catch {
