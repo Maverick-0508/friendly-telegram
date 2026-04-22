@@ -82,6 +82,24 @@ def about_page():
 def service_area_page():
     return _page("service-area.html")
 
+@app.get("/dashboard")
+def dashboard_page():
+    return _page("dashboard.html")
+
+@app.get("/dashboard.css")
+def dashboard_css():
+    path = FRONTEND_DIR / "dashboard.css"
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Not found")
+    return FileResponse(str(path), media_type="text/css")
+
+@app.get("/dashboard.js")
+def dashboard_js():
+    path = FRONTEND_DIR / "dashboard.js"
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Not found")
+    return FileResponse(str(path), media_type="application/javascript")
+
 @app.get("/api/services", response_model=list[Service])
 def get_services():
     """Get all available lawn care services"""
