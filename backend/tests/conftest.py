@@ -114,6 +114,8 @@ CUSTOMER_EMAIL = "customer@example.com"
 CUSTOMER_PASSWORD = "CustomerPass1!"
 ADMIN_EMAIL = "admin@example.com"
 ADMIN_PASSWORD = "AdminPass1!"
+SUPERVISOR_EMAIL = "supervisor@example.com"
+SUPERVISOR_PASSWORD = "SupervisorPass1!"
 
 
 @pytest.fixture
@@ -139,6 +141,12 @@ def admin_user(db):
 
 
 @pytest.fixture
+def supervisor_user(db):
+    """Create and return a supervisor user."""
+    return _make_user(db, SUPERVISOR_EMAIL, SUPERVISOR_PASSWORD, UserRole.SUPERVISOR, "Supervisor User")
+
+
+@pytest.fixture
 def customer_token(client, customer_user):
     """Return a valid JWT access token for the customer user."""
     return _get_token(client, CUSTOMER_EMAIL, CUSTOMER_PASSWORD)
@@ -151,6 +159,12 @@ def admin_token(client, admin_user):
 
 
 @pytest.fixture
+def supervisor_token(client, supervisor_user):
+    """Return a valid JWT access token for the supervisor user."""
+    return _get_token(client, SUPERVISOR_EMAIL, SUPERVISOR_PASSWORD)
+
+
+@pytest.fixture
 def customer_headers(customer_token):
     return {"Authorization": f"Bearer {customer_token}"}
 
@@ -158,3 +172,8 @@ def customer_headers(customer_token):
 @pytest.fixture
 def admin_headers(admin_token):
     return {"Authorization": f"Bearer {admin_token}"}
+
+
+@pytest.fixture
+def supervisor_headers(supervisor_token):
+    return {"Authorization": f"Bearer {supervisor_token}"}

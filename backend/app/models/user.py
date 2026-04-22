@@ -10,6 +10,7 @@ import enum
 class UserRole(str, enum.Enum):
     """User roles"""
     CUSTOMER = "customer"
+    SUPERVISOR = "supervisor"
     ADMIN = "admin"
 
 
