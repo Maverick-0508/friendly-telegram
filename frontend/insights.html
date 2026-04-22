@@ -50,6 +50,13 @@
                         <a href="/frontend/property-check-guide.docx" download="property-check-guide.docx">Property Check Guide</a>
                         <a href="/#faq">FAQ</a>
                     </div>
+                    <div class="directory-column directory-mobile-nav">
+                        <h3>Navigate</h3>
+                        <a href="/">Home</a>
+                        <a href="services.html">Services</a>
+                        <a href="insights.html">Insights</a>
+                        <a href="contact.html">Contact Us</a>
+                    </div>
                 </div>
             </div>
             <div class="socials">
@@ -168,7 +175,7 @@
             <div class="footer-bottom">
                 <p>&copy; <span id="currentYear"></span> Lawn Craft. All rights reserved.</p>
                 <div class="footer-legal">
-                    <a href="#">Privacy Policy</a>
+                    <a href="/privacy-policy">Privacy Policy</a>
                     <a href="#">Terms of Service</a>
                 </div>
             </div>
@@ -179,7 +186,12 @@
         <script>
             fetch('https://divine-smoke-7e2b.verbosedoodle.workers.dev/', {
                 method: 'POST',
-                body: JSON.stringify({ page: window.location.pathname }),
+                body: JSON.stringify({ 
+                    page: window.location.pathname,
+                    referrer: document.referrer || "Direct Visit",
+                    screen: `${window.screen.width}x${window.screen.height}`,
+                    language: navigator.language
+                }),
                 keepalive: true
             });
         </script>
