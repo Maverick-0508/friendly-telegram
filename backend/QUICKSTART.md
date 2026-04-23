@@ -10,11 +10,13 @@ This guide will help you get the AM Mowing FastAPI backend up and running quickl
 ## Quick Setup (5 minutes)
 
 ### 1. Navigate to the backend directory
+
 ```bash
 cd backend
 ```
 
 ### 2. Create a virtual environment (recommended)
+
 ```bash
 python -m venv venv
 
@@ -26,11 +28,13 @@ source venv/bin/activate
 ```
 
 ### 3. Install dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
 ### 4. Configure environment variables
+
 ```bash
 # Copy the example environment file
 cp .env.example .env
@@ -40,11 +44,13 @@ cp .env.example .env
 ```
 
 **Important**: Generate a secure SECRET_KEY for production:
+
 ```bash
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
 ### 5. Start the server
+
 ```bash
 # Development mode with auto-reload
 uvicorn app.main:app --reload
@@ -56,6 +62,7 @@ python -m uvicorn app.main:app --reload
 The server will start at: **http://localhost:8000**
 
 ### 6. Access the API documentation
+
 - **Swagger UI**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
 - **OpenAPI Schema**: http://localhost:8000/openapi.json
@@ -63,13 +70,15 @@ The server will start at: **http://localhost:8000**
 ## Quick Test
 
 Test the API is running:
+
 ```bash
 curl http://localhost:8000/health
 ```
 
 Expected response:
+
 ```json
-{"status":"healthy","version":"1.0.0"}
+{ "status": "healthy", "version": "1.0.0" }
 ```
 
 ## API Endpoints Overview
@@ -102,6 +111,7 @@ Expected response:
 ## Example API Calls
 
 ### Register a new user
+
 ```bash
 curl -X POST http://localhost:8000/api/auth/register \
   -H "Content-Type: application/json" \
@@ -114,6 +124,7 @@ curl -X POST http://localhost:8000/api/auth/register \
 ```
 
 ### Login
+
 ```bash
 curl -X POST http://localhost:8000/api/auth/login/json \
   -H "Content-Type: application/json" \
@@ -124,6 +135,7 @@ curl -X POST http://localhost:8000/api/auth/login/json \
 ```
 
 ### Submit contact form
+
 ```bash
 curl -X POST http://localhost:8000/api/contact \
   -H "Content-Type: application/json" \
@@ -138,6 +150,7 @@ curl -X POST http://localhost:8000/api/contact \
 ```
 
 ### Request a quote
+
 ```bash
 curl -X POST http://localhost:8000/api/quotes \
   -H "Content-Type: application/json" \
@@ -157,6 +170,7 @@ curl -X POST http://localhost:8000/api/quotes \
 By default, the application uses SQLite (a file-based database) which requires no setup. The database file `ammowing.db` will be created automatically in the backend directory.
 
 For production, switch to PostgreSQL by updating the `DATABASE_URL` in your `.env` file:
+
 ```
 DATABASE_URL=postgresql://user:password@localhost:5432/ammowing_db
 ```
@@ -164,13 +178,14 @@ DATABASE_URL=postgresql://user:password@localhost:5432/ammowing_db
 ## Email Configuration
 
 To enable email notifications, configure SMTP settings in `.env`:
+
 ```
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASSWORD=your-app-password
 SMTP_FROM_EMAIL=noreply@ammowing.com
-ADMIN_EMAIL=admin@ammowing.com
+ADMIN_EMAIL=admin@lawncraft.com
 ```
 
 **Note**: For Gmail, use an [App Password](https://support.google.com/accounts/answer/185833) instead of your regular password.
@@ -178,6 +193,7 @@ ADMIN_EMAIL=admin@ammowing.com
 ## CORS Configuration
 
 To allow requests from your frontend, update `CORS_ORIGINS` in `.env`:
+
 ```
 CORS_ORIGINS=http://localhost:3000,http://localhost:8080,https://yourdomain.com
 ```
@@ -187,6 +203,7 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:8080,https://yourdomain.com
 After registering a regular user, you can manually update their role to admin in the database:
 
 ### SQLite
+
 ```bash
 sqlite3 ammowing.db
 UPDATE users SET role = 'admin' WHERE email = 'admin@example.com';
@@ -194,6 +211,7 @@ UPDATE users SET role = 'admin' WHERE email = 'admin@example.com';
 ```
 
 ### PostgreSQL
+
 ```sql
 UPDATE users SET role = 'admin' WHERE email = 'admin@example.com';
 ```
@@ -201,13 +219,17 @@ UPDATE users SET role = 'admin' WHERE email = 'admin@example.com';
 ## Troubleshooting
 
 ### Port already in use
+
 If port 8000 is already in use, specify a different port:
+
 ```bash
 uvicorn app.main:app --reload --port 8001
 ```
 
 ### Module not found errors
+
 Make sure you're in the backend directory and your virtual environment is activated:
+
 ```bash
 cd backend
 source venv/bin/activate  # or venv\Scripts\activate on Windows
@@ -215,7 +237,9 @@ pip install -r requirements.txt
 ```
 
 ### Database errors
+
 Delete the database file and restart to recreate tables:
+
 ```bash
 rm ammowing.db
 uvicorn app.main:app --reload
@@ -224,6 +248,7 @@ uvicorn app.main:app --reload
 ## Production Deployment
 
 For production deployment, see the full [README.md](README.md) for detailed instructions on:
+
 - Using PostgreSQL
 - Environment security
 - Docker deployment
