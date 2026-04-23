@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM_EMAIL: str = "noreply@ammowing.com"
     SMTP_FROM_NAME: str = "AM Mowing"
-    ADMIN_EMAIL: str = "admin@ammowing.com"
+    ADMIN_EMAIL: str = "admin@lawncraft.com"
     
     # File Upload
     MAX_UPLOAD_SIZE: int = 5242880  # 5MB
