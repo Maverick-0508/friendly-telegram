@@ -8,21 +8,30 @@ import os
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.database import SessionLocal, engine
+from app.config import settings
+from app.database import Base, SessionLocal, engine
 from app.models.service import Service
 from app.models.user import User, UserRole
 from app.utils.auth import get_password_hash
 
 
+def _is_truthy(value: str) -> bool:
+    """Interpret common truthy string values from environment variables."""
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
 def create_admin_user(db):
-    """Create default admin user if not exists"""
-    admin_email = "admin@ammowing.com"
+    """Create or normalize default admin user."""
+    admin_email = settings.ADMIN_EMAIL
+    admin_password = os.getenv("ADMIN_SEED_PASSWORD", "Admin123!")
+    reset_admin_password = _is_truthy(os.getenv("SEED_RESET_ADMIN_PASSWORD", "true"))
+
     existing_admin = db.query(User).filter(User.email == admin_email).first()
-    
-    if not existing_admin:
+
+    if existing_admin is None:
         admin = User(
             email=admin_email,
-            hashed_password=get_password_hash("Admin123!"),
+            hashed_password=get_password_hash(admin_password),
             full_name="Admin User",
             phone="+254 758827319",
             role=UserRole.ADMIN,
@@ -32,13 +41,35 @@ def create_admin_user(db):
         db.add(admin)
         db.commit()
         print(f"✓ Created admin user: {admin_email}")
-        print(f"  Password: Admin123!")
+        print(f"  Password: {admin_password}")
     else:
-        print(f"✓ Admin user already exists: {admin_email}")
+        updated_fields = []
+
+        if existing_admin.role != UserRole.ADMIN:
+            existing_admin.role = UserRole.ADMIN
+            updated_fields.append("role")
+        if not existing_admin.is_active:
+            existing_admin.is_active = True
+            updated_fields.append("is_active")
+        if not existing_admin.is_verified:
+            existing_admin.is_verified = True
+            updated_fields.append("is_verified")
+        if reset_admin_password:
+            existing_admin.hashed_password = get_password_hash(admin_password)
+            updated_fields.append("hashed_password")
+
+        if updated_fields:
+            db.commit()
+            print(f"✓ Updated admin user: {admin_email}")
+            print(f"  Updated fields: {', '.join(updated_fields)}")
+            if "hashed_password" in updated_fields:
+                print(f"  Password reset to: {admin_password}")
+        else:
+            print(f"✓ Admin user already up to date: {admin_email}")
 
 
 def seed_services(db):
-    """Seed initial services"""
+    """Create or update initial services by slug."""
     services_data = [
         {
             "name": "Lawn Mowing",
@@ -149,21 +180,29 @@ def seed_services(db):
             "display_order": 6
         }
     ]
-    
-    # Check if services already exist
-    existing_services = db.query(Service).count()
-    
-    if existing_services > 0:
-        print(f"✓ Services already exist ({existing_services} services found)")
-        return
-    
-    # Create services
+
+    created_count = 0
+    updated_count = 0
+
     for service_data in services_data:
-        service = Service(**service_data)
-        db.add(service)
-    
+        existing_service = db.query(Service).filter(Service.slug == service_data["slug"]).first()
+
+        if existing_service is None:
+            db.add(Service(**service_data))
+            created_count += 1
+            continue
+
+        has_changes = False
+        for field, value in service_data.items():
+            if getattr(existing_service, field) != value:
+                setattr(existing_service, field, value)
+                has_changes = True
+
+        if has_changes:
+            updated_count += 1
+
     db.commit()
-    print(f"✓ Created {len(services_data)} services")
+    print(f"✓ Services seeded: {created_count} created, {updated_count} updated")
 
 
 def main():
@@ -171,6 +210,9 @@ def main():
     print("=" * 60)
     print("AM Mowing Database Seeding")
     print("=" * 60)
+
+    # Ensure all tables exist before seeding into a clean database.
+    Base.metadata.create_all(bind=engine)
     
     db = SessionLocal()
     
@@ -187,7 +229,7 @@ def main():
         print("Database seeding completed successfully!")
         print("=" * 60)
         print("\nYou can now:")
-        print("- Login as admin: admin@ammowing.com / Admin123!")
+        print(f"- Login as admin: {settings.ADMIN_EMAIL} / {os.getenv('ADMIN_SEED_PASSWORD', 'Admin123!')}")
         print("- View services at: http://localhost:8000/api/services")
         print("- Access admin dashboard at: http://localhost:8000/api/admin/stats")
         
