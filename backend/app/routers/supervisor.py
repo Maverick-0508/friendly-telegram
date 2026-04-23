@@ -335,3 +335,87 @@ def get_supervisor_stats(
         "open_issues": total_open_issues,
         "pending_tasks": total_pending_tasks,
     }
+
+
+@router.get("/stats-trends")
+def get_supervisor_stats_trends(
+    days: int = Query(7, ge=3, le=30, description="Number of trailing days for trend lines"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_supervisor_or_admin_user),
+):
+    """Daily trend points for supervisor overview micro-charts."""
+    start_date = date.today() - timedelta(days=days - 1)
+
+    labels = []
+    incoming_created = []
+    started_jobs = []
+    completed_jobs = []
+    issues_logged = []
+    pending_tasks_created = []
+
+    for offset in range(days):
+        day = start_date + timedelta(days=offset)
+        next_day = day + timedelta(days=1)
+        day_start = datetime.combine(day, datetime.min.time())
+        day_end = datetime.combine(next_day, datetime.min.time())
+
+        labels.append(day.strftime("%d %b"))
+
+        incoming_created.append(
+            db.query(WorkOrder)
+            .filter(
+                WorkOrder.created_at >= day_start,
+                WorkOrder.created_at < day_end,
+            )
+            .count()
+        )
+
+        started_jobs.append(
+            db.query(WorkOrder)
+            .filter(
+                WorkOrder.started_at.isnot(None),
+                WorkOrder.started_at >= day_start,
+                WorkOrder.started_at < day_end,
+            )
+            .count()
+        )
+
+        completed_jobs.append(
+            db.query(WorkOrder)
+            .filter(
+                WorkOrder.completed_at.isnot(None),
+                WorkOrder.completed_at >= day_start,
+                WorkOrder.completed_at < day_end,
+                WorkOrder.status.in_([WorkOrderStatus.COMPLETED, WorkOrderStatus.VERIFIED]),
+            )
+            .count()
+        )
+
+        issues_logged.append(
+            db.query(IssueNote)
+            .filter(
+                IssueNote.created_at >= day_start,
+                IssueNote.created_at < day_end,
+            )
+            .count()
+        )
+
+        pending_tasks_created.append(
+            db.query(TaskItem)
+            .filter(
+                TaskItem.created_at >= day_start,
+                TaskItem.created_at < day_end,
+                TaskItem.status == TaskItemStatus.PENDING,
+            )
+            .count()
+        )
+
+    return {
+        "period_days": days,
+        "labels": labels,
+        "incoming_created": incoming_created,
+        "started_jobs": started_jobs,
+        "completed_jobs": completed_jobs,
+        "issues_logged": issues_logged,
+        "pending_tasks_created": pending_tasks_created,
+    }
