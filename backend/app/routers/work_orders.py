@@ -12,7 +12,7 @@ from app.models.work_order import WorkOrder, WorkOrderStatus, WorkOrderSourceTyp
 from app.models.quote import Quote
 from app.models.contact import Contact
 from app.models.appointment import Appointment
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.work_order import (
     WorkOrderCreate,
     WorkOrderUpdate,
@@ -22,8 +22,20 @@ from app.schemas.work_order import (
     WorkOrderForwardFromAppointment,
 )
 from app.utils.auth import get_current_user, get_current_supervisor_or_admin_user, get_current_admin_user
+from app.utils.audit import record_audit_log
 
 router = APIRouter(prefix="/work-orders", tags=["Work Orders"])
+
+
+ALLOWED_STATUS_TRANSITIONS = {
+    WorkOrderStatus.INCOMING: {WorkOrderStatus.REVIEWED, WorkOrderStatus.CANCELLED},
+    WorkOrderStatus.REVIEWED: {WorkOrderStatus.PLANNED, WorkOrderStatus.CANCELLED},
+    WorkOrderStatus.PLANNED: {WorkOrderStatus.IN_PROGRESS, WorkOrderStatus.CANCELLED},
+    WorkOrderStatus.IN_PROGRESS: {WorkOrderStatus.COMPLETED, WorkOrderStatus.CANCELLED},
+    WorkOrderStatus.COMPLETED: {WorkOrderStatus.VERIFIED},
+    WorkOrderStatus.VERIFIED: set(),
+    WorkOrderStatus.CANCELLED: set(),
+}
 
 
 # ---------------------------------------------------------------------------
@@ -41,6 +53,16 @@ def create_work_order(
     db.add(wo)
     db.commit()
     db.refresh(wo)
+    record_audit_log(
+        db,
+        actor=current_user,
+        action="work_order.create",
+        resource_type="work_order",
+        resource_id=wo.id,
+        summary=f"Created work order #{wo.id}",
+        details={"source_type": wo.source_type.value},
+    )
+    db.commit()
     return wo
 
 
@@ -89,6 +111,19 @@ def update_work_order(
     # Set lifecycle timestamps automatically
     if "status" in update_data:
         new_status = update_data["status"]
+
+        if new_status != wo.status and current_user.role != UserRole.ADMIN:
+            allowed = ALLOWED_STATUS_TRANSITIONS.get(wo.status, set())
+            if new_status not in allowed:
+                allowed_labels = ", ".join(s.value for s in sorted(allowed, key=lambda x: x.value)) or "none"
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=(
+                        f"Invalid status transition from '{wo.status.value}' to '{new_status.value}'. "
+                        f"Allowed next statuses: {allowed_labels}."
+                    ),
+                )
+
         if new_status == WorkOrderStatus.IN_PROGRESS and not wo.started_at:
             wo.started_at = datetime.utcnow()
         elif new_status == WorkOrderStatus.COMPLETED and not wo.completed_at:
@@ -157,6 +192,16 @@ def forward_from_quote(
     db.add(wo)
     db.commit()
     db.refresh(wo)
+    record_audit_log(
+        db,
+        actor=current_user,
+        action="work_order.forward.quote",
+        resource_type="work_order",
+        resource_id=wo.id,
+        summary=f"Forwarded quote #{quote.id} into work order #{wo.id}",
+        details={"quote_id": quote.id},
+    )
+    db.commit()
     return wo
 
 
@@ -193,6 +238,16 @@ def forward_from_contact(
     db.add(wo)
     db.commit()
     db.refresh(wo)
+    record_audit_log(
+        db,
+        actor=current_user,
+        action="work_order.forward.contact",
+        resource_type="work_order",
+        resource_id=wo.id,
+        summary=f"Forwarded contact #{contact.id} into work order #{wo.id}",
+        details={"contact_id": contact.id},
+    )
+    db.commit()
     return wo
 
 
@@ -231,4 +286,14 @@ def forward_from_appointment(
     db.add(wo)
     db.commit()
     db.refresh(wo)
+    record_audit_log(
+        db,
+        actor=current_user,
+        action="work_order.forward.appointment",
+        resource_type="work_order",
+        resource_id=wo.id,
+        summary=f"Forwarded appointment #{appt.id} into work order #{wo.id}",
+        details={"appointment_id": appt.id},
+    )
+    db.commit()
     return wo
