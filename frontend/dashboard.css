@@ -667,8 +667,8 @@ body.dashboard-body {
   border: 1px solid var(--dash-border);
   border-radius: 10px;
   padding: 0.95rem 1rem;
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
 }
 
 .command-card-head {
