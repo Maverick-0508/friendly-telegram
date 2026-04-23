@@ -206,6 +206,23 @@ animatedElements.forEach(el => observer.observe(el));
 // Contact Form Handling with Validation
 const contactForm = document.getElementById('contactForm');
 const formSuccess = document.getElementById('formSuccess');
+const formError = document.getElementById('formError');
+
+function resolveApiBase() {
+    if (typeof window === 'undefined') return '/api';
+    if (window.LAWNCRAFT_API_BASE) return window.LAWNCRAFT_API_BASE;
+    if (window.DASHBOARD_API_BASE) return window.DASHBOARD_API_BASE;
+
+    const { protocol, hostname, port } = window.location;
+    const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1';
+
+    if (protocol === 'file:') return 'http://127.0.0.1:8000/api';
+    if (isLocalHost && port && port !== '8000') return 'http://127.0.0.1:8000/api';
+
+    return '/api';
+}
+
+const API_BASE_URL = resolveApiBase();
 
 // Validation functions
 function validateEmail(email) {
@@ -250,6 +267,44 @@ function clearValidation(input) {
         errorMessage.textContent = '';
         errorMessage.classList.remove('show');
     }
+}
+
+function hideFormMessages() {
+    if (formSuccess) formSuccess.style.display = 'none';
+    if (formError) {
+        formError.textContent = '';
+        formError.style.display = 'none';
+    }
+}
+
+function showFormError(message) {
+    if (!formError) return;
+    formError.textContent = message;
+    formError.style.display = 'flex';
+}
+
+function buildContactPayload(formData) {
+    const contextLines = [];
+    if (formData.address) contextLines.push(`Address: ${formData.address}`);
+    if (formData.propertyType) contextLines.push(`Property Type: ${formData.propertyType}`);
+    if (formData.preferredDate) contextLines.push(`Preferred Start Date: ${formData.preferredDate}`);
+
+    const userMessage = formData.message.trim();
+    const contextMessage = contextLines.join('\n');
+    const message = userMessage
+        ? (contextMessage ? `${userMessage}\n\n${contextMessage}` : userMessage)
+        : (contextMessage || 'Website consultation request.');
+
+    return {
+        full_name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        subject: formData.service
+            ? `Website enquiry - ${formData.service}`
+            : 'Website enquiry',
+        service_type: formData.service || null,
+        message,
+    };
 }
 
 // Inline validation
@@ -301,8 +356,9 @@ if (contactForm && nameInput && emailInput && phoneInput && messageInput) {
         }
     });
 
-    contactForm.addEventListener('submit', (e) => {
+    contactForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        hideFormMessages();
         
         // Validate all fields
         let isValid = true;
@@ -355,19 +411,41 @@ if (contactForm && nameInput && emailInput && phoneInput && messageInput) {
             preferredDate: getOptionalFieldValue('preferred-date'),
             message: messageInput.value
         };
-        
-        // Simulate form submission (in production, this would send to a server)
-        console.log('Form submitted:', formData);
-        
-        // Simulate network delay
-        setTimeout(() => {
+
+        try {
+            const payload = buildContactPayload(formData);
+            const response = await fetch(`${API_BASE_URL}/contact`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                let detail = 'We could not submit your request right now. Please try again.';
+                try {
+                    const body = await response.json();
+                    if (body?.detail) {
+                        detail = Array.isArray(body.detail)
+                            ? body.detail.map(item => item.msg || item).join(', ')
+                            : body.detail;
+                    }
+                } catch (_) {
+                    // Keep generic message when response body is not JSON.
+                }
+                throw new Error(detail);
+            }
+
+            await response.json().catch(() => ({}));
+
             // Remove loading state
             submitBtn.classList.remove('loading');
             submitBtn.disabled = false;
             
             // Show success message
             contactForm.style.display = 'none';
-            formSuccess.style.display = 'flex';
+            if (formSuccess) formSuccess.style.display = 'flex';
             
             // Reset form and hide success message after 5 seconds
             setTimeout(() => {
@@ -375,9 +453,14 @@ if (contactForm && nameInput && emailInput && phoneInput && messageInput) {
                 // Clear all validation states
                 [nameInput, emailInput, phoneInput, messageInput].forEach(clearValidation);
                 contactForm.style.display = 'flex';
-                formSuccess.style.display = 'none';
+                if (formSuccess) formSuccess.style.display = 'none';
             }, 5000);
-        }, 1500);
+        } catch (err) {
+            submitBtn.classList.remove('loading');
+            submitBtn.disabled = false;
+
+            showFormError(err.message || 'Submission failed. Please try again.');
+        }
     });
 }
 
