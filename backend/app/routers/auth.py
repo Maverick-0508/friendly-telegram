@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User, UserRole
 from app.schemas.user import UserCreate, UserLogin, UserResponse, Token
+from app.utils.audit import record_audit_log
 from app.utils.auth import (
     get_password_hash,
     authenticate_user,
@@ -77,6 +78,17 @@ async def login(
     # Update last login
     user.last_login = datetime.utcnow()
     db.commit()
+
+    record_audit_log(
+        db,
+        actor=user,
+        action="auth.login",
+        resource_type="user",
+        resource_id=user.id,
+        summary="User signed in",
+        details={"channel": "form"},
+    )
+    db.commit()
     
     # Create tokens
     access_token = create_access_token(
@@ -109,6 +121,17 @@ async def login_json(user_data: UserLogin, db: Session = Depends(get_db)):
     
     # Update last login
     user.last_login = datetime.utcnow()
+    db.commit()
+
+    record_audit_log(
+        db,
+        actor=user,
+        action="auth.login",
+        resource_type="user",
+        resource_id=user.id,
+        summary="User signed in",
+        details={"channel": "json"},
+    )
     db.commit()
     
     # Create tokens
