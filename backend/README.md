@@ -62,33 +62,37 @@ A comprehensive FastAPI backend for the Lawn Craft professional lawn care websit
 ### Setup Steps
 
 1. **Clone the repository**
+
    ```bash
    cd backend
    ```
 
 2. **Create a virtual environment**
+
    ```bash
    python -m venv venv
-   
+
    # On Windows
    venv\Scripts\activate
-   
+
    # On macOS/Linux
    source venv/bin/activate
    ```
 
 3. **Install dependencies**
+
    ```bash
    pip install -r requirements.txt
    ```
 
 4. **Environment Configuration**
-   
+
    Copy the `.env.example` file to `.env`:
+
    ```bash
    cp .env.example .env
    ```
-   
+
    Edit `.env` and configure your settings:
    - Set a strong `SECRET_KEY` for JWT
    - Configure database connection (`DATABASE_URL`)
@@ -96,23 +100,26 @@ A comprehensive FastAPI backend for the Lawn Craft professional lawn care websit
    - Adjust CORS origins for your frontend
 
 5. **Initialize the database**
-   
+
    The application will automatically create tables on first run. For SQLite (development):
+
    ```bash
    # The database file will be created automatically
    ```
-   
+
    For PostgreSQL (production):
+
    ```bash
    # Create database first
    createdb ammowing_db
    ```
 
 6. **Run the application**
+
    ```bash
    # Development mode with auto-reload
    python -m app.main
-   
+
    # Or using uvicorn directly
    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
    ```
@@ -124,6 +131,7 @@ A comprehensive FastAPI backend for the Lawn Craft professional lawn care websit
 ## API Endpoints
 
 ### Authentication
+
 - `POST /api/auth/register` - Register a new user
 - `POST /api/auth/login` - Login with OAuth2 form
 - `POST /api/auth/login/json` - Login with JSON payload
@@ -131,6 +139,7 @@ A comprehensive FastAPI backend for the Lawn Craft professional lawn care websit
 - `POST /api/auth/refresh` - Refresh access token
 
 ### Services
+
 - `GET /api/services` - List all services
 - `GET /api/services/{id}` - Get service details
 - `POST /api/services` - Create service (admin only)
@@ -138,6 +147,7 @@ A comprehensive FastAPI backend for the Lawn Craft professional lawn care websit
 - `DELETE /api/services/{id}` - Delete service (admin only)
 
 ### Quotes
+
 - `POST /api/quotes` - Request a quote
 - `GET /api/quotes` - Get all quotes (admin only)
 - `GET /api/quotes/{id}` - Get specific quote
@@ -145,6 +155,7 @@ A comprehensive FastAPI backend for the Lawn Craft professional lawn care websit
 - `DELETE /api/quotes/{id}` - Delete quote (admin only)
 
 ### Appointments
+
 - `POST /api/appointments` - Book an appointment
 - `GET /api/appointments` - Get all appointments (admin only)
 - `GET /api/appointments/user/{user_id}` - Get user's appointments
@@ -152,12 +163,14 @@ A comprehensive FastAPI backend for the Lawn Craft professional lawn care websit
 - `DELETE /api/appointments/{id}` - Cancel appointment
 
 ### Contact
+
 - `POST /api/contact` - Submit contact form
 - `GET /api/contact` - Get all submissions (admin only)
 - `GET /api/contact/{id}` - Get specific submission (admin only)
 - `PUT /api/contact/{id}/mark-replied` - Mark as replied (admin only)
 
 ### Testimonials
+
 - `GET /api/testimonials` - Get approved testimonials
 - `POST /api/testimonials` - Submit testimonial
 - `PUT /api/testimonials/{id}` - Update testimonial (admin only)
@@ -166,39 +179,46 @@ A comprehensive FastAPI backend for the Lawn Craft professional lawn care websit
 - `DELETE /api/testimonials/{id}` - Delete testimonial (admin only)
 
 ### Admin
+
 - `GET /api/admin/stats` - Get dashboard statistics (admin only)
 - `GET /api/admin/service-area/check` - Check service area coverage
 
 ## Database Models
 
 ### User
+
 - Email, password, full name, phone
 - Role (customer/admin)
 - Active status and verification
 
 ### Service
+
 - Name, description, pricing
 - Features and icons
 - Display order and active status
 
 ### Quote
+
 - Customer information
 - Property details
 - Service requirements
 - Status tracking
 
 ### Appointment
+
 - Scheduling information
 - Service type
 - Status tracking
 - Duration and notes
 
 ### Contact
+
 - Customer inquiry details
 - Read/replied status
 - Timestamps
 
 ### Testimonial
+
 - Customer feedback
 - Rating (1-5 stars)
 - Approval and featured status
@@ -215,19 +235,21 @@ A comprehensive FastAPI backend for the Lawn Craft professional lawn care websit
 ## Email Configuration
 
 The application sends email notifications for:
+
 - New user registration (welcome email)
 - Contact form submissions (admin notification)
 - Quote requests (confirmation to customer)
 - Appointment bookings (confirmation to customer)
 
 Configure SMTP settings in `.env`:
+
 ```env
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASSWORD=your-app-password
 SMTP_FROM_EMAIL=noreply@ammowing.com
-ADMIN_EMAIL=admin@ammowing.com
+ADMIN_EMAIL=admin@lawncraft.com
 ```
 
 **Note**: For Gmail, use an [App Password](https://support.google.com/accounts/answer/185833) instead of your regular password.
@@ -235,6 +257,7 @@ ADMIN_EMAIL=admin@ammowing.com
 ## Development
 
 ### Project Structure
+
 ```
 backend/
 ├── app/
@@ -255,6 +278,7 @@ backend/
 ### Running Tests
 
 Tests can be added in a `tests/` directory. Example structure:
+
 ```bash
 pytest tests/
 ```
@@ -262,6 +286,7 @@ pytest tests/
 ### Code Style
 
 The project follows PEP 8 guidelines. Use tools like:
+
 ```bash
 # Format code
 black app/
@@ -278,6 +303,7 @@ mypy app/
 ### Using Docker
 
 Create a `Dockerfile`:
+
 ```dockerfile
 FROM python:3.11-slim
 
@@ -292,6 +318,7 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
 Build and run:
+
 ```bash
 docker build -t ammowing-backend .
 docker run -p 8000:8000 --env-file .env ammowing-backend
@@ -300,6 +327,7 @@ docker run -p 8000:8000 --env-file .env ammowing-backend
 ### Environment Variables
 
 Ensure all production environment variables are set:
+
 - Use a strong, random `SECRET_KEY`
 - Set `DEBUG=False`
 - Configure production database
@@ -309,6 +337,7 @@ Ensure all production environment variables are set:
 ### Database Migrations
 
 For production, use Alembic for database migrations:
+
 ```bash
 # Initialize Alembic
 alembic init alembic
@@ -323,10 +352,11 @@ alembic upgrade head
 ## Support
 
 For issues or questions:
+
 - Check the API documentation at `/docs`
 - Review error messages in the response
 - Check application logs
-- Contact: admin@ammowing.com
+- Contact: admin@lawncraft.com
 
 ## License
 
