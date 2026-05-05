@@ -4,6 +4,7 @@
   "rewrites": [
     { "source": "/", "destination": "/frontend/index.html" },
     { "source": "/styles.css", "destination": "/frontend/styles.css" },
+    { "source": "/config.js", "destination": "/frontend/config.js" },
     { "source": "/script.js", "destination": "/frontend/script.js" },
     { "source": "/property-check-guide.docx", "destination": "/frontend/property-check-guide.docx" },
     { "source": "/assets/:path*", "destination": "/frontend/assets/:path*" },
