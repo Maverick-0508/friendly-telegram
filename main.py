@@ -47,7 +47,7 @@ class ContactForm(BaseModel):
     service_type: Optional[str] = None
     # Shared fields
     email: EmailStr
-    phone: Optional[str] = None
+    phone: str
     message: str
 
 class Service(BaseModel):
@@ -58,6 +58,9 @@ class Service(BaseModel):
 
 # In-memory storage (replace with database for production)
 contacts = []
+
+def normalize_optional(value: Optional[str]) -> Optional[str]:
+    return (value or "").strip() or None
 
 # Page routes
 @app.get("/")
@@ -146,12 +149,16 @@ def get_services():
 @app.post("/api/contact")
 def submit_contact_form(contact: ContactForm):
     """Submit a contact form inquiry"""
-    full_name = (contact.full_name or contact.name or "").strip()
+    full_name = normalize_optional(contact.full_name) or normalize_optional(contact.name)
     if not full_name:
-        raise HTTPException(status_code=422, detail="Name is required")
+        raise HTTPException(status_code=422, detail="full_name (or name) is required")
 
-    service_type = (contact.service_type or contact.service or "").strip() or None
-    subject = (contact.subject or "").strip() or (
+    phone = normalize_optional(contact.phone)
+    if not phone:
+        raise HTTPException(status_code=422, detail="phone is required")
+
+    service_type = normalize_optional(contact.service_type) or normalize_optional(contact.service)
+    subject = normalize_optional(contact.subject) or (
         f"Website enquiry - {service_type}" if service_type else "Website enquiry"
     )
 
@@ -159,7 +166,7 @@ def submit_contact_form(contact: ContactForm):
         "timestamp": datetime.now().isoformat(),
         "full_name": full_name,
         "email": contact.email,
-        "phone": (contact.phone or "").strip() or None,
+        "phone": phone,
         "subject": subject,
         "service_type": service_type,
         "message": contact.message,
