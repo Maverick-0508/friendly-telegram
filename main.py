@@ -47,7 +47,7 @@ class ContactForm(BaseModel):
     service_type: Optional[str] = None
     # Shared fields
     email: EmailStr
-    phone: str
+    phone: Optional[str] = None
     message: str
 
 class Service(BaseModel):
@@ -149,6 +149,10 @@ def get_services():
 @app.post("/api/contact")
 def submit_contact_form(contact: ContactForm):
     """Submit a contact form inquiry"""
+    email = str(contact.email).strip()
+    if not email:
+        raise HTTPException(status_code=422, detail="email is required")
+
     full_name = normalize_optional(contact.full_name) or normalize_optional(contact.name)
     if not full_name:
         raise HTTPException(status_code=422, detail="full_name (or name) is required")
@@ -161,15 +165,18 @@ def submit_contact_form(contact: ContactForm):
     subject = normalize_optional(contact.subject) or (
         f"Website enquiry - {service_type}" if service_type else "Website enquiry"
     )
+    message = contact.message.strip()
+    if not message:
+        raise HTTPException(status_code=422, detail="message is required")
 
     contact_data = {
         "timestamp": datetime.now().isoformat(),
         "full_name": full_name,
-        "email": contact.email,
+        "email": email,
         "phone": phone,
         "subject": subject,
         "service_type": service_type,
-        "message": contact.message,
+        "message": message,
     }
     contacts.append(contact_data)
     
