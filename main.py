@@ -38,10 +38,16 @@ app.add_middleware(
 
 # Data Models
 class ContactForm(BaseModel):
-    name: str
+    # Legacy fields
+    name: Optional[str] = None
+    service: Optional[str] = None
+    # Current frontend fields
+    full_name: Optional[str] = None
+    subject: Optional[str] = None
+    service_type: Optional[str] = None
+    # Shared fields
     email: EmailStr
-    phone: str
-    service: str
+    phone: Optional[str] = None
     message: str
 
 class Service(BaseModel):
@@ -140,9 +146,23 @@ def get_services():
 @app.post("/api/contact")
 def submit_contact_form(contact: ContactForm):
     """Submit a contact form inquiry"""
+    full_name = (contact.full_name or contact.name or "").strip()
+    if not full_name:
+        raise HTTPException(status_code=422, detail="Name is required")
+
+    service_type = (contact.service_type or contact.service or "").strip() or None
+    subject = (contact.subject or "").strip() or (
+        f"Website enquiry - {service_type}" if service_type else "Website enquiry"
+    )
+
     contact_data = {
         "timestamp": datetime.now().isoformat(),
-        **contact.dict()
+        "full_name": full_name,
+        "email": contact.email,
+        "phone": (contact.phone or "").strip() or None,
+        "subject": subject,
+        "service_type": service_type,
+        "message": contact.message,
     }
     contacts.append(contact_data)
     
