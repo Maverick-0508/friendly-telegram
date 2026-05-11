@@ -77,7 +77,7 @@ class ContactHandler(BaseHTTPRequestHandler):
         try:
             raw = self.rfile.read(content_length) if content_length > 0 else DEFAULT_EMPTY_PAYLOAD
         except OSError:
-            self._send_json(400, {"detail": "Unable to read request body. Please try again."})
+            self._send_json(408, {"detail": "Request body could not be read in time. Please try again."})
             return
         try:
             decoded = raw.decode("utf-8")
