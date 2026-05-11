@@ -100,8 +100,9 @@ def _normalize_backend_response(status_code: int, backend_response):
 def _forward_contact_to_backend(payload: dict):
     backend_url = _resolve_backend_contact_url()
     if not backend_url:
+        supported_keys = ", ".join(BACKEND_URL_ENV_KEYS)
         return 503, {
-            "detail": "Contact backend URL is not configured. Set CONTACT_BACKEND_API_URL to enable dashboard intake.",
+            "detail": f"Contact backend URL is not configured. Set one of: {supported_keys}.",
         }
 
     request_data = json.dumps(payload).encode("utf-8")
@@ -129,7 +130,8 @@ def _forward_contact_to_backend(payload: dict):
                 "message": "Thank you! Your consultation request has been received.",
             }
     except HTTPError as exc:
-        return exc.code, {"detail": _extract_error_detail(exc.read(MAX_BACKEND_ERROR_BYTES))}
+        error_body = exc.read(MAX_BACKEND_ERROR_BYTES)
+        return exc.code, {"detail": _extract_error_detail(error_body)}
     except (TimeoutError, URLError, OSError):
         return 503, {"detail": "Contact backend is temporarily unavailable. Please try again."}
 
