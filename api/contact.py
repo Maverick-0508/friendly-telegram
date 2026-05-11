@@ -60,10 +60,20 @@ class ContactHandler(BaseHTTPRequestHandler):
         self.wfile.write(payload)
 
     def do_POST(self):
-        content_length = int(self.headers.get("Content-Length") or 0)
+        try:
+            content_length = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            self._send_json(400, {"detail": "Invalid Content-Length header."})
+            return
+
+        if content_length < 0:
+            self._send_json(400, {"detail": "Invalid Content-Length header."})
+            return
+
         if content_length > MAX_BODY_BYTES:
             self._send_json(413, {"detail": "Payload too large."})
             return
+        self.connection.settimeout(5)
         raw = self.rfile.read(content_length) if content_length > 0 else b"{}"
         try:
             payload = json.loads(raw.decode("utf-8"))
