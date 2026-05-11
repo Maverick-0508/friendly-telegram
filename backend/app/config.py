@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     
     # Database
     DATABASE_URL: str = "sqlite:///./ammowing.db"
+    SUPABASE_URL: str = ""
+    SUPABASE_ANON_KEY: str = ""
     
     # JWT
     SECRET_KEY: str
