@@ -76,9 +76,6 @@ class ContactHandler(BaseHTTPRequestHandler):
             return
         try:
             raw = self.rfile.read(content_length) if content_length > 0 else DEFAULT_EMPTY_PAYLOAD
-        except TimeoutError:
-            self._send_json(408, {"detail": "Request body read timed out. Please try again."})
-            return
         except OSError:
             self._send_json(408, {"detail": "Request body could not be read due to a network error. Please try again."})
             return
