@@ -38,10 +38,16 @@ app.add_middleware(
 
 # Data Models
 class ContactForm(BaseModel):
-    name: str
+    # Legacy fields
+    name: Optional[str] = None
+    service: Optional[str] = None
+    # Current frontend fields
+    full_name: Optional[str] = None
+    subject: Optional[str] = None
+    service_type: Optional[str] = None
+    # Shared fields
     email: EmailStr
-    phone: str
-    service: str
+    phone: Optional[str] = None
     message: str
 
 class Service(BaseModel):
@@ -52,6 +58,9 @@ class Service(BaseModel):
 
 # In-memory storage (replace with database for production)
 contacts = []
+
+def normalize_optional(value: Optional[str]) -> Optional[str]:
+    return (value or "").strip() or None
 
 # Page routes
 @app.get("/")
@@ -140,9 +149,34 @@ def get_services():
 @app.post("/api/contact")
 def submit_contact_form(contact: ContactForm):
     """Submit a contact form inquiry"""
+    email = str(contact.email).strip()
+    if not email:
+        raise HTTPException(status_code=422, detail="email is required")
+
+    full_name = normalize_optional(contact.full_name) or normalize_optional(contact.name)
+    if not full_name:
+        raise HTTPException(status_code=422, detail="full_name (or name) is required")
+
+    phone = normalize_optional(contact.phone)
+    if not phone:
+        raise HTTPException(status_code=422, detail="phone is required")
+
+    service_type = normalize_optional(contact.service_type) or normalize_optional(contact.service)
+    subject = normalize_optional(contact.subject) or (
+        f"Website enquiry - {service_type}" if service_type else "Website enquiry"
+    )
+    message = contact.message.strip()
+    if not message:
+        raise HTTPException(status_code=422, detail="message is required")
+
     contact_data = {
         "timestamp": datetime.now().isoformat(),
-        **contact.dict()
+        "full_name": full_name,
+        "email": email,
+        "phone": phone,
+        "subject": subject,
+        "service_type": service_type,
+        "message": message,
     }
     contacts.append(contact_data)
     
