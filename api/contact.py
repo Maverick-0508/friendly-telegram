@@ -60,7 +60,7 @@ class ContactHandler(BaseHTTPRequestHandler):
         self.wfile.write(payload)
 
     def do_POST(self):
-        content_length = int(self.headers.get("Content-Length", 0))
+        content_length = int(self.headers.get("Content-Length") or 0)
         if content_length > MAX_BODY_BYTES:
             self._send_json(413, {"detail": "Payload too large."})
             return
