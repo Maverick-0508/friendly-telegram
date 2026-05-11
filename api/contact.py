@@ -5,6 +5,9 @@ from uuid import uuid4
 import json
 import re
 
+MAX_BODY_BYTES = 1_048_576  # 1 MB
+
+
 def _clean(value: Optional[str]) -> Optional[str]:
     return (value or "").strip() or None
 
@@ -58,6 +61,9 @@ class handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         content_length = int(self.headers.get("Content-Length", 0))
+        if content_length > MAX_BODY_BYTES:
+            self._send_json(413, {"detail": "Payload too large."})
+            return
         raw = self.rfile.read(content_length) if content_length > 0 else b"{}"
         try:
             payload = json.loads(raw.decode("utf-8"))
