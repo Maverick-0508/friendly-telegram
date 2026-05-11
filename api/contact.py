@@ -50,7 +50,7 @@ def _build_contact_record(payload: dict):
     }, None
 
 
-class handler(BaseHTTPRequestHandler):
+class ContactHandler(BaseHTTPRequestHandler):
     def _send_json(self, status_code: int, body: dict):
         payload = json.dumps(body).encode("utf-8")
         self.send_response(status_code)
@@ -86,3 +86,7 @@ class handler(BaseHTTPRequestHandler):
                 "message": "Thank you! Your consultation request has been received.",
             },
         )
+
+
+# Vercel Python runtime entrypoint
+handler = ContactHandler
