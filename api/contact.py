@@ -3,10 +3,20 @@ from http.server import BaseHTTPRequestHandler
 from typing import Optional
 from uuid import uuid4
 import json
+import os
 import re
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 MAX_BODY_BYTES = 1_048_576  # 1 MB
 DEFAULT_EMPTY_PAYLOAD = b"{}"
+BACKEND_URL_ENV_KEYS = (
+    "CONTACT_BACKEND_API_URL",
+    "BACKEND_API_BASE_URL",
+    "BACKEND_API_URL",
+    "DASHBOARD_API_BASE",
+    "LAWNCRAFT_API_BASE",
+)
 
 
 def _clean(value: Optional[str]) -> Optional[str]:
@@ -49,6 +59,70 @@ def _build_contact_record(payload: dict):
         "message": message,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }, None
+
+
+def _resolve_backend_contact_url() -> Optional[str]:
+    for key in BACKEND_URL_ENV_KEYS:
+        raw = (os.getenv(key) or "").strip()
+        if not raw:
+            continue
+
+        if raw.endswith("/contact"):
+            return raw
+        if raw.endswith("/api"):
+            return f"{raw}/contact"
+        return f"{raw.rstrip('/')}/api/contact"
+    return None
+
+
+def _extract_error_detail(error_body: bytes) -> str:
+    if not error_body:
+        return "Contact request could not be delivered to backend."
+    try:
+        parsed = json.loads(error_body.decode("utf-8"))
+        detail = parsed.get("detail")
+        if isinstance(detail, str) and detail.strip():
+            return detail
+    except Exception:
+        pass
+    return "Contact request could not be delivered to backend."
+
+
+def _forward_contact_to_backend(payload: dict):
+    backend_url = _resolve_backend_contact_url()
+    if not backend_url:
+        return 503, {
+            "detail": "Contact backend URL is not configured. Set CONTACT_BACKEND_API_URL to enable dashboard intake.",
+        }
+
+    request_data = json.dumps(payload).encode("utf-8")
+    request = Request(
+        backend_url,
+        data=request_data,
+        method="POST",
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        },
+    )
+    try:
+        with urlopen(request, timeout=12) as response:
+            status_code = getattr(response, "status", 200) or 200
+            body = response.read() or b"{}"
+            try:
+                parsed = json.loads(body.decode("utf-8"))
+                if isinstance(parsed, dict):
+                    return status_code, parsed
+            except Exception:
+                pass
+            return status_code, {
+                "status": "success",
+                "message": "Thank you! Your consultation request has been received.",
+            }
+    except HTTPError as exc:
+        return exc.code, {"detail": _extract_error_detail(exc.read())}
+    except (TimeoutError, URLError, OSError):
+        return 503, {"detail": "Contact backend is temporarily unavailable. Please try again."}
 
 
 class ContactHandler(BaseHTTPRequestHandler):
@@ -97,14 +171,12 @@ class ContactHandler(BaseHTTPRequestHandler):
             self._send_json(422, {"detail": error})
             return
 
-        self._send_json(
-            201,
-            {
-                "status": "success",
-                "id": record["id"],
-                "message": "Thank you! Your consultation request has been received.",
-            },
-        )
+        status_code, backend_response = _forward_contact_to_backend(record)
+        if not isinstance(backend_response, dict):
+            backend_response = {"detail": "Invalid response from contact backend."}
+            status_code = 502
+
+        self._send_json(status_code, backend_response)
 
 
 # Vercel Python runtime entrypoint
