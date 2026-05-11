@@ -10,6 +10,7 @@ from urllib.request import Request, urlopen
 
 MAX_BODY_BYTES = 1_048_576  # 1 MB
 DEFAULT_EMPTY_PAYLOAD = b"{}"
+MAX_BACKEND_ERROR_BYTES = 8192
 BACKEND_URL_ENV_KEYS = (
     "CONTACT_BACKEND_API_URL",
     "BACKEND_API_BASE_URL",
@@ -69,7 +70,7 @@ def _resolve_backend_contact_url() -> Optional[str]:
 
         if raw.endswith("/contact"):
             return raw
-        if raw.endswith("/api"):
+        elif raw.endswith("/api"):
             return f"{raw}/contact"
         return f"{raw.rstrip('/')}/api/contact"
     return None
@@ -86,6 +87,12 @@ def _extract_error_detail(error_body: bytes) -> str:
     except Exception:
         pass
     return "Contact request could not be delivered to backend."
+
+
+def _normalize_backend_response(status_code: int, backend_response):
+    if isinstance(backend_response, dict):
+        return status_code, backend_response
+    return 502, {"detail": "Invalid response from contact backend."}
 
 
 def _forward_contact_to_backend(payload: dict):
@@ -120,7 +127,7 @@ def _forward_contact_to_backend(payload: dict):
                 "message": "Thank you! Your consultation request has been received.",
             }
     except HTTPError as exc:
-        return exc.code, {"detail": _extract_error_detail(exc.read())}
+        return exc.code, {"detail": _extract_error_detail(exc.read(MAX_BACKEND_ERROR_BYTES))}
     except (TimeoutError, URLError, OSError):
         return 503, {"detail": "Contact backend is temporarily unavailable. Please try again."}
 
@@ -172,10 +179,7 @@ class ContactHandler(BaseHTTPRequestHandler):
             return
 
         status_code, backend_response = _forward_contact_to_backend(record)
-        if not isinstance(backend_response, dict):
-            backend_response = {"detail": "Invalid response from contact backend."}
-            status_code = 502
-
+        status_code, backend_response = _normalize_backend_response(status_code, backend_response)
         self._send_json(status_code, backend_response)
 
 

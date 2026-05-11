@@ -47,3 +47,15 @@ def test_forward_contact_to_backend_posts_payload(monkeypatch):
     assert captured["url"] == "https://api.example.com/api/contact"
     assert captured["timeout"] == 12
     assert captured["payload"]["full_name"] == "A"
+
+
+def test_normalize_backend_response_accepts_dict_payload():
+    status_code, payload = contact_api._normalize_backend_response(201, {"status": "success"})
+    assert status_code == 201
+    assert payload["status"] == "success"
+
+
+def test_normalize_backend_response_rejects_non_dict_payload():
+    status_code, payload = contact_api._normalize_backend_response(201, "ok")
+    assert status_code == 502
+    assert payload["detail"] == "Invalid response from contact backend."
