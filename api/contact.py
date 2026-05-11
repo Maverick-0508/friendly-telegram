@@ -4,10 +4,8 @@ from typing import Optional
 from uuid import uuid4
 import json
 import re
-import socket
 
 MAX_BODY_BYTES = 1_048_576  # 1 MB
-SOCKET_READ_TIMEOUT_SECONDS = 5
 DEFAULT_EMPTY_PAYLOAD = b"{}"
 
 
@@ -76,11 +74,10 @@ class ContactHandler(BaseHTTPRequestHandler):
         if content_length > MAX_BODY_BYTES:
             self._send_json(413, {"detail": "Payload too large."})
             return
-        self.connection.settimeout(SOCKET_READ_TIMEOUT_SECONDS)
         try:
             raw = self.rfile.read(content_length) if content_length > 0 else DEFAULT_EMPTY_PAYLOAD
-        except (socket.timeout, OSError):
-            self._send_json(408, {"detail": "Request body read timed out."})
+        except OSError:
+            self._send_json(400, {"detail": "Failed to read request body."})
             return
         try:
             decoded = raw.decode("utf-8")
