@@ -216,7 +216,8 @@ function resolveApiBase() {
     const { protocol, hostname, port } = window.location;
     const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1';
 
-    if (protocol === 'file:') return 'http://127.0.0.1:8000/api';
+    // When opened as a local file, default to local backend port 8001
+    if (protocol === 'file:') return 'http://127.0.0.1:8001/api';
     if (isLocalHost && port && port !== '8000') return 'http://127.0.0.1:8000/api';
 
     return '/api';
@@ -306,6 +307,54 @@ function buildContactPayload(formData) {
         message,
     };
 }
+
+// Submit a quote request to the backend `/api/quotes` endpoint.
+// Accepts an object with friendly form field names (name, email, phone, address, service, propertyType,
+// preferredDate, message, propertySize, serviceFrequency) and maps them to the API `QuoteCreate` schema.
+async function submitQuoteRequest(formData) {
+    const payload = {
+        full_name: (formData.name || formData.full_name || '').trim(),
+        email: (formData.email || '').trim(),
+        phone: (formData.phone || '').trim(),
+        address: (formData.address || '').trim() || null,
+        property_size: formData.propertySize ? Number(formData.propertySize) : null,
+        property_type: formData.propertyType || formData.property_type || null,
+        service_type: formData.service || formData.service_type || null,
+        service_frequency: formData.serviceFrequency || formData.service_frequency || null,
+        preferred_start_date: formData.preferredDate ? new Date(formData.preferredDate).toISOString() : null,
+        additional_details: formData.message || formData.additional_details || null
+    };
+
+    const res = await fetch(`${API_BASE_URL}/quotes`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+        let detail = 'Unable to submit quote request.';
+        try {
+            const body = await res.json();
+            if (body?.detail) {
+                detail = Array.isArray(body.detail)
+                    ? body.detail.map(d => d.msg || d).join(', ')
+                    : body.detail;
+            }
+        } catch (_) {
+            // ignore JSON parse errors
+        }
+        const err = new Error(detail);
+        err.response = res;
+        throw err;
+    }
+
+    return res.json().catch(() => ({}));
+}
+
+// Expose helper globally for other inline scripts to call (e.g. await submitQuoteRequest(formData))
+window.submitQuoteRequest = submitQuoteRequest;
 
 // Inline validation
 const nameInput = document.getElementById('name');
