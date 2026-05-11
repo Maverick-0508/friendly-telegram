@@ -11,6 +11,7 @@ from urllib.request import Request, urlopen
 MAX_BODY_BYTES = 1_048_576  # 1 MB
 DEFAULT_EMPTY_PAYLOAD = b"{}"
 MAX_BACKEND_ERROR_BYTES = 8192
+BACKEND_TIMEOUT_SECONDS = 12
 BACKEND_URL_ENV_KEYS = (
     "CONTACT_BACKEND_API_URL",
     "BACKEND_API_BASE_URL",
@@ -68,11 +69,12 @@ def _resolve_backend_contact_url() -> Optional[str]:
         if not raw:
             continue
 
-        if raw.endswith("/contact"):
-            return raw
-        elif raw.endswith("/api"):
-            return f"{raw}/contact"
-        return f"{raw.rstrip('/')}/api/contact"
+        normalized = raw.rstrip("/")
+        if normalized.endswith("/contact"):
+            return normalized
+        if normalized.endswith("/api"):
+            return f"{normalized}/contact"
+        return f"{normalized}/api/contact"
     return None
 
 
@@ -113,7 +115,7 @@ def _forward_contact_to_backend(payload: dict):
         },
     )
     try:
-        with urlopen(request, timeout=12) as response:
+        with urlopen(request, timeout=BACKEND_TIMEOUT_SECONDS) as response:
             status_code = getattr(response, "status", 200) or 200
             body = response.read() or b"{}"
             try:

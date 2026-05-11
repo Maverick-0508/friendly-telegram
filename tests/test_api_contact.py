@@ -45,7 +45,7 @@ def test_forward_contact_to_backend_posts_payload(monkeypatch):
     assert status_code == 201
     assert payload["status"] == "success"
     assert captured["url"] == "https://api.example.com/api/contact"
-    assert captured["timeout"] == 12
+    assert captured["timeout"] == contact_api.BACKEND_TIMEOUT_SECONDS
     assert captured["payload"]["full_name"] == "A"
 
 
