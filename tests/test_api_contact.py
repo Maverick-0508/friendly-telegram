@@ -33,7 +33,7 @@ def test_forward_contact_to_backend_posts_payload(monkeypatch):
     monkeypatch.setenv("CONTACT_BACKEND_API_URL", "https://api.example.com/api")
     captured = {}
 
-    def _fake_urlopen(request, timeout):
+    def _fake_urlopen(request, timeout=None):
         captured["url"] = request.full_url
         captured["timeout"] = timeout
         captured["payload"] = json.loads(request.data.decode("utf-8"))

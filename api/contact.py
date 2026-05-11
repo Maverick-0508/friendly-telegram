@@ -65,7 +65,7 @@ def _build_contact_record(payload: dict):
 
 def _resolve_backend_contact_url() -> Optional[str]:
     for key in BACKEND_URL_ENV_KEYS:
-        raw = (os.getenv(key) or "").strip()
+        raw = os.getenv(key, "").strip()
         if not raw:
             continue
 
@@ -117,8 +117,11 @@ def _forward_contact_to_backend(payload: dict):
     )
     try:
         with urlopen(request, timeout=BACKEND_TIMEOUT_SECONDS) as response:
-            status_code = getattr(response, "status", 200) or 200
-            body = response.read() or b"{}"
+            status_code = getattr(response, "status", None)
+            status_code = status_code if status_code is not None else 200
+            body = response.read()
+            if body == b"":
+                body = b"{}"
             try:
                 parsed = json.loads(body.decode("utf-8"))
                 if isinstance(parsed, dict):
