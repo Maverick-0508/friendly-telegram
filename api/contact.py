@@ -6,6 +6,8 @@ import json
 import re
 
 MAX_BODY_BYTES = 1_048_576  # 1 MB
+SOCKET_READ_TIMEOUT_SECONDS = 5
+DEFAULT_EMPTY_PAYLOAD = b"{}"
 
 
 def _clean(value: Optional[str]) -> Optional[str]:
@@ -73,8 +75,8 @@ class ContactHandler(BaseHTTPRequestHandler):
         if content_length > MAX_BODY_BYTES:
             self._send_json(413, {"detail": "Payload too large."})
             return
-        self.connection.settimeout(5)
-        raw = self.rfile.read(content_length) if content_length > 0 else b"{}"
+        self.connection.settimeout(SOCKET_READ_TIMEOUT_SECONDS)
+        raw = self.rfile.read(content_length) if content_length > 0 else DEFAULT_EMPTY_PAYLOAD
         try:
             payload = json.loads(raw.decode("utf-8"))
             if not isinstance(payload, dict):
