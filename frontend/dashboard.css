@@ -1042,15 +1042,15 @@ body.dashboard-body.theme-dark .theme-toggle-btn:hover {
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 1.1rem;
-  margin-bottom: 2rem;
+  gap: 0.9rem;
+  margin-bottom: 1.5rem;
 }
 
 .stat-card {
   background: var(--dash-card-bg);
   border: 1px solid var(--dash-border);
   border-radius: 4px;
-  padding: 1.1rem 1.25rem;
+  padding: 0.9rem 1rem;
   position: relative;
   overflow: hidden;
   grid-column: span 3;
@@ -1060,17 +1060,17 @@ body.dashboard-body.theme-dark .theme-toggle-btn:hover {
 
 .stat-card.bento-primary {
   grid-column: span 6;
-  padding: 1.3rem 1.35rem;
+  padding: 1.1rem 1.2rem;
 }
 
 .stat-card.bento-wide {
-  grid-column: span 4;
+  grid-column: span 3;
 }
 
 .stat-card .stat-inline-note {
   font-size: 0.72rem;
   color: var(--text-light);
-  margin-top: 0.6rem;
+  margin-top: 0.35rem;
 }
 
 .empty-trend {
@@ -1113,13 +1113,14 @@ body.dashboard-body.theme-dark .theme-toggle-btn:hover {
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--text-light);
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.3rem;
 }
 
 .stat-card .stat-value {
   font-family: 'Barlow Condensed', 'Lato', sans-serif;
-  font-size: 2rem;
+  font-size: 2.1rem;
   font-weight: 900;
+  letter-spacing: -0.01em;
   line-height: 1;
   color: var(--text-dark);
 }
@@ -1127,7 +1128,11 @@ body.dashboard-body.theme-dark .theme-toggle-btn:hover {
 .stat-card .stat-sub {
   font-size: 0.75rem;
   color: var(--text-light);
-  margin-top: 0.25rem;
+  margin-top: 0.18rem;
+}
+
+.stat-card .row-actions {
+  margin-top: 0.5rem;
 }
 
 .stat-card.accent-card::after { background: var(--accent); }
@@ -1184,7 +1189,7 @@ body.dashboard-body.theme-dark .theme-toggle-btn:hover {
   display: block;
   width: 100%;
   height: 34px;
-  margin-top: 0.45rem;
+  margin-top: 0.18rem;
 }
 
 .sparkline polyline {
