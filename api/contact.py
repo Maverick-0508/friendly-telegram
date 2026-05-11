@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional
+from uuid import uuid4
+import re
 
 from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel
@@ -20,16 +22,14 @@ class ContactPayload(BaseModel):
     service: Optional[str] = None
 
 
-submissions: list[dict] = []
-
-
 def _clean(value: Optional[str]) -> Optional[str]:
     return (value or "").strip() or None
 
 
 def _validate_email(value: str) -> str:
     email = (value or "").strip()
-    if not email or "@" not in email or email.startswith("@") or email.endswith("@"):
+    email_pattern = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
+    if not email or not re.match(email_pattern, email):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Please provide a valid email address.",
@@ -55,18 +55,21 @@ def create_contact(payload: ContactPayload):
         )
 
     service_type = _clean(payload.service_type) or _clean(payload.service)
+    subject = _clean(payload.subject)
+    if not subject:
+        subject = f"Website enquiry - {service_type}" if service_type else "Website enquiry"
+    submission_id = str(uuid4())
 
     record = {
-        "id": len(submissions) + 1,
+        "id": submission_id,
         "full_name": full_name,
         "email": _validate_email(payload.email),
         "phone": _clean(payload.phone),
-        "subject": _clean(payload.subject) or (f"Website enquiry - {service_type}" if service_type else "Website enquiry"),
+        "subject": subject,
         "service_type": service_type,
         "message": message,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
-    submissions.append(record)
 
     return {
         "status": "success",
