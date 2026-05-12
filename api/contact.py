@@ -6,6 +6,7 @@ import json
 import os
 import re
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 MAX_BODY_BYTES = 1_048_576  # 1 MB
@@ -70,12 +71,19 @@ def _resolve_backend_contact_url() -> Optional[str]:
             continue
 
         normalized = raw.rstrip("/")
+        if "://" not in normalized and not normalized.startswith("/"):
+            normalized = f"https://{normalized}"
         if normalized.endswith("/contact"):
             return normalized
         if normalized.endswith("/api"):
             return f"{normalized}/contact"
         return f"{normalized}/api/contact"
     return None
+
+
+def _is_valid_backend_url(url: str) -> bool:
+    parsed = urlparse(url)
+    return parsed.scheme in ("http", "https") and bool(parsed.netloc)
 
 
 def _extract_error_detail(error_body: bytes) -> str:
@@ -104,18 +112,22 @@ def _forward_contact_to_backend(payload: dict):
         return 503, {
             "detail": f"Contact backend URL is not configured. Set one of: {supported_keys}.",
         }
+    if not _is_valid_backend_url(backend_url):
+        return 503, {
+            "detail": "Contact backend URL configuration is invalid. Use an absolute http(s) URL.",
+        }
 
-    request_data = json.dumps(payload).encode("utf-8")
-    request = Request(
-        backend_url,
-        data=request_data,
-        method="POST",
-        headers={
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-        },
-    )
     try:
+        request_data = json.dumps(payload).encode("utf-8")
+        request = Request(
+            backend_url,
+            data=request_data,
+            method="POST",
+            headers={
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            },
+        )
         with urlopen(request, timeout=BACKEND_TIMEOUT_SECONDS) as response:
             status_code = getattr(response, "status", None)
             status_code = status_code if status_code is not None else 200
@@ -135,6 +147,10 @@ def _forward_contact_to_backend(payload: dict):
     except HTTPError as exc:
         error_body = exc.read(MAX_BACKEND_ERROR_BYTES)
         return exc.code, {"detail": _extract_error_detail(error_body)}
+    except ValueError:
+        return 503, {
+            "detail": "Contact backend URL configuration is invalid. Use an absolute http(s) URL.",
+        }
     except (TimeoutError, URLError, OSError):
         return 503, {"detail": "Contact backend is temporarily unavailable. Please try again."}
 

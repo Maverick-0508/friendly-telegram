@@ -29,6 +29,12 @@ def test_resolve_backend_contact_url_appends_api_contact(monkeypatch):
     assert contact_api._resolve_backend_contact_url() == "https://api.example.com/api/contact"
 
 
+def test_resolve_backend_contact_url_adds_https_scheme(monkeypatch):
+    monkeypatch.delenv("CONTACT_BACKEND_API_URL", raising=False)
+    monkeypatch.setenv("BACKEND_API_BASE_URL", "api.example.com")
+    assert contact_api._resolve_backend_contact_url() == "https://api.example.com/api/contact"
+
+
 def test_forward_contact_to_backend_posts_payload(monkeypatch):
     monkeypatch.setenv("CONTACT_BACKEND_API_URL", "https://api.example.com/api")
     captured = {}
@@ -59,3 +65,12 @@ def test_normalize_backend_response_rejects_non_dict_payload():
     status_code, payload = contact_api._normalize_backend_response(201, "ok")
     assert status_code == 502
     assert payload["detail"] == "Invalid response from contact backend."
+
+
+def test_forward_contact_to_backend_rejects_invalid_url(monkeypatch):
+    monkeypatch.setenv("CONTACT_BACKEND_API_URL", "/api")
+    status_code, payload = contact_api._forward_contact_to_backend(
+        {"full_name": "A", "email": "a@x.com", "message": "Hi"}
+    )
+    assert status_code == 503
+    assert payload["detail"] == "Contact backend URL configuration is invalid. Use an absolute http(s) URL."
