@@ -82,8 +82,18 @@ A comprehensive FastAPI backend for the Lawn Craft professional lawn care websit
 3. **Install dependencies**
 
    ```bash
-   pip install -r requirements.txt
+   python -m pip install -r requirements.txt
    ```
+
+   To run the test suite, install the development dependencies as well:
+
+   ```bash
+   python -m pip install -r requirements-dev.txt
+   python -m pytest -q
+   ```
+
+   > Note: `pip install -e ".[test]"` is not used from this `backend/` folder because
+   > the backend is configured with requirements files rather than a local `pyproject.toml`.
 
 4. **Environment Configuration**
 
