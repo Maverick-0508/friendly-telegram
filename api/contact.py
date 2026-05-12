@@ -71,7 +71,9 @@ def _resolve_backend_contact_url() -> Optional[str]:
             continue
 
         normalized = raw.rstrip("/")
-        if "://" not in normalized and not normalized.startswith("/"):
+        # Host-only values (e.g. "api.example.com") are normalized to HTTPS.
+        # Path-like values (e.g. "/api") stay unchanged and are rejected later.
+        if not urlparse(normalized).scheme and not normalized.startswith("/"):
             normalized = f"https://{normalized}"
         if normalized.endswith("/contact"):
             return normalized
@@ -149,7 +151,7 @@ def _forward_contact_to_backend(payload: dict):
         return exc.code, {"detail": _extract_error_detail(error_body)}
     except ValueError:
         return 503, {
-            "detail": "Contact backend URL configuration is invalid. Use an absolute http(s) URL.",
+            "detail": "Contact backend URL format is invalid and cannot be used to create a request.",
         }
     except (TimeoutError, URLError, OSError):
         return 503, {"detail": "Contact backend is temporarily unavailable. Please try again."}
