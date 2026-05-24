@@ -6,6 +6,7 @@ import json
 import os
 import re
 import fcntl
+import logging
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
@@ -22,6 +23,7 @@ BACKEND_URL_ENV_KEYS = (
     "DASHBOARD_API_BASE",
     "LAWNCRAFT_API_BASE",
 )
+LOGGER = logging.getLogger(__name__)
 
 
 def _clean(value: Optional[str]) -> Optional[str]:
@@ -122,9 +124,14 @@ def _resolve_fallback_storage_path() -> str:
 
 
 def _is_safe_fallback_storage_path(path: str) -> bool:
+    if os.path.islink(path):
+        return False
     resolved = os.path.realpath(path)
     tmp_root = os.path.realpath("/tmp")
-    return resolved.startswith(f"{tmp_root}{os.sep}")
+    try:
+        return os.path.commonpath([resolved, tmp_root]) == tmp_root and resolved != tmp_root
+    except ValueError:
+        return False
 
 
 def _persist_contact_submission(record: dict):
@@ -139,9 +146,9 @@ def _persist_contact_submission(record: dict):
             fcntl.flock(fh.fileno(), fcntl.LOCK_EX)
             fh.write(json.dumps(record, ensure_ascii=False) + "\n")
             fh.flush()
-            fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
         return True
-    except OSError:
+    except OSError as exc:
+        LOGGER.warning("contact fallback persistence failed: %s", exc)
         return False
 
 

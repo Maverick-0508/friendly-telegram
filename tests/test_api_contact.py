@@ -85,13 +85,15 @@ def test_forward_contact_to_backend_uses_fallback_when_unconfigured(monkeypatch,
     monkeypatch.delenv("LAWNCRAFT_API_BASE", raising=False)
     monkeypatch.setenv("CONTACT_FALLBACK_STORAGE_PATH", str(tmp_path / "contact-submissions.jsonl"))
 
-    status_code, payload = contact_api._forward_contact_to_backend(
-        {"id": "submission-1", "full_name": "A", "email": "a@x.com", "message": "Hi"}
-    )
+    submission = {"id": "submission-1", "full_name": "A", "email": "a@x.com", "message": "Hi"}
+    status_code, payload = contact_api._forward_contact_to_backend(submission)
 
     assert status_code == 202
     assert payload["status"] == "success"
     assert payload["id"] == "submission-1"
+    stored_lines = (tmp_path / "contact-submissions.jsonl").read_text(encoding="utf-8").splitlines()
+    assert len(stored_lines) == 1
+    assert json.loads(stored_lines[0])["id"] == submission["id"]
 
 
 def test_forward_contact_to_backend_uses_fallback_when_unavailable(monkeypatch, tmp_path):
@@ -102,10 +104,12 @@ def test_forward_contact_to_backend_uses_fallback_when_unavailable(monkeypatch, 
         raise URLError("unavailable")
 
     monkeypatch.setattr(contact_api, "urlopen", _simulate_network_error)
-    status_code, payload = contact_api._forward_contact_to_backend(
-        {"id": "submission-2", "full_name": "A", "email": "a@x.com", "message": "Hi"}
-    )
+    submission = {"id": "submission-2", "full_name": "A", "email": "a@x.com", "message": "Hi"}
+    status_code, payload = contact_api._forward_contact_to_backend(submission)
 
     assert status_code == 202
     assert payload["status"] == "success"
     assert payload["id"] == "submission-2"
+    stored_lines = (tmp_path / "contact-submissions.jsonl").read_text(encoding="utf-8").splitlines()
+    assert len(stored_lines) == 1
+    assert json.loads(stored_lines[0])["id"] == submission["id"]
