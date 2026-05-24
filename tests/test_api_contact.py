@@ -42,6 +42,19 @@ def test_resolve_backend_contact_url_supports_automatic_spoon_alias(monkeypatch)
     assert contact_api._resolve_backend_contact_url() == "https://automatic-spoon.example.com/api/contact"
 
 
+def test_resolve_backend_contact_url_prefers_contact_backend_url_over_aliases(monkeypatch):
+    monkeypatch.setenv("CONTACT_BACKEND_API_URL", "https://primary.example.com")
+    monkeypatch.setenv("AUTOMATIC_SPOON_API_URL", "https://alias.example.com")
+    assert contact_api._resolve_backend_contact_url() == "https://primary.example.com/api/contact"
+
+
+def test_resolve_backend_contact_url_supports_dashboard_api_base_alias(monkeypatch):
+    monkeypatch.delenv("CONTACT_BACKEND_API_URL", raising=False)
+    monkeypatch.delenv("AUTOMATIC_SPOON_API_URL", raising=False)
+    monkeypatch.setenv("DASHBOARD_API_BASE", "https://dashboard-api.example.com")
+    assert contact_api._resolve_backend_contact_url() == "https://dashboard-api.example.com/api/contact"
+
+
 def test_forward_contact_to_backend_posts_payload(monkeypatch):
     monkeypatch.setenv("CONTACT_BACKEND_API_URL", "https://api.example.com/api")
     captured = {}

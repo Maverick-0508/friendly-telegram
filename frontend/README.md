@@ -92,6 +92,14 @@ To connect the frontend to the backend:
    - `AUTOMATIC_SPOON_BACKEND_URL`
 4. Set the value to your deployed backend origin (for example the `automatic-spoon` deployment URL). The function automatically forwards to `${BASE_URL}/api/contact`.
 
+### Contact form deployment checklist
+
+- Keep frontend form submissions on same-origin `/api/contact` (do not hardcode backend origin in browser JS).
+- In Vercel, set `CONTACT_BACKEND_API_URL` to the correct backend environment origin.
+- Remove outdated/conflicting fallback keys unless intentionally used.
+- Verify backend logs receive `POST /api/contact` when submitting the form from production.
+- Verify the contact appears in admin endpoints/dashboard after submission.
+
 ## Customization
 
 ### Updating Content
