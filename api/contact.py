@@ -5,6 +5,7 @@ from uuid import uuid4
 import json
 import os
 import re
+import fcntl
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
@@ -123,7 +124,7 @@ def _resolve_fallback_storage_path() -> str:
 def _is_safe_fallback_storage_path(path: str) -> bool:
     resolved = os.path.realpath(path)
     tmp_root = os.path.realpath("/tmp")
-    return resolved == tmp_root or resolved.startswith(f"{tmp_root}{os.sep}")
+    return resolved.startswith(f"{tmp_root}{os.sep}")
 
 
 def _persist_contact_submission(record: dict):
@@ -135,7 +136,10 @@ def _persist_contact_submission(record: dict):
     try:
         fd = os.open(storage_path, os.O_APPEND | os.O_CREAT | os.O_WRONLY, 0o600)
         with os.fdopen(fd, "a", encoding="utf-8") as fh:
+            fcntl.flock(fh.fileno(), fcntl.LOCK_EX)
             fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+            fh.flush()
+            fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
         return True
     except OSError:
         return False

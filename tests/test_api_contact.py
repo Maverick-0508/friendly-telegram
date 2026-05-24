@@ -98,10 +98,10 @@ def test_forward_contact_to_backend_uses_fallback_when_unavailable(monkeypatch, 
     monkeypatch.setenv("CONTACT_BACKEND_API_URL", "https://api.example.com/api")
     monkeypatch.setenv("CONTACT_FALLBACK_STORAGE_PATH", str(tmp_path / "contact-submissions.jsonl"))
 
-    def _boom(*args, **kwargs):
+    def _simulate_network_error(*args, **kwargs):
         raise URLError("unavailable")
 
-    monkeypatch.setattr(contact_api, "urlopen", _boom)
+    monkeypatch.setattr(contact_api, "urlopen", _simulate_network_error)
     status_code, payload = contact_api._forward_contact_to_backend(
         {"id": "submission-2", "full_name": "A", "email": "a@x.com", "message": "Hi"}
     )
