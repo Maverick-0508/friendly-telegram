@@ -5,6 +5,8 @@ from uuid import uuid4
 import json
 import os
 import re
+import fcntl
+import logging
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
@@ -13,6 +15,7 @@ MAX_BODY_BYTES = 1_048_576  # 1 MB
 DEFAULT_EMPTY_PAYLOAD = b"{}"
 MAX_BACKEND_ERROR_BYTES = 8192
 BACKEND_TIMEOUT_SECONDS = 12
+DEFAULT_FALLBACK_STORAGE_PATH = "/tmp/contact-submissions.jsonl"
 BACKEND_URL_ENV_KEYS = (
     "CONTACT_BACKEND_API_URL",
     "BACKEND_API_BASE_URL",
@@ -20,6 +23,7 @@ BACKEND_URL_ENV_KEYS = (
     "DASHBOARD_API_BASE",
     "LAWNCRAFT_API_BASE",
 )
+LOGGER = logging.getLogger(__name__)
 
 
 def _clean(value: Optional[str]) -> Optional[str]:
@@ -107,16 +111,60 @@ def _normalize_backend_response(status_code: int, backend_response):
     return 502, {"detail": "Invalid response from contact backend."}
 
 
+def _fallback_success_response(payload: dict):
+    return {
+        "status": "success",
+        "message": "Thank you! Your consultation request has been received.",
+        "id": payload.get("id"),
+    }
+
+
+def _resolve_fallback_storage_path() -> str:
+    return (os.getenv("CONTACT_FALLBACK_STORAGE_PATH") or DEFAULT_FALLBACK_STORAGE_PATH).strip()
+
+
+def _is_safe_fallback_storage_path(path: str) -> bool:
+    if os.path.islink(path):
+        return False
+    resolved = os.path.realpath(path)
+    tmp_root = os.path.realpath("/tmp")
+    try:
+        return os.path.commonpath([resolved, tmp_root]) == tmp_root and resolved != tmp_root
+    except ValueError:
+        return False
+
+
+def _persist_contact_submission(record: dict):
+    """Persist a validated contact record to local fallback storage."""
+    storage_path = _resolve_fallback_storage_path()
+    if not _is_safe_fallback_storage_path(storage_path):
+        return False
+
+    try:
+        fd = os.open(storage_path, os.O_APPEND | os.O_CREAT | os.O_WRONLY, 0o600)
+        with os.fdopen(fd, "a", encoding="utf-8") as fh:
+            fcntl.flock(fh.fileno(), fcntl.LOCK_EX)
+            fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+            fh.flush()
+        return True
+    except OSError as exc:
+        LOGGER.warning("contact fallback persistence failed: %s", exc)
+        return False
+
+
 def _forward_contact_to_backend(payload: dict):
     backend_url = _resolve_backend_contact_url()
     if not backend_url:
-        supported_keys = ", ".join(BACKEND_URL_ENV_KEYS)
+        if _persist_contact_submission(payload):
+            return 202, _fallback_success_response(payload)
         return 503, {
-            "detail": f"Contact backend URL is not configured. Set one of: {supported_keys}.",
+            "detail": "Contact backend is unavailable and fallback storage failed. Please try again.",
         }
     if not _is_valid_backend_url(backend_url):
+        if _persist_contact_submission(payload):
+            return 202, _fallback_success_response(payload)
         return 503, {
-            "detail": "Contact backend URL configuration is invalid. Use an absolute http(s) URL.",
+            "detail": "Contact backend URL configuration is invalid and fallback storage failed.",
         }
 
     try:
@@ -154,6 +202,8 @@ def _forward_contact_to_backend(payload: dict):
             "detail": "Contact backend URL format is invalid and cannot be used to create a request.",
         }
     except (TimeoutError, URLError, OSError):
+        if _persist_contact_submission(payload):
+            return 202, _fallback_success_response(payload)
         return 503, {"detail": "Contact backend is temporarily unavailable. Please try again."}
 
 
