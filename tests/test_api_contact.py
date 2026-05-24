@@ -83,7 +83,7 @@ def test_forward_contact_to_backend_uses_fallback_when_unconfigured(monkeypatch,
     monkeypatch.delenv("BACKEND_API_URL", raising=False)
     monkeypatch.delenv("DASHBOARD_API_BASE", raising=False)
     monkeypatch.delenv("LAWNCRAFT_API_BASE", raising=False)
-    monkeypatch.setattr(contact_api, "FALLBACK_STORAGE_PATH", str(tmp_path / "contact-submissions.jsonl"))
+    monkeypatch.setenv("CONTACT_FALLBACK_STORAGE_PATH", str(tmp_path / "contact-submissions.jsonl"))
 
     status_code, payload = contact_api._forward_contact_to_backend(
         {"id": "submission-1", "full_name": "A", "email": "a@x.com", "message": "Hi"}
@@ -96,7 +96,7 @@ def test_forward_contact_to_backend_uses_fallback_when_unconfigured(monkeypatch,
 
 def test_forward_contact_to_backend_uses_fallback_when_unavailable(monkeypatch, tmp_path):
     monkeypatch.setenv("CONTACT_BACKEND_API_URL", "https://api.example.com/api")
-    monkeypatch.setattr(contact_api, "FALLBACK_STORAGE_PATH", str(tmp_path / "contact-submissions.jsonl"))
+    monkeypatch.setenv("CONTACT_FALLBACK_STORAGE_PATH", str(tmp_path / "contact-submissions.jsonl"))
 
     def _boom(*args, **kwargs):
         raise URLError("unavailable")
