@@ -120,10 +120,16 @@ def _resolve_fallback_storage_path() -> str:
     return (os.getenv("CONTACT_FALLBACK_STORAGE_PATH") or DEFAULT_FALLBACK_STORAGE_PATH).strip()
 
 
+def _is_safe_fallback_storage_path(path: str) -> bool:
+    resolved = os.path.realpath(path)
+    tmp_root = os.path.realpath("/tmp")
+    return resolved == tmp_root or resolved.startswith(f"{tmp_root}{os.sep}")
+
+
 def _persist_contact_submission(record: dict):
     """Persist a validated contact record to local fallback storage."""
     storage_path = _resolve_fallback_storage_path()
-    if not storage_path:
+    if not _is_safe_fallback_storage_path(storage_path):
         return False
 
     try:
@@ -140,15 +146,14 @@ def _forward_contact_to_backend(payload: dict):
     if not backend_url:
         if _persist_contact_submission(payload):
             return 202, _fallback_success_response(payload)
-        supported_keys = ", ".join(BACKEND_URL_ENV_KEYS)
         return 503, {
-            "detail": f"Contact backend URL is not configured. Set one of: {supported_keys}.",
+            "detail": "Contact backend is unavailable and fallback storage failed. Please try again.",
         }
     if not _is_valid_backend_url(backend_url):
         if _persist_contact_submission(payload):
             return 202, _fallback_success_response(payload)
         return 503, {
-            "detail": "Contact backend URL configuration is invalid. Use an absolute http(s) URL.",
+            "detail": "Contact backend URL configuration is invalid and fallback storage failed.",
         }
 
     try:
