@@ -36,6 +36,12 @@ def test_resolve_backend_contact_url_adds_https_scheme(monkeypatch):
     assert contact_api._resolve_backend_contact_url() == "https://api.example.com/api/contact"
 
 
+def test_resolve_backend_contact_url_supports_automatic_spoon_alias(monkeypatch):
+    monkeypatch.delenv("CONTACT_BACKEND_API_URL", raising=False)
+    monkeypatch.setenv("AUTOMATIC_SPOON_API_URL", "https://automatic-spoon.example.com")
+    assert contact_api._resolve_backend_contact_url() == "https://automatic-spoon.example.com/api/contact"
+
+
 def test_forward_contact_to_backend_posts_payload(monkeypatch):
     monkeypatch.setenv("CONTACT_BACKEND_API_URL", "https://api.example.com/api")
     captured = {}
@@ -83,6 +89,8 @@ def test_forward_contact_to_backend_uses_fallback_when_unconfigured(monkeypatch,
     monkeypatch.delenv("BACKEND_API_URL", raising=False)
     monkeypatch.delenv("DASHBOARD_API_BASE", raising=False)
     monkeypatch.delenv("LAWNCRAFT_API_BASE", raising=False)
+    monkeypatch.delenv("AUTOMATIC_SPOON_API_URL", raising=False)
+    monkeypatch.delenv("AUTOMATIC_SPOON_BACKEND_URL", raising=False)
     monkeypatch.setenv("CONTACT_FALLBACK_STORAGE_PATH", str(tmp_path / "contact-submissions.jsonl"))
 
     submission = {"id": "submission-1", "full_name": "A", "email": "a@x.com", "message": "Hi"}

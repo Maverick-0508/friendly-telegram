@@ -80,18 +80,17 @@ The website is compatible with all modern browsers:
 
 ## Integration with Backend
 
-The frontend is designed to work with the FastAPI backend located in the `../backend` directory. 
+The frontend is designed to work with the FastAPI backend located in the `../backend` directory.
 
 To connect the frontend to the backend:
 
-1. Update the API endpoint in `script.js`:
-   ```javascript
-   const API_BASE_URL = 'http://localhost:8000/api';
-   ```
-
-2. Start the backend server (see `../backend/README.md`)
-
-3. The contact form and other interactive features will communicate with the backend API
+1. Start the backend server (see `../backend/README.md`)
+2. The browser-side frontend scripts call `/api/...` on the same origin.
+3. In Vercel, configure the API forwarding function (`/api/contact`) with one of:
+   - `CONTACT_BACKEND_API_URL` (preferred)
+   - `AUTOMATIC_SPOON_API_URL`
+   - `AUTOMATIC_SPOON_BACKEND_URL`
+4. Set the value to your deployed backend origin (for example the `automatic-spoon` deployment URL). The function automatically forwards to `${BASE_URL}/api/contact`.
 
 ## Customization
 

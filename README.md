@@ -85,6 +85,16 @@ uvicorn app.main:app --reload
 
 API Documentation: http://localhost:8000/docs
 
+### Frontend → automatic-spoon backend forwarding
+
+For deployed frontend contact submissions, configure the Vercel environment variable in this repo:
+
+- `CONTACT_BACKEND_API_URL` (preferred), or
+- `AUTOMATIC_SPOON_API_URL`, or
+- `AUTOMATIC_SPOON_BACKEND_URL`
+
+Set it to the backend deployment base URL from the `automatic-spoon` repo. The `/api/contact` function in this repository forwards requests to `${BASE_URL}/api/contact`.
+
 ## Technologies Used
 
 ### Frontend
