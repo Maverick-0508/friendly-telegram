@@ -13,6 +13,7 @@ MAX_BODY_BYTES = 1_048_576  # 1 MB
 DEFAULT_EMPTY_PAYLOAD = b"{}"
 MAX_BACKEND_ERROR_BYTES = 8192
 BACKEND_TIMEOUT_SECONDS = 12
+FALLBACK_STORAGE_PATH = "/tmp/contact-submissions.jsonl"
 BACKEND_URL_ENV_KEYS = (
     "CONTACT_BACKEND_API_URL",
     "BACKEND_API_BASE_URL",
@@ -107,14 +108,35 @@ def _normalize_backend_response(status_code: int, backend_response):
     return 502, {"detail": "Invalid response from contact backend."}
 
 
+def _persist_contact_submission(record: dict):
+    try:
+        with open(FALLBACK_STORAGE_PATH, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+        return True
+    except OSError:
+        return False
+
+
 def _forward_contact_to_backend(payload: dict):
     backend_url = _resolve_backend_contact_url()
     if not backend_url:
+        if _persist_contact_submission(payload):
+            return 202, {
+                "status": "success",
+                "message": "Thank you! Your consultation request has been received.",
+                "id": payload.get("id"),
+            }
         supported_keys = ", ".join(BACKEND_URL_ENV_KEYS)
         return 503, {
             "detail": f"Contact backend URL is not configured. Set one of: {supported_keys}.",
         }
     if not _is_valid_backend_url(backend_url):
+        if _persist_contact_submission(payload):
+            return 202, {
+                "status": "success",
+                "message": "Thank you! Your consultation request has been received.",
+                "id": payload.get("id"),
+            }
         return 503, {
             "detail": "Contact backend URL configuration is invalid. Use an absolute http(s) URL.",
         }
@@ -154,6 +176,12 @@ def _forward_contact_to_backend(payload: dict):
             "detail": "Contact backend URL format is invalid and cannot be used to create a request.",
         }
     except (TimeoutError, URLError, OSError):
+        if _persist_contact_submission(payload):
+            return 202, {
+                "status": "success",
+                "message": "Thank you! Your consultation request has been received.",
+                "id": payload.get("id"),
+            }
         return 503, {"detail": "Contact backend is temporarily unavailable. Please try again."}
 
 

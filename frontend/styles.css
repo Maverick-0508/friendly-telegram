@@ -1405,7 +1405,6 @@ section {
     background: #d4edda;
     color: #155724;
     border: 1px solid #c3e6cb;
-    display: flex;
     align-items: center;
     gap: 0.75rem;
 }
