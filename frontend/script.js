@@ -225,6 +225,20 @@ function resolveApiBase() {
 
 const API_BASE_URL = resolveApiBase();
 
+function resolveContactSubmitUrl() {
+    if (typeof window === 'undefined') return '/api/contact';
+    if (window.LAWNCRAFT_CONTACT_API_URL) return window.LAWNCRAFT_CONTACT_API_URL;
+
+    const { protocol } = window.location;
+    if (protocol === 'file:') return 'http://127.0.0.1:8001/api/contact';
+
+    // Keep contact submission same-origin in deployed environments so Vercel
+    // can proxy the request via /api/contact.
+    return '/api/contact';
+}
+
+const CONTACT_SUBMIT_URL = resolveContactSubmitUrl();
+
 // Validation functions
 function validateEmail(email) {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -463,7 +477,7 @@ if (contactForm && nameInput && emailInput && phoneInput && messageInput) {
 
         try {
             const payload = buildContactPayload(formData);
-            const response = await fetch(`${API_BASE_URL}/contact`, {
+            const response = await fetch(CONTACT_SUBMIT_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
