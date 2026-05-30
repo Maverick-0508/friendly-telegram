@@ -155,6 +155,9 @@ def _persist_contact_submission(record: dict):
 
 
 def _forward_contact_to_backend(payload: dict):
+    if not isinstance(payload, dict):
+        return 400, {"detail": "Invalid contact payload."}
+
     backend_url = _resolve_backend_contact_url()
     if not backend_url:
         if _persist_contact_submission(payload):

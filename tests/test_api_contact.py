@@ -134,3 +134,9 @@ def test_forward_contact_to_backend_uses_fallback_when_unavailable(monkeypatch, 
     stored_lines = (tmp_path / "contact-submissions.jsonl").read_text(encoding="utf-8").splitlines()
     assert len(stored_lines) == 1
     assert json.loads(stored_lines[0])["id"] == submission["id"]
+
+
+def test_forward_contact_to_backend_rejects_non_dict_payload():
+    status_code, payload = contact_api._forward_contact_to_backend(["not", "a", "dict"])
+    assert status_code == 400
+    assert payload["detail"] == "Invalid contact payload."
