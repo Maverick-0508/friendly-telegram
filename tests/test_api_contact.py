@@ -139,4 +139,4 @@ def test_forward_contact_to_backend_uses_fallback_when_unavailable(monkeypatch, 
 def test_forward_contact_to_backend_rejects_non_dict_payload():
     status_code, payload = contact_api._forward_contact_to_backend(["not", "a", "dict"])
     assert status_code == 400
-    assert payload["detail"] == "Invalid contact payload."
+    assert payload["detail"] == "Contact payload must be a dictionary object."
