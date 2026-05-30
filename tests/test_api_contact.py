@@ -36,6 +36,25 @@ def test_resolve_backend_contact_url_adds_https_scheme(monkeypatch):
     assert contact_api._resolve_backend_contact_url() == "https://api.example.com/api/contact"
 
 
+def test_resolve_backend_contact_url_supports_automatic_spoon_alias(monkeypatch):
+    monkeypatch.delenv("CONTACT_BACKEND_API_URL", raising=False)
+    monkeypatch.setenv("AUTOMATIC_SPOON_API_URL", "https://automatic-spoon.example.com")
+    assert contact_api._resolve_backend_contact_url() == "https://automatic-spoon.example.com/api/contact"
+
+
+def test_resolve_backend_contact_url_prefers_contact_backend_url_over_aliases(monkeypatch):
+    monkeypatch.setenv("CONTACT_BACKEND_API_URL", "https://primary.example.com")
+    monkeypatch.setenv("AUTOMATIC_SPOON_API_URL", "https://alias.example.com")
+    assert contact_api._resolve_backend_contact_url() == "https://primary.example.com/api/contact"
+
+
+def test_resolve_backend_contact_url_supports_dashboard_api_base_alias(monkeypatch):
+    monkeypatch.delenv("CONTACT_BACKEND_API_URL", raising=False)
+    monkeypatch.delenv("AUTOMATIC_SPOON_API_URL", raising=False)
+    monkeypatch.setenv("DASHBOARD_API_BASE", "https://dashboard-api.example.com")
+    assert contact_api._resolve_backend_contact_url() == "https://dashboard-api.example.com/api/contact"
+
+
 def test_forward_contact_to_backend_posts_payload(monkeypatch):
     monkeypatch.setenv("CONTACT_BACKEND_API_URL", "https://api.example.com/api")
     captured = {}
@@ -83,6 +102,8 @@ def test_forward_contact_to_backend_uses_fallback_when_unconfigured(monkeypatch,
     monkeypatch.delenv("BACKEND_API_URL", raising=False)
     monkeypatch.delenv("DASHBOARD_API_BASE", raising=False)
     monkeypatch.delenv("LAWNCRAFT_API_BASE", raising=False)
+    monkeypatch.delenv("AUTOMATIC_SPOON_API_URL", raising=False)
+    monkeypatch.delenv("AUTOMATIC_SPOON_BACKEND_URL", raising=False)
     monkeypatch.setenv("CONTACT_FALLBACK_STORAGE_PATH", str(tmp_path / "contact-submissions.jsonl"))
 
     submission = {"id": "submission-1", "full_name": "A", "email": "a@x.com", "message": "Hi"}
@@ -113,3 +134,9 @@ def test_forward_contact_to_backend_uses_fallback_when_unavailable(monkeypatch, 
     stored_lines = (tmp_path / "contact-submissions.jsonl").read_text(encoding="utf-8").splitlines()
     assert len(stored_lines) == 1
     assert json.loads(stored_lines[0])["id"] == submission["id"]
+
+
+def test_forward_contact_to_backend_rejects_non_dict_payload():
+    status_code, payload = contact_api._forward_contact_to_backend(["not", "a", "dict"])
+    assert status_code == 400
+    assert payload["detail"] == "Contact payload must be a dictionary object."

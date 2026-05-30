@@ -85,6 +85,47 @@ uvicorn app.main:app --reload
 
 API Documentation: http://localhost:8000/docs
 
+### Frontend → automatic-spoon backend forwarding
+
+For deployed frontend contact submissions, configure the Vercel environment variable in this repo:
+
+- `CONTACT_BACKEND_API_URL` (preferred), or
+- `AUTOMATIC_SPOON_API_URL`, or
+- `AUTOMATIC_SPOON_BACKEND_URL`
+
+Set it to the backend deployment base URL from the `automatic-spoon` repo. The `/api/contact` function in this repository forwards requests to `${BASE_URL}/api/contact`.
+
+### Contact form production integration checklist
+
+Use this checklist when contact submissions are not appearing in backend/admin views:
+
+1. **Confirm request path**
+   - Frontend submits to same-origin `POST /api/contact` (`frontend/script.js`).
+   - Vercel Python function entrypoint is `api/contact.py`.
+   - Backend intake endpoint is `POST /api/contact`.
+
+2. **Set forwarding env vars in Vercel**
+   - Set `CONTACT_BACKEND_API_URL` to the deployed backend base URL.
+   - Remove stale/conflicting fallback keys (`AUTOMATIC_SPOON_API_URL`, `AUTOMATIC_SPOON_BACKEND_URL`, etc.) unless intentionally used.
+   - Ensure Production and Preview environments point to the correct backend deployments.
+
+3. **Validate backend database target**
+   - Ensure Render backend has the correct `DATABASE_URL`.
+   - Ensure the `contacts` table exists in that database.
+   - Ensure production-like environments are not writing to an unintended local fallback DB.
+
+4. **Check network controls**
+   - If DB/network access is IP-restricted, allow Render outbound CIDRs:
+     - `74.220.48.0/24`
+     - `74.220.56.0/24`
+   - Keep DB authentication/TLS enabled even when allowlisting is in place.
+
+5. **Run production verification**
+   - Submit a live contact form.
+   - Confirm backend logs show `POST /api/contact`.
+   - Confirm a new row in `contacts` and expected work-order/audit side-effects.
+   - Confirm contact appears in admin retrieval/dashboard flows.
+
 ## Technologies Used
 
 ### Frontend

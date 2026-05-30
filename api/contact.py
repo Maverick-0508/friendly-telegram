@@ -18,6 +18,8 @@ BACKEND_TIMEOUT_SECONDS = 12
 DEFAULT_FALLBACK_STORAGE_PATH = "/tmp/contact-submissions.jsonl"
 BACKEND_URL_ENV_KEYS = (
     "CONTACT_BACKEND_API_URL",
+    "AUTOMATIC_SPOON_API_URL",
+    "AUTOMATIC_SPOON_BACKEND_URL",
     "BACKEND_API_BASE_URL",
     "BACKEND_API_URL",
     "DASHBOARD_API_BASE",
@@ -153,6 +155,9 @@ def _persist_contact_submission(record: dict):
 
 
 def _forward_contact_to_backend(payload: dict):
+    if not isinstance(payload, dict):
+        return 400, {"detail": "Contact payload must be a dictionary object."}
+
     backend_url = _resolve_backend_contact_url()
     if not backend_url:
         if _persist_contact_submission(payload):
