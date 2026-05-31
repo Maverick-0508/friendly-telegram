@@ -4,9 +4,10 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import Optional
 import json
+import re
 from datetime import datetime
 
 FRONTEND_DIR = Path(__file__).parent / "frontend"
@@ -46,7 +47,7 @@ class ContactForm(BaseModel):
     subject: Optional[str] = None
     service_type: Optional[str] = None
     # Shared fields
-    email: EmailStr
+    email: str
     phone: Optional[str] = None
     message: str
 
@@ -61,6 +62,14 @@ contacts = []
 
 def normalize_optional(value: Optional[str]) -> Optional[str]:
     return (value or "").strip() or None
+
+
+EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+
+
+def is_valid_email(value: str) -> bool:
+    """Validate emails without requiring pydantic's optional email-validator package."""
+    return bool(EMAIL_RE.fullmatch(value.strip()))
 
 # Page routes
 @app.get("/")
@@ -152,6 +161,8 @@ def submit_contact_form(contact: ContactForm):
     email = str(contact.email).strip()
     if not email:
         raise HTTPException(status_code=422, detail="email is required")
+    if not is_valid_email(email):
+        raise HTTPException(status_code=422, detail="Please enter a valid email address")
 
     full_name = normalize_optional(contact.full_name) or normalize_optional(contact.name)
     if not full_name:

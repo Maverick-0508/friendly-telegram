@@ -255,6 +255,18 @@ For production deployment, see the full [README.md](README.md) for detailed inst
 - HTTPS configuration
 - Database migrations with Alembic
 
+### Contact intake production checks
+
+When frontend contact submissions are not appearing in backend/admin:
+
+1. Verify backend `DATABASE_URL` points to your intended production database.
+2. Verify schema includes the `contacts` table.
+3. Verify incoming requests hit `POST /api/contact` in backend logs.
+4. Verify inserts appear in `contacts` and related work-order/audit records (when intake is enabled).
+5. If database/network is IP-restricted, allow Render outbound CIDRs:
+   - `74.220.48.0/24`
+   - `74.220.56.0/24`
+
 ## Next Steps
 
 1. Explore the interactive API documentation at http://localhost:8000/docs

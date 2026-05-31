@@ -2,8 +2,8 @@
 Application configuration management
 """
 from typing import List
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings
-from pydantic import validator
 
 
 class Settings(BaseSettings):
@@ -20,7 +20,14 @@ class Settings(BaseSettings):
     PORT: int = 8000
     
     # Database
-    DATABASE_URL: str = "sqlite:///./ammowing.db"
+    DATABASE_URL: str = Field(
+        default="sqlite:///./ammowing.db",
+        validation_alias=AliasChoices(
+            "DATABASE_URL",
+            "SUPABASE_DB_URL",
+            "SUPABASE_DATABASE_URL",
+        ),
+    )
     SUPABASE_URL: str = ""
     SUPABASE_ANON_KEY: str = ""
     
