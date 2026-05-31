@@ -111,15 +111,27 @@ def update_work_order(
     # Set lifecycle timestamps automatically
     if "status" in update_data:
         new_status = update_data["status"]
+        # Coerce string values to WorkOrderStatus enum for consistent comparison
+        if isinstance(new_status, str):
+            try:
+                new_status = WorkOrderStatus(new_status)
+                update_data["status"] = new_status
+            except ValueError:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid work order status value.")
 
-        if new_status != wo.status and current_user.role != UserRole.ADMIN:
+        # Allow supervisors and admins to change status; stricter validation
+        # applies only to non-privileged roles (if any reach this endpoint).
+        if new_status != wo.status and current_user.role not in (UserRole.ADMIN, UserRole.SUPERVISOR):
             allowed = ALLOWED_STATUS_TRANSITIONS.get(wo.status, set())
-            if new_status not in allowed:
-                allowed_labels = ", ".join(s.value for s in sorted(allowed, key=lambda x: x.value)) or "none"
+            # Compare by enum value strings to avoid mismatches between str and Enum
+            allowed_values = {s.value for s in allowed}
+            new_status_value = new_status.value if hasattr(new_status, "value") else str(new_status)
+            if new_status_value not in allowed_values:
+                allowed_labels = ", ".join(sorted(allowed_values)) or "none"
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=(
-                        f"Invalid status transition from '{wo.status.value}' to '{new_status.value}'. "
+                        f"Invalid status transition from '{wo.status.value}' to '{new_status_value}'. "
                         f"Allowed next statuses: {allowed_labels}."
                     ),
                 )
