@@ -110,7 +110,7 @@ Use this checklist when contact submissions are not appearing in backend/admin v
    - Ensure Production and Preview environments point to the correct backend deployments.
 
 3. **Validate backend database target**
-   - Ensure Render backend has the correct `DATABASE_URL`.
+   - Ensure Render backend has the correct database connection string via `DATABASE_URL` (or `SUPABASE_DB_URL` / `SUPABASE_DATABASE_URL`).
    - Ensure the `contacts` table exists in that database.
    - Ensure production-like environments are not writing to an unintended local fallback DB.
 
