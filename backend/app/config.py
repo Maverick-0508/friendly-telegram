@@ -2,7 +2,7 @@
 Application configuration management
 """
 from typing import List
-from pydantic import AliasChoices, Field, validator
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings
 
 
