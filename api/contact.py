@@ -94,18 +94,6 @@ def _is_valid_backend_url(url: str) -> bool:
     return parsed.scheme in ("http", "https") and bool(parsed.netloc)
 
 
-def _resolve_cors_origin(origin_header: Optional[str]) -> str:
-    origin = (origin_header or "").strip()
-    if not origin:
-        return "*"
-    if origin == "null":
-        return "null"
-    parsed = urlparse(origin)
-    if parsed.scheme in ("http", "https") and parsed.netloc:
-        return origin
-    return "*"
-
-
 def _extract_error_detail(error_body: bytes) -> str:
     if not error_body:
         return "Contact request could not be delivered to backend."
@@ -226,12 +214,10 @@ def _forward_contact_to_backend(payload: dict):
 
 class ContactHandler(BaseHTTPRequestHandler):
     def _send_cors_headers(self):
-        allowed_origin = _resolve_cors_origin(self.headers.get("Origin"))
-        self.send_header("Access-Control-Allow-Origin", allowed_origin)
+        self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, Accept, Authorization")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Accept")
         self.send_header("Access-Control-Max-Age", "86400")
-        self.send_header("Vary", "Origin")
 
     def _send_json(self, status_code: int, body: dict):
         payload = json.dumps(body).encode("utf-8")
