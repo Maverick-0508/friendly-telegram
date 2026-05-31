@@ -213,13 +213,26 @@ def _forward_contact_to_backend(payload: dict):
 
 
 class ContactHandler(BaseHTTPRequestHandler):
+    def _send_cors_headers(self):
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Accept")
+        self.send_header("Access-Control-Max-Age", "86400")
+
     def _send_json(self, status_code: int, body: dict):
         payload = json.dumps(body).encode("utf-8")
         self.send_response(status_code)
+        self._send_cors_headers()
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(payload)))
         self.end_headers()
         self.wfile.write(payload)
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self._send_cors_headers()
+        self.send_header("Content-Length", "0")
+        self.end_headers()
 
     def do_POST(self):
         try:

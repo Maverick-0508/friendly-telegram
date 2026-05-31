@@ -105,7 +105,7 @@ A comprehensive FastAPI backend for the Lawn Craft professional lawn care websit
 
    Edit `.env` and configure your settings:
    - Set a strong `SECRET_KEY` for JWT
-   - Configure database connection (`DATABASE_URL`)
+   - Configure database connection (`DATABASE_URL`, or Supabase aliases `SUPABASE_DB_URL` / `SUPABASE_DATABASE_URL`)
    - Set up SMTP credentials for email functionality
    - Adjust CORS origins for your frontend
 
