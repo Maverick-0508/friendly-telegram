@@ -1,5 +1,5 @@
 {
-  "cleanUrls": true,
+  "cleanUrls": false,
   "trailingSlash": false,
   "rewrites": [
     { "source": "/", "destination": "/frontend/index.html" },
@@ -12,6 +12,7 @@
     { "source": "/contact.html", "destination": "/frontend/contact.html" },
     { "source": "/insights", "destination": "/frontend/insights.html" },
     { "source": "/process", "destination": "/frontend/process.html" },
+    { "source": "/privacy-policy", "destination": "/frontend/privacy-policy.html" },
     { "source": "/service-area", "destination": "/frontend/service-area.html" },
     { "source": "/services", "destination": "/frontend/services.html" }
   ],
@@ -22,6 +23,7 @@
     { "source": "/contact.html", "destination": "/contact", "permanent": true },
     { "source": "/insights.html", "destination": "/insights", "permanent": true },
     { "source": "/process.html", "destination": "/process", "permanent": true },
+    { "source": "/privacy-policy.html", "destination": "/privacy-policy", "permanent": true },
     { "source": "/service-area.html", "destination": "/service-area", "permanent": true },
     { "source": "/services.html", "destination": "/services", "permanent": true }
   ]
