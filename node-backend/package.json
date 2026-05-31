@@ -1,0 +1,30 @@
+{
+  "name": "lawncraft-backend",
+  "version": "1.0.0",
+  "description": "Express backend for lawncraft.vercel.app with Supabase",
+  "type": "module",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.57.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "pg": "^8.11.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  },
+  "keywords": [
+    "express",
+    "supabase",
+    "backend",
+    "forms"
+  ],
+  "author": "",
+  "license": "MIT"
+}
