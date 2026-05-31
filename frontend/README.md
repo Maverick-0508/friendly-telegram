@@ -14,7 +14,7 @@ A modern static multi-page website for Lawn Craft professional lawn care service
 
 ## Files Structure
 
-```
+```text
 frontend/
 ├── index.html         # Home page
 ├── services.html      # Services page
@@ -73,6 +73,7 @@ python3 -m http.server 8080
 ## Browser Support
 
 The website is compatible with all modern browsers:
+
 - Chrome (latest)
 - Firefox (latest)
 - Safari (latest)
@@ -98,7 +99,6 @@ To connect the frontend to the backend:
 - In Vercel, set `CONTACT_BACKEND_API_URL` to the correct backend environment origin.
 - Remove outdated/conflicting fallback keys unless intentionally used.
 - Verify backend logs receive `POST /api/contact` when submitting the form from production.
-- Verify the contact appears in admin endpoints/dashboard after submission.
 
 ## Customization
 
@@ -126,6 +126,7 @@ To connect the frontend to the backend:
 ## Performance
 
 The website is optimized for performance:
+
 - Preloaded critical assets (fonts, hero image)
 - Optimized images from CDN
 - Minimal JavaScript
