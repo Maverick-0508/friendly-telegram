@@ -1,6 +1,0 @@
--r requirements.txt
-
-# Test runner and HTTP clients used by the backend test suite
-pytest>=8.0,<9.0
-httpx>=0.27,<1.0
-requests>=2.32,<3.0
