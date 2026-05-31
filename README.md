@@ -70,6 +70,17 @@ python3 -m http.server 8080
 
 Then navigate to `http://localhost:8080`
 
+### Connecting the Frontend to the Backend
+
+When the frontend and backend are deployed on different hosts (e.g. frontend on Vercel, backend on Render/Railway/etc.), edit `frontend/config.js` to point at your backend:
+
+```js
+window.LAWNCRAFT_API_BASE = 'https://your-backend-url.example.com/api';
+window.DASHBOARD_API_BASE = 'https://your-backend-url.example.com/api';
+```
+
+`config.js` is automatically loaded before `script.js` and `dashboard.js` on every page. When both variables are left undefined the scripts fall back to auto-detection: same-origin `/api` in production and `http://127.0.0.1:8000/api` in local development.
+
 ### Backend (FastAPI)
 
 See [backend/QUICKSTART.md](backend/QUICKSTART.md) for detailed setup instructions.
