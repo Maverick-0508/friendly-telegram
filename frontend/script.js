@@ -211,14 +211,13 @@ const formError = document.getElementById('formError');
 function resolveApiBase() {
     if (typeof window === 'undefined') return '/api';
     if (window.LAWNCRAFT_API_BASE) return window.LAWNCRAFT_API_BASE;
-    if (window.DASHBOARD_API_BASE) return window.DASHBOARD_API_BASE;
 
     const { protocol, hostname, port } = window.location;
     const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1';
 
-    // When opened as a local file, default to local backend port 8001
-    if (protocol === 'file:') return 'http://127.0.0.1:8001/api';
-    if (isLocalHost && port && port !== '8000') return 'http://127.0.0.1:8000/api';
+    // When opened as a local file, default to the local Node backend port.
+    if (protocol === 'file:') return 'http://127.0.0.1:3001/api';
+    if (isLocalHost && port && port !== '3001') return 'http://127.0.0.1:3001/api';
 
     return '/api';
 }
@@ -230,7 +229,7 @@ function resolveContactSubmitUrl() {
     if (window.LAWNCRAFT_CONTACT_API_URL) return window.LAWNCRAFT_CONTACT_API_URL;
 
     const { protocol } = window.location;
-    if (protocol === 'file:') return 'http://127.0.0.1:8001/api/contact';
+    if (protocol === 'file:') return 'http://127.0.0.1:3001/api/contact';
 
     // Keep contact submission same-origin in deployed environments so Vercel
     // can proxy the request via /api/contact.
@@ -298,9 +297,19 @@ function showFormError(message) {
     formError.style.display = 'flex';
 }
 
+async function parseApiError(response, fallbackMessage) {
+    try {
+        const body = await response.json();
+        return body?.error?.message || body?.detail || fallbackMessage;
+    } catch (_) {
+        return fallbackMessage;
+    }
+}
+
 function buildContactPayload(formData) {
     const contextLines = [];
     if (formData.address) contextLines.push(`Address: ${formData.address}`);
+    if (formData.service) contextLines.push(`Service of Interest: ${formData.service}`);
     if (formData.propertyType) contextLines.push(`Property Type: ${formData.propertyType}`);
     if (formData.preferredDate) contextLines.push(`Preferred Start Date: ${formData.preferredDate}`);
 
@@ -311,13 +320,9 @@ function buildContactPayload(formData) {
         : (contextMessage || 'Website consultation request.');
 
     return {
-        full_name: formData.name.trim(),
+        name: formData.name.trim(),
         email: formData.email.trim(),
         phone: formData.phone.trim(),
-        subject: formData.service
-            ? `Website enquiry - ${formData.service}`
-            : 'Website enquiry',
-        service_type: formData.service || null,
         message,
     };
 }
@@ -486,17 +491,10 @@ if (contactForm && nameInput && emailInput && phoneInput && messageInput) {
             });
 
             if (!response.ok) {
-                let detail = 'We could not submit your request right now. Please try again.';
-                try {
-                    const body = await response.json();
-                    if (body?.detail) {
-                        detail = Array.isArray(body.detail)
-                            ? body.detail.map(item => item.msg || item).join(', ')
-                            : body.detail;
-                    }
-                } catch (_) {
-                    // Keep generic message when response body is not JSON.
-                }
+                const detail = await parseApiError(
+                    response,
+                    'We could not submit your request right now. Please try again.'
+                );
                 throw new Error(detail);
             }
 
@@ -526,9 +524,6 @@ if (contactForm && nameInput && emailInput && phoneInput && messageInput) {
         }
     });
 }
-
-// Add parallax effect to hero section (throttled for performance)
-let ticking = false;
 window.addEventListener('scroll', () => {
     if (!ticking) {
         window.requestAnimationFrame(() => {
@@ -540,7 +535,6 @@ window.addEventListener('scroll', () => {
             }
             ticking = false;
         });
-        ticking = true;
     }
 });
 
