@@ -9,6 +9,7 @@
     { "source": "/assets/:path*", "destination": "/frontend/assets/:path*" },
     { "source": "/about", "destination": "/frontend/about.html" },
     { "source": "/contact", "destination": "/frontend/contact.html" },
+    { "source": "/contact.html", "destination": "/frontend/contact.html" },
     { "source": "/insights", "destination": "/frontend/insights.html" },
     { "source": "/process", "destination": "/frontend/process.html" },
     { "source": "/service-area", "destination": "/frontend/service-area.html" },
