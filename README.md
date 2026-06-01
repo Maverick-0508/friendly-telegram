@@ -30,7 +30,7 @@ Start the frontend with a static file server and the backend with Node:
 
 ```bash
 cd frontend
-python3 -m http.server 8080
+npx serve -l 8080 .
 ```
 
 ```bash
@@ -55,3 +55,5 @@ The frontend contact form submits to `POST /api/contact`. When running locally, 
 ## Notes
 
 The old Python backend has been removed from this repository to avoid collisions with the new Node.js implementation.
+Browser console errors like `ERR_BLOCKED_BY_CLIENT` for external fonts/CDNs are expected in restricted sandbox environments and are not backend failures.
+If you only run a static frontend server, `/api/contact` will fail locally unless the Node backend or a rewrite/proxy layer is running.
