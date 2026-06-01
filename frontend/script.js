@@ -236,7 +236,24 @@ function resolveContactSubmitUrl() {
     return '/api/contact';
 }
 
-const CONTACT_SUBMIT_URL = resolveContactSubmitUrl();
+function getContactSubmitUrl() {
+    const url = resolveContactSubmitUrl();
+
+    if (!url) {
+        return '/api/contact';
+    }
+
+    if (typeof window === 'undefined') {
+        return url;
+    }
+
+    const isAbsoluteUrl = /^https?:\/\//i.test(url);
+    if (!isAbsoluteUrl) {
+        return url.startsWith('/') ? url : `/${url}`;
+    }
+
+    return url;
+}
 
 // Validation functions
 function validateEmail(email) {
@@ -482,7 +499,8 @@ if (contactForm && nameInput && emailInput && phoneInput && messageInput) {
 
         try {
             const payload = buildContactPayload(formData);
-            const response = await fetch(CONTACT_SUBMIT_URL, {
+            const contactSubmitUrl = getContactSubmitUrl();
+            const response = await fetch(contactSubmitUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -493,7 +511,7 @@ if (contactForm && nameInput && emailInput && phoneInput && messageInput) {
             if (!response.ok) {
                 const detail = await parseApiError(
                     response,
-                    'We could not submit your request right now. Please try again.'
+                    `We could not submit your request right now. Please try again. (${contactSubmitUrl})`
                 );
                 throw new Error(detail);
             }
