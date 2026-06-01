@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
+import { once } from 'node:events';
 
 const TEST_PORT = 3101;
 const BASE_URL = `http://127.0.0.1:${TEST_PORT}`;
@@ -47,14 +48,12 @@ test.after(async () => {
 
   serverProcess.kill('SIGTERM');
 
-  await Promise.race([
-    new Promise((resolve) => {
-      serverProcess.once('exit', resolve);
-    }),
-    delay(2000).then(() => {
-      serverProcess.kill('SIGKILL');
-    }),
-  ]);
+  await Promise.race([once(serverProcess, 'exit'), delay(2000)]);
+
+  if (serverProcess.exitCode === null) {
+    serverProcess.kill('SIGKILL');
+    await once(serverProcess, 'exit');
+  }
 });
 
 test('GET /health returns service status', async () => {
