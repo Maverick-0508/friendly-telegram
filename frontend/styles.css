@@ -16,7 +16,7 @@
     --bg-light: #f5f3f0;
     --bg-lighter: #faf8f6;
     --border-light: #e8e3dd;
-    --accent-warm: #d4a574;
+    --accent-warm: #885f33;
     --accent-green: #6b8e6f;
     --error-color: #dc3545;
     --success-color: #28a745;
@@ -383,6 +383,20 @@ a:focus {
     pointer-events: none;
     transition: opacity 0.25s ease, transform 0.25s ease;
     z-index: 1010;
+}
+
+/* When the directory panel is hidden (aria-hidden), remove it from the focus/visual flow
+   This prevents focusable links inside from being reached by keyboard when the panel is closed. */
+.directory-panel[aria-hidden="true"] {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+.directory-panel[aria-hidden="false"] {
+    display: block !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
 }
 
 #main-header.menu-open .directory-panel {
