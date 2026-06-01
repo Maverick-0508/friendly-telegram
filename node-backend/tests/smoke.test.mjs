@@ -48,9 +48,12 @@ test.after(async () => {
 
   serverProcess.kill('SIGTERM');
 
-  await Promise.race([once(serverProcess, 'exit'), delay(2000)]);
+  const raceResult = await Promise.race([
+    once(serverProcess, 'exit').then(() => 'exited'),
+    delay(2000).then(() => 'timeout'),
+  ]);
 
-  if (serverProcess.exitCode === null) {
+  if (raceResult === 'timeout' && serverProcess.exitCode === null) {
     serverProcess.kill('SIGKILL');
     await once(serverProcess, 'exit');
   }
