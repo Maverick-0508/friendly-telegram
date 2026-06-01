@@ -7,11 +7,14 @@ import { once } from 'node:events';
 
 const TEST_PORT = 3101;
 const BASE_URL = `http://127.0.0.1:${TEST_PORT}`;
+const MAX_STARTUP_RETRIES = 20;
+const RETRY_DELAY_MS = 250;
+const GRACEFUL_SHUTDOWN_TIMEOUT_MS = 2000;
 
 let serverProcess;
 
 async function waitForServerReady() {
-  for (let attempt = 0; attempt < 20; attempt += 1) {
+  for (let attempt = 0; attempt < MAX_STARTUP_RETRIES; attempt += 1) {
     try {
       const response = await fetch(`${BASE_URL}/health`);
       if (response.ok) {
@@ -21,7 +24,7 @@ async function waitForServerReady() {
       // Server has not started yet.
     }
 
-    await delay(250);
+    await delay(RETRY_DELAY_MS);
   }
 
   throw new Error('Backend server did not start in time.');
@@ -50,7 +53,7 @@ test.after(async () => {
 
   const raceResult = await Promise.race([
     once(serverProcess, 'exit').then(() => 'exited'),
-    delay(2000).then(() => 'timeout'),
+    delay(GRACEFUL_SHUTDOWN_TIMEOUT_MS).then(() => 'timeout'),
   ]);
 
   if (raceResult === 'timeout' && serverProcess.exitCode === null) {
