@@ -228,6 +228,11 @@ function resolveContactSubmitUrl() {
     if (typeof window === 'undefined') return '/api/contact';
     if (window.LAWNCRAFT_CONTACT_API_URL) return window.LAWNCRAFT_CONTACT_API_URL;
 
+    const apiBase = resolveApiBase();
+    if (apiBase) {
+        return apiBase.endsWith('/') ? `${apiBase}contact` : `${apiBase}/contact`;
+    }
+
     const { protocol } = window.location;
     if (protocol === 'file:') return 'http://127.0.0.1:3001/api/contact';
 
