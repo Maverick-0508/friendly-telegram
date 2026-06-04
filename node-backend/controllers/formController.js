@@ -8,7 +8,7 @@ function normalizeText(value) {
 }
 
 function validateContactPayload(payload) {
-  const name = normalizeText(payload?.name);
+  const name = normalizeText(payload?.name || payload?.full_name);
   const email = normalizeText(payload?.email);
   const phone = normalizeText(payload?.phone);
   const message = normalizeText(payload?.message);
