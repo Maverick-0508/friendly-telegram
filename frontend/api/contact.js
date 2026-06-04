@@ -3,7 +3,7 @@ function normalizeText(value) {
 }
 
 function validateContactPayload(payload) {
-  const name = normalizeText(payload?.name);
+  const name = normalizeText(payload?.name || payload?.full_name);
   const email = normalizeText(payload?.email);
   const phone = normalizeText(payload?.phone);
   const message = normalizeText(payload?.message);
@@ -42,7 +42,7 @@ function validateContactPayload(payload) {
 }
 
 function resolveBackendContactUrl() {
-  const candidate =
+  let candidate =
     process.env.CONTACT_BACKEND_API_URL ||
     process.env.AUTOMATIC_SPOON_API_URL ||
     process.env.AUTOMATIC_SPOON_BACKEND_URL ||
@@ -52,11 +52,17 @@ function resolveBackendContactUrl() {
     return null;
   }
 
-  if (/\/api\/contact\/?$/i.test(candidate)) {
-    return candidate.replace(/\/$/, '');
+  candidate = candidate.trim().replace(/\/$/, '');
+
+  if (/\/api\/contact$/i.test(candidate)) {
+    return candidate;
   }
 
-  return `${candidate.replace(/\/$/, '')}/api/contact`;
+  if (/\/api$/i.test(candidate)) {
+    return `${candidate}/contact`;
+  }
+
+  return `${candidate}/api/contact`;
 }
 
 function resolveSupabaseConfig() {
