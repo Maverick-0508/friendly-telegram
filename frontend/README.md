@@ -53,7 +53,7 @@ serve the `frontend/` directory with any static server:
 
 ```bash
 cd frontend
-python3 -m http.server 8080
+npx serve -l 8080 .
 # Then open http://localhost:8080/index.html
 ```
 
@@ -81,11 +81,11 @@ The website is compatible with all modern browsers:
 
 ## Integration with Backend
 
-The frontend is designed to work with the FastAPI backend located in the `../backend` directory.
+The frontend is designed to work with the Node.js backend located in the `../node-backend` directory.
 
 To connect the frontend to the backend:
 
-1. Start the backend server (see `../backend/README.md`)
+1. Start the backend server (see `../README.md`)
 2. The browser-side frontend scripts call `/api/...` on the same origin.
 3. In Vercel, configure the API forwarding function (`/api/contact`) with one of:
    - `CONTACT_BACKEND_API_URL` (preferred)
@@ -99,6 +99,8 @@ To connect the frontend to the backend:
 - In Vercel, set `CONTACT_BACKEND_API_URL` to the correct backend environment origin.
 - Remove outdated/conflicting fallback keys unless intentionally used.
 - Verify backend logs receive `POST /api/contact` when submitting the form from production.
+- `ERR_BLOCKED_BY_CLIENT` for Google Fonts/CDNs in sandboxed browsers can be ignored.
+- A local static frontend server without backend/rewrite support is expected to fail on `/api/contact`.
 
 ## Customization
 

@@ -260,6 +260,12 @@ function getContactSubmitUrl() {
     return url;
 }
 
+function resolveAnalyticsEndpoint() {
+    if (typeof window === 'undefined') return '';
+    if (window.LAWNCRAFT_ANALYTICS_URL) return window.LAWNCRAFT_ANALYTICS_URL;
+    return '';
+}
+
 // Validation functions
 function validateEmail(email) {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -547,8 +553,10 @@ if (contactForm && nameInput && emailInput && phoneInput && messageInput) {
         }
     });
 }
+let ticking = false;
 window.addEventListener('scroll', () => {
     if (!ticking) {
+        ticking = true;
         window.requestAnimationFrame(() => {
             const scrolled = window.pageYOffset;
             const heroBackground = document.querySelector('.hero-background');
@@ -1052,8 +1060,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const [perf] = performance.getEntriesByType("navigation");
     
     // Send performance and hardware analytics
-    if (perf) {
-        fetch('https://dash.cloudflare.com/e81c2b492502fc5e4fe0cd0b992c7c8c/workers/services/view/divine-smoke-7e2b/production', {
+    const analyticsEndpoint = resolveAnalyticsEndpoint();
+    if (perf && analyticsEndpoint) {
+        fetch(analyticsEndpoint, {
             method: 'POST',
             body: JSON.stringify({ 
                 page: window.location.pathname,
