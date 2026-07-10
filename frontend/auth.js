@@ -8,9 +8,9 @@
     if (typeof window === 'undefined') return '/api';
     if (window.LAWNCRAFT_API_BASE) return window.LAWNCRAFT_API_BASE;
 
-    const { protocol, hostname, port } = window.location;
+    const { protocol, hostname } = window.location;
     if (protocol === 'file:') return 'http://127.0.0.1:3001/api';
-    if ((hostname === 'localhost' || hostname === '127.0.0.1') && port && port !== '3001') {
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
       return 'http://127.0.0.1:3001/api';
     }
     return '/api';
@@ -59,15 +59,26 @@
       return res.json();
     }
     const text = await res.text();
-    throw new Error(`Unexpected response from server (status ${res.status})`);
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const hint = isLocalhost
+      ? ' Make sure the backend server is running on http://127.0.0.1:3001'
+      : '';
+    throw new Error(`Server returned an error page (status ${res.status}).${hint}`);
   }
 
   async function apiPost(path, body) {
-    const res = await fetch(`${API_BASE}${path}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+    let res;
+    try {
+      res = await fetch(`${API_BASE}${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    } catch {
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const hint = isLocalhost ? ' Make sure the backend server is running on http://127.0.0.1:3001' : '';
+      throw new Error(`Could not reach the server.${hint}`);
+    }
     const data = await parseJsonSafe(res);
     if (!res.ok) {
       const msg = data?.error?.message || data?.detail || 'Something went wrong';
@@ -81,7 +92,14 @@
     const headers = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const res = await fetch(`${API_BASE}${path}`, { headers });
+    let res;
+    try {
+      res = await fetch(`${API_BASE}${path}`, { headers });
+    } catch {
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const hint = isLocalhost ? ' Make sure the backend server is running on http://127.0.0.1:3001' : '';
+      throw new Error(`Could not reach the server.${hint}`);
+    }
     const data = await parseJsonSafe(res);
     if (!res.ok) {
       const msg = data?.error?.message || data?.detail || 'Something went wrong';
