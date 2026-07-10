@@ -94,7 +94,12 @@
 
                         <div class="form-group">
                             <label for="password">Password <span class="required-indicator" aria-label="required">*</span></label>
-                            <input type="password" id="password" name="password" placeholder="Enter your password" required aria-required="true" autocomplete="current-password" minlength="6">
+                            <div class="password-wrapper">
+                                <input type="password" id="password" name="password" placeholder="Enter your password" required aria-required="true" autocomplete="current-password" minlength="6">
+                                <button type="button" class="password-toggle" aria-label="Show password" tabindex="-1">
+                                    <i class="fa-regular fa-eye"></i>
+                                </button>
+                            </div>
                             <span class="error-message" role="alert"></span>
                         </div>
 
