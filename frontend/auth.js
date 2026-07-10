@@ -112,6 +112,64 @@
     return !!getStoredToken();
   }
 
+  // ── Password visibility toggle ──
+
+  function setupPasswordToggles() {
+    document.querySelectorAll('.password-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const input = btn.parentElement.querySelector('input');
+        if (!input) return;
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+        btn.innerHTML = isPassword
+          ? '<i class="fa-regular fa-eye-slash"></i>'
+          : '<i class="fa-regular fa-eye"></i>';
+      });
+    });
+  }
+
+  // ── Inline validation helpers ──
+
+  function validateEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  function showFieldError(input, message) {
+    const formGroup = input.closest('.form-group');
+    if (!formGroup) return;
+    const errorSpan = formGroup.querySelector('.error-message');
+    formGroup.classList.add('error');
+    formGroup.classList.remove('success');
+    if (errorSpan) {
+      errorSpan.textContent = message;
+      errorSpan.classList.add('show');
+    }
+  }
+
+  function showFieldSuccess(input) {
+    const formGroup = input.closest('.form-group');
+    if (!formGroup) return;
+    const errorSpan = formGroup.querySelector('.error-message');
+    formGroup.classList.remove('error');
+    formGroup.classList.add('success');
+    if (errorSpan) {
+      errorSpan.textContent = '';
+      errorSpan.classList.remove('show');
+    }
+  }
+
+  function clearFieldValidation(input) {
+    const formGroup = input.closest('.form-group');
+    if (!formGroup) return;
+    const errorSpan = formGroup.querySelector('.error-message');
+    formGroup.classList.remove('error', 'success');
+    if (errorSpan) {
+      errorSpan.textContent = '';
+      errorSpan.classList.remove('show');
+    }
+  }
+
   // ── Form handlers ──
 
   function setupLoginForm() {
@@ -123,6 +181,39 @@
     const formError = document.getElementById('formError');
     const formSuccess = document.getElementById('formSuccess');
     const submitBtn = form.querySelector('button[type="submit"]');
+
+    emailInput.addEventListener('blur', () => {
+      const val = emailInput.value.trim();
+      if (!val) {
+        showFieldError(emailInput, 'Email is required');
+      } else if (!validateEmail(val)) {
+        showFieldError(emailInput, 'Please enter a valid email address');
+      } else {
+        showFieldSuccess(emailInput);
+      }
+    });
+
+    emailInput.addEventListener('input', () => {
+      if (validateEmail(emailInput.value.trim())) {
+        clearFieldValidation(emailInput);
+      }
+    });
+
+    passwordInput.addEventListener('blur', () => {
+      if (!passwordInput.value) {
+        showFieldError(passwordInput, 'Password is required');
+      } else if (passwordInput.value.length < 6) {
+        showFieldError(passwordInput, 'Password must be at least 6 characters');
+      } else {
+        showFieldSuccess(passwordInput);
+      }
+    });
+
+    passwordInput.addEventListener('input', () => {
+      if (passwordInput.value.length >= 6) {
+        clearFieldValidation(passwordInput);
+      }
+    });
 
     function showError(message) {
       if (!formError) return;
@@ -138,10 +229,13 @@
       const email = emailInput.value.trim();
       const password = passwordInput.value;
 
-      if (!email || !password) {
-        showError('Please fill in all fields');
-        return;
-      }
+      let valid = true;
+      if (!email) { showFieldError(emailInput, 'Email is required'); valid = false; }
+      else if (!validateEmail(email)) { showFieldError(emailInput, 'Please enter a valid email address'); valid = false; }
+      if (!password) { showFieldError(passwordInput, 'Password is required'); valid = false; }
+      else if (password.length < 6) { showFieldError(passwordInput, 'Password must be at least 6 characters'); valid = false; }
+
+      if (!valid) return;
 
       submitBtn.classList.add('loading');
       submitBtn.disabled = true;
@@ -174,6 +268,55 @@
     const formSuccess = document.getElementById('formSuccess');
     const submitBtn = form.querySelector('button[type="submit"]');
 
+    nameInput.addEventListener('blur', () => {
+      if (!nameInput.value.trim()) {
+        showFieldError(nameInput, 'Name is required');
+      } else if (nameInput.value.trim().length < 2) {
+        showFieldError(nameInput, 'Name must be at least 2 characters');
+      } else {
+        showFieldSuccess(nameInput);
+      }
+    });
+
+    nameInput.addEventListener('input', () => {
+      if (nameInput.value.trim().length >= 2) {
+        clearFieldValidation(nameInput);
+      }
+    });
+
+    emailInput.addEventListener('blur', () => {
+      const val = emailInput.value.trim();
+      if (!val) {
+        showFieldError(emailInput, 'Email is required');
+      } else if (!validateEmail(val)) {
+        showFieldError(emailInput, 'Please enter a valid email address');
+      } else {
+        showFieldSuccess(emailInput);
+      }
+    });
+
+    emailInput.addEventListener('input', () => {
+      if (validateEmail(emailInput.value.trim())) {
+        clearFieldValidation(emailInput);
+      }
+    });
+
+    passwordInput.addEventListener('blur', () => {
+      if (!passwordInput.value) {
+        showFieldError(passwordInput, 'Password is required');
+      } else if (passwordInput.value.length < 6) {
+        showFieldError(passwordInput, 'Password must be at least 6 characters');
+      } else {
+        showFieldSuccess(passwordInput);
+      }
+    });
+
+    passwordInput.addEventListener('input', () => {
+      if (passwordInput.value.length >= 6) {
+        clearFieldValidation(passwordInput);
+      }
+    });
+
     function showError(message) {
       if (!formError) return;
       formError.textContent = message;
@@ -189,15 +332,15 @@
       const email = emailInput.value.trim();
       const password = passwordInput.value;
 
-      if (!name || !email || !password) {
-        showError('Please fill in all fields');
-        return;
-      }
+      let valid = true;
+      if (!name) { showFieldError(nameInput, 'Name is required'); valid = false; }
+      else if (name.length < 2) { showFieldError(nameInput, 'Name must be at least 2 characters'); valid = false; }
+      if (!email) { showFieldError(emailInput, 'Email is required'); valid = false; }
+      else if (!validateEmail(email)) { showFieldError(emailInput, 'Please enter a valid email address'); valid = false; }
+      if (!password) { showFieldError(passwordInput, 'Password is required'); valid = false; }
+      else if (password.length < 6) { showFieldError(passwordInput, 'Password must be at least 6 characters'); valid = false; }
 
-      if (password.length < 6) {
-        showError('Password must be at least 6 characters');
-        return;
-      }
+      if (!valid) return;
 
       submitBtn.classList.add('loading');
       submitBtn.disabled = true;
@@ -315,8 +458,15 @@
 
   // ── Init ──
 
+  function setCurrentYear() {
+    const el = document.getElementById('currentYear');
+    if (el) el.textContent = new Date().getFullYear();
+  }
+
   function init() {
     if (redirectIfAuthed()) return;
+    setCurrentYear();
+    setupPasswordToggles();
     injectAuthNav();
     injectDirectoryAuth();
     setupLoginForm();
