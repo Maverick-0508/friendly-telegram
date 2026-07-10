@@ -53,13 +53,22 @@
     }
   }
 
+  async function parseJsonSafe(res) {
+    const ct = res.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+      return res.json();
+    }
+    const text = await res.text();
+    throw new Error(`Unexpected response from server (status ${res.status})`);
+  }
+
   async function apiPost(path, body) {
     const res = await fetch(`${API_BASE}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    const data = await res.json();
+    const data = await parseJsonSafe(res);
     if (!res.ok) {
       const msg = data?.error?.message || data?.detail || 'Something went wrong';
       throw new Error(msg);
@@ -73,7 +82,7 @@
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
     const res = await fetch(`${API_BASE}${path}`, { headers });
-    const data = await res.json();
+    const data = await parseJsonSafe(res);
     if (!res.ok) {
       const msg = data?.error?.message || data?.detail || 'Something went wrong';
       throw new Error(msg);
