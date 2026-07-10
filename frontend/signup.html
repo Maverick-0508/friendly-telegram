@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Create a Lawn Craft account to save your preferences and manage bookings.">
+    <title>Sign Up | Lawn Craft</title>
+
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <header id="main-header">
+        <div class="header-container">
+            <a href="/" class="logo-link">
+                <img src="/assets/images/lawn-craft.png" alt="Lawn Craft Logo" class="logo-image">
+                <span class="logo-text">Lawn Craft</span>
+            </a>
+            <nav class="nav-menu">
+                <ul class="nav-links">
+                    <li><a href="/">Home</a></li>
+                    <li><a href="services.html">Services</a></li>
+                    <li><a href="insights.html">Insights</a></li>
+                    <li><a href="contact.html">Contact Us</a></li>
+                    <li><a href="login.html" class="nav-auth-link">Sign In</a></li>
+                </ul>
+            </nav>
+            <button class="menu-toggle directory-toggle" type="button" aria-expanded="false" aria-controls="directory-panel" aria-label="Open menu">
+                <span>Menu</span>
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="directory-panel" id="directory-panel" aria-hidden="true">
+                <div class="directory-grid">
+                    <div class="directory-column">
+                        <h3>Company</h3>
+                        <a href="about.html">About Us</a>
+                        <a href="process.html">Our Process</a>
+                    </div>
+                    <div class="directory-column">
+                        <h3>Operations</h3>
+                        <a href="service-area.html">Service Area</a>
+                        <a href="contact.html">Book Consultation</a>
+                    </div>
+                    <div class="directory-column">
+                        <h3>Resources</h3>
+                        <a href="/frontend/property-check-guide.docx" download="property-check-guide.docx">Property Check Guide</a>
+                        <a href="/#faq">FAQ</a>
+                    </div>
+                    <div class="directory-column directory-mobile-nav">
+                        <h3>Navigate</h3>
+                        <a href="/">Home</a>
+                        <a href="services.html">Services</a>
+                        <a href="insights.html">Insights</a>
+                        <a href="contact.html">Contact Us</a>
+                    </div>
+                </div>
+            </div>
+            <div class="socials">
+                <a href="https://www.instagram.com/_lawncraft?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noopener noreferrer" title="Visit our Instagram page"><i class="fa-brands fa-instagram"></i></a>
+                <a href="https://www.facebook.com/lawncraft_lawn_care" target="_blank" rel="noopener noreferrer" title="Visit our Facebook page"><i class="fa-brands fa-facebook"></i></a>
+                <a href="https://www.linkedin.com/company/lawn-craft-lawn-care" target="_blank" rel="noopener noreferrer" title="Visit our LinkedIn page"><i class="fa-brands fa-linkedin"></i></a>
+                <a href="https://www.tiktok.com/@lawncraft_lawn_care?is_from_webapp=1&sender_device=pc" target="_blank" rel="noopener noreferrer" title="Visit our TikTok page"><i class="fa-brands fa-tiktok"></i></a>
+            </div>
+        </div>
+    </header>
+
+    <main id="main-content" class="page-main">
+        <section class="page-hero">
+            <div class="container">
+                <h1>Create Your Account</h1>
+                <p>Join Lawn Craft to save your preferences, manage bookings, and get personalized service.</p>
+            </div>
+        </section>
+
+        <section class="auth-section">
+            <div class="container">
+                <div class="auth-card">
+                    <div class="auth-header">
+                        <h2 class="auth-title">Sign Up</h2>
+                        <p class="auth-subtitle">Already have an account? <a href="login.html">Sign in</a></p>
+                    </div>
+
+                    <form class="auth-form" id="signupForm" novalidate>
+                        <div class="form-group">
+                            <label for="fullName">Full Name <span class="required-indicator" aria-label="required">*</span></label>
+                            <input type="text" id="fullName" name="fullName" placeholder="e.g. Jane Wanjiku" required aria-required="true" autocomplete="name">
+                            <span class="error-message" role="alert"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Email Address <span class="required-indicator" aria-label="required">*</span></label>
+                            <input type="email" id="email" name="email" placeholder="e.g. jane@example.com" required aria-required="true" autocomplete="email">
+                            <span class="error-message" role="alert"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password">Password <span class="required-indicator" aria-label="required">*</span></label>
+                            <input type="password" id="password" name="password" placeholder="At least 6 characters" required aria-required="true" autocomplete="new-password" minlength="6">
+                            <span class="error-message" role="alert"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-full">
+                            <span class="btn-text">Create Account</span>
+                            <span class="btn-loader"></span>
+                        </button>
+                    </form>
+
+                    <div id="formSuccess" class="form-message success" role="status" aria-live="polite">
+                        <svg class="success-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>Account created! Redirecting to sign in...</span>
+                    </div>
+                    <div id="formError" class="form-message error" role="alert" aria-live="assertive"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <span class="logo-text">Lawn Craft</span>
+                    </div>
+                    <p class="footer-tagline">Excellence in Lawn Care</p>
+                </div>
+                <div class="footer-section">
+                    <h3 class="footer-title">Services</h3>
+                    <ul class="footer-links">
+                        <li><a href="services.html">Lawn Mowing</a></li>
+                        <li><a href="services.html">Landscape Design</a></li>
+                        <li><a href="services.html">Seasonal Maintenance</a></li>
+                        <li><a href="services.html">Property Management</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3 class="footer-title">Company</h3>
+                    <ul class="footer-links">
+                        <li><a href="about.html">About Us</a></li>
+                        <li><a href="insights.html">Insights</a></li>
+                        <li><a href="process.html">Our Process</a></li>
+                        <li><a href="contact.html">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3 class="footer-title">Connect</h3>
+                    <ul class="footer-links">
+                        <li><a href="https://www.linkedin.com/company/lawn-craft-lawn-care" target="_blank" rel="noopener noreferrer" aria-label="Visit our LinkedIn page">LinkedIn</a></li>
+                        <li><a href="https://www.facebook.com/lawncraft_lawn_care" target="_blank" rel="noopener noreferrer" aria-label="Visit our Facebook page">Facebook</a></li>
+                        <li><a href="https://www.instagram.com/_lawncraft?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noopener noreferrer" aria-label="Visit our Instagram page">Instagram</a></li>
+                        <li><a href="https://www.tiktok.com/@lawncraft_lawn_care?is_from_webapp=1&sender_device=pc" target="_blank" rel="noopener noreferrer" aria-label="Visit our TikTok page">TikTok</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; <span id="currentYear"></span> Lawn Craft. All rights reserved.</p>
+                <div class="footer-legal">
+                    <a href="/privacy-policy">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/auth.js"></script>
+    <script src="/script.js"></script>
+</body>
+</html>
