@@ -14,7 +14,11 @@
     { "source": "/process", "destination": "/frontend/process.html" },
     { "source": "/privacy-policy", "destination": "/frontend/privacy-policy.html" },
     { "source": "/service-area", "destination": "/frontend/service-area.html" },
-    { "source": "/services", "destination": "/frontend/services.html" }
+    { "source": "/services", "destination": "/frontend/services.html" },
+    { "source": "/login", "destination": "/frontend/login.html" },
+    { "source": "/signup", "destination": "/frontend/signup.html" },
+    { "source": "/login.html", "destination": "/frontend/login.html" },
+    { "source": "/signup.html", "destination": "/frontend/signup.html" }
   ],
   "redirects": [
     { "source": "/home", "destination": "/", "permanent": true },
