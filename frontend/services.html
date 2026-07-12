@@ -7,6 +7,9 @@
     <title>Services | Lawn Craft</title>
 
     <link rel="stylesheet" href="/styles.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <link rel="apple-touch-icon" href="/assets/icons/icon-192.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
@@ -215,5 +218,6 @@
                 keepalive: true
             });
         </script>
+    <script>if('serviceWorker'in navigator){navigator.serviceWorker.register('/sw.js')}</script>
 </body>
 </html>
