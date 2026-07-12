@@ -1,0 +1,30 @@
+{
+  "name": "Lawn Craft - Lawn Bliss",
+  "short_name": "Lawn Craft",
+  "description": "Professional lawn care and mowing services for residential and commercial properties in Nairobi, Kenya.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4CAF50",
+  "orientation": "portrait-primary",
+  "categories": ["lifestyle", "utilities"],
+  "lang": "en-KE",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/assets/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false,
+  "related_applications": []
+}
