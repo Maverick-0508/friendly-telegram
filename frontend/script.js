@@ -643,18 +643,6 @@ buttons.forEach(button => {
     });
 });
 
-// Add CSS for ripple animation
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes ripple {
-        to {
-            transform: scale(2);
-            opacity: 0;
-        }
-    }
-`;
-document.head.appendChild(style);
-
 // Lazy loading for images (if images are added in the future)
 if ('IntersectionObserver' in window) {
     const imageObserver = new IntersectionObserver((entries) => {
