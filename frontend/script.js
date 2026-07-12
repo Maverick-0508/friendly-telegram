@@ -847,7 +847,7 @@ function initServiceAreaMap() {
         });
         const marker = L.marker([area.lat, area.lng], { icon: areaIcon }).addTo(map);
         marker.bindPopup(
-            `<strong>${area.name}</strong><br>Within our service area. <a href="contact.html">Book a service</a>.`
+            `<strong>${area.name}</strong><br>Within our service area. <a href="/contact">Book a service</a>.`
         );
         marker.on('click', () => {
             if (zipInput) {
