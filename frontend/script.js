@@ -1058,4 +1058,74 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     console.log('Lawn Craft website loaded successfully!');
+
+    // PWA Install Banner
+    (function () {
+        const DISMISSED_KEY = 'lawn-craft-install-dismissed';
+        if (localStorage.getItem(DISMISSED_KEY) === '1') return;
+
+        let deferredPrompt = null;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            showInstallBanner();
+        });
+
+        function showInstallBanner() {
+            if (document.getElementById('install-banner')) return;
+
+            const banner = document.createElement('div');
+            banner.id = 'install-banner';
+            banner.className = 'install-banner';
+            banner.setAttribute('role', 'complementary');
+            banner.setAttribute('aria-label', 'Install Lawn Craft app');
+            banner.innerHTML = `
+                <div class="install-banner-icon">
+                    <img src="/assets/icons/icon-192.svg" alt="" width="40" height="40">
+                </div>
+                <div class="install-banner-text">
+                    <strong>Install Lawn Craft</strong>
+                    <span>Add to your home screen for quick access</span>
+                </div>
+                <div class="install-banner-actions">
+                    <button class="btn-install" type="button">Install</button>
+                    <button class="btn-dismiss" type="button" aria-label="Dismiss install prompt">&times;</button>
+                </div>
+            `;
+            document.body.appendChild(banner);
+
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    banner.classList.add('visible');
+                });
+            });
+
+            banner.querySelector('.btn-install').addEventListener('click', async () => {
+                if (!deferredPrompt) return;
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    banner.classList.remove('visible');
+                    setTimeout(() => banner.remove(), 400);
+                }
+                deferredPrompt = null;
+            });
+
+            banner.querySelector('.btn-dismiss').addEventListener('click', () => {
+                localStorage.setItem(DISMISSED_KEY, '1');
+                banner.classList.remove('visible');
+                setTimeout(() => banner.remove(), 400);
+            });
+        }
+
+        window.addEventListener('appinstalled', () => {
+            deferredPrompt = null;
+            const banner = document.getElementById('install-banner');
+            if (banner) {
+                banner.classList.remove('visible');
+                setTimeout(() => banner.remove(), 400);
+            }
+        });
+    })();
 });
