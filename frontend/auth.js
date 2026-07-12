@@ -379,7 +379,7 @@
         if (formSuccess) formSuccess.style.display = 'flex';
         form.style.display = 'none';
         setTimeout(() => {
-          window.location.href = '/login.html';
+          window.location.href = '/login';
         }, 1500);
       } catch (err) {
         submitBtn.classList.remove('loading');
@@ -425,7 +425,7 @@
       });
     } else {
       a.textContent = 'Sign In';
-      a.href = '/login.html';
+      a.href = '/login';
     }
 
     li.appendChild(a);
@@ -461,8 +461,8 @@
     } else {
       col.innerHTML = `
         <h3>Account</h3>
-        <a href="/login.html">Sign In</a>
-        <a href="/signup.html">Create Account</a>
+        <a href="/login">Sign In</a>
+        <a href="/signup">Create Account</a>
       `;
     }
 
