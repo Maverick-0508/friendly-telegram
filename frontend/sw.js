@@ -1,8 +1,13 @@
-const CACHE = 'lawncraft-v1';
+const CACHE = 'lawncraft-v2';
 
 const PRECACHE_URLS = [
   '/',
   '/styles.css',
+  '/script.js',
+  '/auth.js',
+  '/manifest.json',
+  '/assets/icons/icon-192.png',
+  '/assets/icons/icon-512.png',
   '/offline.html',
 ];
 
