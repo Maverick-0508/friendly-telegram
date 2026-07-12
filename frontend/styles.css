@@ -2628,3 +2628,113 @@ section {
         padding: 0.8rem 1.1rem;
     }
 }
+
+/* PWA Install Banner */
+.install-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--navy-primary, #1a2a3a);
+    color: #fff;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    z-index: 1000;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.install-banner.visible {
+    transform: translateY(0);
+}
+
+.install-banner-icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+}
+
+.install-banner-icon img {
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+}
+
+.install-banner-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.install-banner-text strong {
+    display: block;
+    font-size: 0.95rem;
+    margin-bottom: 0.15rem;
+}
+
+.install-banner-text span {
+    display: block;
+    font-size: 0.8rem;
+    opacity: 0.8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.install-banner-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.install-banner .btn-install {
+    background: var(--green-primary, #4CAF50);
+    color: #fff;
+    border: none;
+    padding: 0.55rem 1.1rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s;
+}
+
+.install-banner .btn-install:hover {
+    background: var(--green-dark, #388E3C);
+}
+
+.install-banner .btn-dismiss {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.install-banner .btn-dismiss:hover {
+    color: #fff;
+}
+
+@media (max-width: 480px) {
+    .install-banner {
+        flex-wrap: wrap;
+        padding: 0.85rem 1rem;
+    }
+
+    .install-banner-text span {
+        font-size: 0.75rem;
+    }
+
+    .install-banner .btn-install {
+        flex: 1;
+        text-align: center;
+        padding: 0.6rem 1rem;
+    }
+}
