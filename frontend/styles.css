@@ -2283,3 +2283,348 @@ section {
         justify-content: center;
     }
 }
+
+/* Process page */
+.process-hero {
+    background: linear-gradient(135deg, #1a3a1a 0%, #2d5a27 60%, #3a7a30 100%);
+    padding: 100px 0 60px;
+    text-align: center;
+    color: #fff;
+}
+
+.process-hero h1 {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 900;
+    margin-bottom: 1rem;
+}
+
+.process-hero p {
+    font-size: 1.15rem;
+    opacity: 0.88;
+    max-width: 640px;
+    margin: 0 auto 2rem;
+}
+
+.process-hero .btn-download {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    background: #fff;
+    color: #1a3a1a;
+    font-weight: 700;
+    padding: 0.85rem 2rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 1rem;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.process-hero .btn-download:hover {
+    background: #e8f5e9;
+    transform: translateY(-2px);
+}
+
+.workflow {
+    padding: 70px 0;
+    background: #f9fafb;
+}
+
+.workflow .section-header {
+    margin-bottom: 3rem;
+}
+
+.steps-list {
+    display: grid;
+    gap: 1.5rem;
+    max-width: 860px;
+    margin: 0 auto;
+}
+
+.step-item {
+    display: flex;
+    gap: 1.5rem;
+    background: #fff;
+    border-radius: 8px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    align-items: flex-start;
+}
+
+.step-number {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    background: #2d5a27;
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 1.1rem;
+}
+
+.step-body h3 {
+    margin: 0 0 0.4rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1a3a1a;
+}
+
+.step-body p {
+    margin: 0;
+    color: #555;
+    line-height: 1.6;
+}
+
+.decision-guide {
+    padding: 70px 0;
+}
+
+.decision-table-wrap {
+    overflow-x: auto;
+}
+
+.decision-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.decision-table th {
+    background: #2d5a27;
+    color: #fff;
+    padding: 0.85rem 1.2rem;
+    text-align: left;
+    font-weight: 700;
+}
+
+.decision-table td {
+    padding: 0.75rem 1.2rem;
+    border-bottom: 1px solid #e5e7eb;
+    color: #374151;
+    vertical-align: top;
+}
+
+.decision-table tr:nth-child(even) td {
+    background: #f3f7f1;
+}
+
+.badge-diy {
+    display: inline-block;
+    background: #dbeafe;
+    color: #1d4ed8;
+    border-radius: 12px;
+    padding: 0.2rem 0.7rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.badge-expert {
+    display: inline-block;
+    background: #dcfce7;
+    color: #166534;
+    border-radius: 12px;
+    padding: 0.2rem 0.7rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.pros-cons {
+    padding: 70px 0;
+    background: #f9fafb;
+}
+
+.pros-cons-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    max-width: 900px;
+    margin: 2.5rem auto 0;
+}
+
+.pc-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 2rem;
+    box-shadow: 0 2px 14px rgba(0,0,0,0.07);
+}
+
+.pc-card h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.15rem;
+    font-weight: 800;
+    margin-bottom: 1.2rem;
+    color: #1a3a1a;
+}
+
+.pc-heading-icon {
+    color: #2d5a27;
+}
+
+.pc-label {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-bottom: 1rem;
+}
+
+.pc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.2rem;
+}
+
+.pc-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    margin-bottom: 0.6rem;
+    font-size: 0.95rem;
+    color: #374151;
+}
+
+.icon-pro {
+    color: #16a34a;
+    flex-shrink: 0;
+}
+
+.icon-con {
+    color: #dc2626;
+    flex-shrink: 0;
+}
+
+.expert-cta {
+    padding: 70px 0;
+    text-align: center;
+    background: linear-gradient(135deg, #2d5a27 0%, #3a7a30 100%);
+    color: #fff;
+}
+
+.expert-cta h2 {
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 900;
+    margin-bottom: 1rem;
+}
+
+.expert-cta p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    max-width: 580px;
+    margin: 0 auto 2rem;
+}
+
+.expert-cta-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.btn-white {
+    background: #fff;
+    color: #1a3a1a;
+    font-weight: 700;
+    padding: 0.85rem 2rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 1rem;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.btn-white:hover {
+    background: #e8f5e9;
+    transform: translateY(-2px);
+}
+
+.btn-outline-white {
+    background: transparent;
+    color: #fff;
+    font-weight: 700;
+    padding: 0.85rem 2rem;
+    border-radius: 4px;
+    border: 2px solid #fff;
+    text-decoration: none;
+    font-size: 1rem;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.btn-outline-white:hover {
+    background: rgba(255,255,255,0.15);
+    transform: translateY(-2px);
+}
+
+.cta-icon {
+    margin-right: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .process-hero {
+        padding: 90px 0 50px;
+    }
+
+    .process-hero p {
+        font-size: 1rem;
+    }
+
+    .process-hero .btn-download {
+        width: 100%;
+        justify-content: center;
+        padding: 0.85rem 1.2rem;
+    }
+
+    .workflow,
+    .decision-guide,
+    .pros-cons,
+    .expert-cta {
+        padding: 52px 0;
+    }
+
+    .step-item {
+        flex-direction: column;
+        gap: 0.9rem;
+        padding: 1.2rem;
+    }
+
+    .step-number {
+        width: 42px;
+        height: 42px;
+        font-size: 1rem;
+    }
+
+    .decision-table {
+        min-width: 640px;
+        font-size: 0.9rem;
+    }
+
+    .decision-table th,
+    .decision-table td {
+        padding: 0.65rem 0.85rem;
+    }
+
+    .pros-cons-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .pc-card {
+        padding: 1.2rem;
+    }
+
+    .expert-cta p {
+        font-size: 1rem;
+    }
+
+    .expert-cta-buttons {
+        width: 100%;
+    }
+
+    .btn-white,
+    .btn-outline-white {
+        width: 100%;
+        text-align: center;
+        padding: 0.8rem 1.1rem;
+    }
+}
