@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - Lawn Craft</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-brand">
+                <a href="/">
+                    <span class="brand-text" style="font-size: 1.2rem; font-weight: 900; color: var(--primary);">LAWN CRAFT</span>
+                </a>
+            </div>
+        </nav>
+    </header>
+    <main style="min-height: 70vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 2rem;">
+        <div>
+            <i class="fa-solid fa-wifi-slash" style="font-size: 4rem; color: var(--text-light); margin-bottom: 1rem;"></i>
+            <h1>You're Offline</h1>
+            <p style="color: var(--text-light); max-width: 400px; margin: 1rem auto;">
+                Please check your internet connection and try again.
+            </p>
+            <a href="/" class="btn" style="display: inline-block; margin-top: 1rem;">Go Home</a>
+        </div>
+    </main>
+    <footer class="footer">
+        <p>&copy; <span id="currentYear"></span> Lawn Craft. All rights reserved.</p>
+    </footer>
+    <script>document.getElementById('currentYear').textContent = new Date().getFullYear();</script>
+</body>
+</html>
