@@ -1,6 +1,31 @@
 // Mobile Menu Toggle
 const navMenu = document.querySelector('.nav-menu');
 
+// PWA standalone detection — force mobile layout when installed as app
+(function () {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    if (isStandalone) {
+        document.documentElement.classList.add('pwa-standalone');
+        document.body.classList.add('pwa-standalone');
+
+        // Force the viewport meta tag to prevent desktop layout in standalone mode
+        var viewport = document.querySelector('meta[name="viewport"]');
+        if (viewport) {
+            viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+        }
+
+        // Also ensure the viewport is applied on orientation change
+        window.addEventListener('orientationchange', function () {
+            setTimeout(function () {
+                var vp = document.querySelector('meta[name="viewport"]');
+                if (vp) {
+                    vp.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+                }
+            }, 200);
+        });
+    }
+})();
+
 function ensureMobileToggle() {
     const headerContainer = document.querySelector('#main-header .header-container');
     if (!headerContainer || !navMenu) return null;
