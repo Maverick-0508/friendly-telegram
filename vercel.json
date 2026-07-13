@@ -1,19 +1,6 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
-  "rewrites": [
-    { "source": "/about", "destination": "/about.html" },
-    { "source": "/contact", "destination": "/contact.html" },
-    { "source": "/insights", "destination": "/insights.html" },
-    { "source": "/login", "destination": "/login.html" },
-    { "source": "/portfolio", "destination": "/portfolio.html" },
-    { "source": "/privacy-policy", "destination": "/privacy-policy.html" },
-    { "source": "/process", "destination": "/process.html" },
-    { "source": "/service-area", "destination": "/service-area.html" },
-    { "source": "/services", "destination": "/services.html" },
-    { "source": "/signup", "destination": "/signup.html" },
-    { "source": "/tos", "destination": "/tos.html" }
-  ],
   "headers": [
     {
       "source": "/sw.js",
