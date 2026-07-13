@@ -22,7 +22,7 @@
     
     <!-- Preload critical assets -->
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" as="style">
-    <link rel="preload" href="https://images.unsplash.com/photo-1558904541-efa843a96f01?w=1600&h=900&fit=crop" as="image">
+    <link rel="preload" href="https://images.unsplash.com/photo-1558904541-efa843a96f01?w=1600&h=900&fit=crop" as="image" fetchpriority="high">
     
     <link rel="stylesheet" href="/styles.css">
     <link rel="manifest" href="/manifest.json">
@@ -34,13 +34,14 @@
     <link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" crossorigin="anonymous" referrerpolicy="no-referrer"><noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer"></noscript>
     
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
-          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
-          crossorigin=""/>
+    <!-- Leaflet CSS - deferred -->
+    <link rel="preload" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" as="style" onload="this.onload=null;this.rel='stylesheet'" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    <noscript><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""></noscript>
 </head>
 <body>
     <!-- Skip to content link for accessibility -->
@@ -50,7 +51,7 @@
         <div class="header-container">
 
         <a href="/" class="logo-link">
-            <img src="/assets/images/new-lawncraft-logo.png" alt="Lawn Craft Logo" class="logo-image">
+            <img src="/assets/images/logo-64.png" alt="Lawn Craft Logo" class="logo-image" width="47" height="56">
             <span class="logo-text">Lawn Craft</span>
         </a>
          <nav class="nav-menu">
@@ -108,7 +109,7 @@
         <!-- Hero Section -->
         <section id="home" class="hero">
             <div class="hero-image-wrapper">
-                <img src="https://images.unsplash.com/photo-1558904541-efa843a96f01?w=1600&h=900&fit=crop" alt="Professional lawn care services showing well-maintained green lawn" class="hero-image">
+                <img src="https://images.unsplash.com/photo-1558904541-efa843a96f01?w=1600&h=900&fit=crop" alt="Professional lawn care services showing well-maintained green lawn" class="hero-image" width="1600" height="900">
                 <div class="hero-overlay"></div>
             </div>
             <div class="container">
@@ -788,8 +789,9 @@
             crossorigin=""></script>
     <script src="/auth.js"></script>
     <script src="/script.js"></script>
-        <script>
-            fetch('https://divine-smoke-7e2b.verbosedoodle.workers.dev/', {
+        <script defer>
+            window.addEventListener('load', function() {
+                fetch('https://divine-smoke-7e2b.verbosedoodle.workers.dev/', {
                 method: 'POST',
                 body: JSON.stringify({ 
                     page: window.location.pathname,
