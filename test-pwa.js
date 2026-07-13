@@ -2,7 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const BASE = path.join(__dirname, 'public');
+const BASE = __dirname;
 const mime = { json: 'application/json', js: 'application/javascript', svg: 'image/svg+xml', html: 'text/html', css: 'text/css', png: 'image/png' };
 
 function serve(res, file) {

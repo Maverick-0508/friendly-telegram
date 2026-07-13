@@ -187,13 +187,10 @@ async function handler(req, res) {
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },
-      body: JSON.stringify(req.body ?? {}),
+      body: JSON.stringify(data),
     });
 
-    const contentType = response.headers.get('content-type') || '';
-    const body = contentType.includes('application/json')
-      ? await response.json()
-      : await response.text();
+    const body = await parseResponseBody(response);
 
     if (!response.ok && shouldFallbackToSupabase(response.status)) {
       const insertedLead = await createLeadInSupabase(data);
