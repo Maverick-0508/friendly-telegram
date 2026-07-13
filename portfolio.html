@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Browse our portfolio of lawn care and landscaping projects across Nairobi and Kenya.">
+    <title>Portfolio | Lawn Craft</title>
+
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <link rel="apple-touch-icon" href="/assets/icons/icon-192.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+
+    <style>
+        .portfolio-content {
+            padding: 3rem 0 5rem;
+        }
+
+        .portfolio-intro {
+            max-width: 700px;
+            margin-bottom: 3rem;
+        }
+
+        .portfolio-intro p {
+            color: var(--text-secondary, #555);
+            line-height: 1.8;
+            font-size: 0.95rem;
+        }
+
+        .portfolio-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .filter-btn {
+            background: var(--bg-light, #f5f3f0);
+            border: 1px solid var(--border-light, #e8e3dd);
+            padding: 0.5rem 1.25rem;
+            border-radius: 24px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            color: var(--text-medium, #4a4a4a);
+        }
+
+        .filter-btn:hover {
+            background: var(--accent-green, #6b8e6f);
+            color: #fff;
+            border-color: var(--accent-green, #6b8e6f);
+        }
+
+        .filter-btn.active {
+            background: var(--accent-green, #6b8e6f);
+            color: #fff;
+            border-color: var(--accent-green, #6b8e6f);
+        }
+
+        .portfolio-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .portfolio-item {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 4 / 3;
+            cursor: pointer;
+        }
+
+        .portfolio-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s ease;
+        }
+
+        .portfolio-item:hover img {
+            transform: scale(1.05);
+        }
+
+        .portfolio-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(transparent 40%, rgba(0, 0, 0, 0.75));
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .portfolio-item:hover .portfolio-overlay {
+            opacity: 1;
+        }
+
+        .portfolio-overlay h3 {
+            color: #fff;
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .portfolio-overlay p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.8rem;
+            margin: 0;
+        }
+
+        .portfolio-tag {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--text-dark);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            z-index: 1;
+        }
+
+        .portfolio-cta {
+            text-align: center;
+            padding: 4rem 0 2rem;
+        }
+
+        .portfolio-cta h2 {
+            font-size: 1.75rem;
+            font-weight: 900;
+            margin-bottom: 0.75rem;
+        }
+
+        .portfolio-cta p {
+            color: var(--text-medium, #4a4a4a);
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 900px) {
+            .portfolio-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 560px) {
+            .portfolio-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .portfolio-overlay {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <header id="main-header">
+        <div class="header-container">
+            <a href="/" class="logo-link">
+                <img src="/assets/images/lawn-craft.png" alt="Lawn Craft Logo" class="logo-image">
+                <span class="logo-text">Lawn Craft</span>
+            </a>
+            <nav class="nav-menu">
+                <ul class="nav-links">
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/services">Services</a></li>
+                    <li><a href="/insights">Insights</a></li>
+                    <li><a href="/contact">Contact Us</a></li>
+                </ul>
+            </nav>
+            <button class="menu-toggle directory-toggle" type="button" aria-expanded="false" aria-controls="directory-panel" aria-label="Open menu">
+                <span>Menu</span>
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="directory-panel" id="directory-panel" aria-hidden="true">
+                <div class="directory-grid">
+                    <div class="directory-column">
+                        <h3>Company</h3>
+                        <a href="/about">About Us</a>
+                        <a href="/process">Our Process</a>
+                    </div>
+                    <div class="directory-column">
+                        <h3>Operations</h3>
+                        <a href="/service-area">Service Area</a>
+                        <a href="/contact">Book Consultation</a>
+                    </div>
+                    <div class="directory-column">
+                        <h3>Resources</h3>
+                        <a href="/property-check-guide.docx" download="property-check-guide.docx">Property Check Guide</a>
+                        <a href="/#faq">FAQ</a>
+                    </div>
+                    <div class="directory-column directory-mobile-nav">
+                        <h3>Navigate</h3>
+                        <a href="/">Home</a>
+                        <a href="/services">Services</a>
+                        <a href="/insights">Insights</a>
+                        <a href="/contact">Contact Us</a>
+                    </div>
+                </div>
+            </div>
+            <div class="socials">
+                <a href="https://www.instagram.com/_lawncraft?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noopener noreferrer" title="Visit our Instagram page"><i class="fa-brands fa-instagram"></i></a>
+                <a href="https://www.facebook.com/lawncraft_lawn_care" target="_blank" rel="noopener noreferrer" title="Visit our Facebook page"><i class="fa-brands fa-facebook"></i></a>
+                <a href="https://www.linkedin.com/company/lawn-craft-lawn-care" target="_blank" rel="noopener noreferrer" title="Visit our LinkedIn page"><i class="fa-brands fa-linkedin"></i></a>
+                <a href="https://www.tiktok.com/@lawncraft_lawn_care?is_from_webapp=1&sender_device=pc" target="_blank" rel="noopener noreferrer" title="Visit our TikTok page"><i class="fa-brands fa-tiktok"></i></a>
+            </div>
+        </div>
+    </header>
+
+    <main id="main-content" class="page-main">
+        <section class="page-hero">
+            <div class="container">
+                <h1>Our Portfolio</h1>
+                <p>Transforming outdoor spaces across Nairobi and beyond.</p>
+            </div>
+        </section>
+
+        <section class="portfolio-content">
+            <div class="container">
+                <div class="portfolio-intro">
+                    <p>Every property is unique, and every project reflects our commitment to quality and precision. Browse our work below to see how we've helped homeowners, businesses, and property managers elevate their outdoor spaces.</p>
+                </div>
+
+                <div class="portfolio-filters">
+                    <button class="filter-btn active" data-filter="all">All Projects</button>
+                    <button class="filter-btn" data-filter="residential">Residential</button>
+                    <button class="filter-btn" data-filter="commercial">Commercial</button>
+                    <button class="filter-btn" data-filter="landscape">Landscape Design</button>
+                    <button class="filter-btn" data-filter="maintenance">Maintenance</button>
+                </div>
+
+                <div class="portfolio-grid">
+                    <div class="portfolio-item" data-category="residential">
+                        <span class="portfolio-tag">Residential</span>
+                        <img src="https://images.unsplash.com/photo-1560749003-f4b1e17e2dff?w=700&h=525&fit=crop" alt="Residential lawn mowing project in Karen" loading="lazy">
+                        <div class="portfolio-overlay">
+                            <h3>Karen Residence</h3>
+                            <p>Full lawn restoration and weekly maintenance</p>
+                        </div>
+                    </div>
+                    <div class="portfolio-item" data-category="commercial">
+                        <span class="portfolio-tag">Commercial</span>
+                        <img src="https://images.unsplash.com/photo-1558522195-e1201b090344?w=700&h=525&fit=crop" alt="Commercial landscape maintenance in Westlands" loading="lazy">
+                        <div class="portfolio-overlay">
+                            <h3>Westlands Office Complex</h3>
+                            <p>Monthly grounds maintenance program</p>
+                        </div>
+                    </div>
+                    <div class="portfolio-item" data-category="landscape">
+                        <span class="portfolio-tag">Landscape</span>
+                        <img src="https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=700&h=525&fit=crop" alt="Seasonal garden refresh in Ruiru" loading="lazy">
+                        <div class="portfolio-overlay">
+                            <h3>Ruiru Garden Refresh</h3>
+                            <p>Seasonal colour program and hedge shaping</p>
+                        </div>
+                    </div>
+                    <div class="portfolio-item" data-category="residential">
+                        <span class="portfolio-tag">Residential</span>
+                        <img src="https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?w=700&h=525&fit=crop" alt="Hedge trimming project in Syokimau" loading="lazy">
+                        <div class="portfolio-overlay">
+                            <h3>Syokimau Estate</h3>
+                            <p>Hedge trimming and lawn edging</p>
+                        </div>
+                    </div>
+                    <div class="portfolio-item" data-category="landscape">
+                        <span class="portfolio-tag">Landscape</span>
+                        <img src="https://images.unsplash.com/photo-1592417817038-d13fd7342605?w=700&h=525&fit=crop" alt="Landscape design in Kilimani" loading="lazy">
+                        <div class="portfolio-overlay">
+                            <h3>Kilimani Landscape Design</h3>
+                            <p>Native planting and irrigation planning</p>
+                        </div>
+                    </div>
+                    <div class="portfolio-item" data-category="maintenance">
+                        <span class="portfolio-tag">Maintenance</span>
+                        <img src="https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=700&h=525&fit=crop" alt="Eco-friendly lawn treatment in Kitisuru" loading="lazy">
+                        <div class="portfolio-overlay">
+                            <h3>Kitisuru Eco Treatment</h3>
+                            <p>Organic fertilisation and pest management</p>
+                        </div>
+                    </div>
+                    <div class="portfolio-item" data-category="commercial">
+                        <span class="portfolio-tag">Commercial</span>
+                        <img src="https://images.unsplash.com/photo-1492496913980-501348b61469?w=700&h=525&fit=crop" alt="Hotel grounds maintenance in Nakuru" loading="lazy">
+                        <div class="portfolio-overlay">
+                            <h3>Nakuru Hotel Grounds</h3>
+                            <p>Year-round property maintenance</p>
+                        </div>
+                    </div>
+                    <div class="portfolio-item" data-category="residential">
+                        <span class="portfolio-tag">Residential</span>
+                        <img src="https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=700&h=525&fit=crop" alt="Compound maintenance in Lavington" loading="lazy">
+                        <div class="portfolio-overlay">
+                            <h3>Lavington Compound</h3>
+                            <p>Bi-weekly lawn care and seasonal cleanup</p>
+                        </div>
+                    </div>
+                    <div class="portfolio-item" data-category="maintenance">
+                        <span class="portfolio-tag">Maintenance</span>
+                        <img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=700&h=525&fit=crop" alt="Seasonal maintenance in Kiambu" loading="lazy">
+                        <div class="portfolio-overlay">
+                            <h3>Kiambu Seasonal Program</h3>
+                            <p>Full-year maintenance schedule</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="portfolio-cta">
+                    <h2>Ready to Transform Your Space?</h2>
+                    <p>Contact us today for a free consultation and quote.</p>
+                    <a href="/contact" class="btn btn-primary">Book Consultation</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <span class="logo-text">Lawn Craft</span>
+                    </div>
+                    <p class="footer-tagline">Excellence in Lawn Care</p>
+                </div>
+                <div class="footer-section">
+                    <h3 class="footer-title">Services</h3>
+                    <ul class="footer-links">
+                        <li><a href="/services">Lawn Mowing</a></li>
+                        <li><a href="/services">Landscape Design</a></li>
+                        <li><a href="/services">Seasonal Maintenance</a></li>
+                        <li><a href="/services">Property Management</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3 class="footer-title">Company</h3>
+                    <ul class="footer-links">
+                        <li><a href="/about">About Us</a></li>
+                        <li><a href="/insights">Insights</a></li>
+                        <li><a href="/process">Our Process</a></li>
+                        <li><a href="/contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3 class="footer-title">Connect</h3>
+                    <ul class="footer-links">
+                        <li><a href="https://www.linkedin.com/company/lawn-craft-lawn-care" target="_blank" rel="noopener noreferrer" aria-label="Visit our LinkedIn page">LinkedIn</a></li>
+                        <li><a href="https://www.facebook.com/lawncraft_lawn_care" target="_blank" rel="noopener noreferrer" aria-label="Visit our Facebook page">Facebook</a></li>
+                        <li><a href="https://www.instagram.com/_lawncraft?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noopener noreferrer" aria-label="Visit our Instagram page">Instagram</a></li>
+                        <li><a href="https://www.tiktok.com/@lawncraft_lawn_care?is_from_webapp=1&sender_device=pc" target="_blank" rel="noopener noreferrer" aria-label="Visit our TikTok page">TikTok</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; <span id="currentYear"></span> Lawn Craft. All rights reserved.</p>
+                <div class="footer-legal">
+                    <a href="/privacy-policy">Privacy Policy</a>
+                    <a href="/tos">Terms of Service</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/auth.js"></script>
+    <script src="/script.js"></script>
+    <script>if('serviceWorker'in navigator){navigator.serviceWorker.register('/sw.js')}</script>
+    <script>
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const filter = btn.dataset.filter;
+                document.querySelectorAll('.portfolio-item').forEach(item => {
+                    if (filter === 'all' || item.dataset.category === filter) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

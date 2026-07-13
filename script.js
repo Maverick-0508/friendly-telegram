@@ -1059,6 +1059,56 @@ document.addEventListener('DOMContentLoaded', () => {
     
     console.log('Lawn Craft website loaded successfully!');
 
+    // Cookie Consent Banner
+    (function () {
+        const COOKIE_KEY = 'lawn-craft-cookies-accepted';
+        if (localStorage.getItem(COOKIE_KEY) === '1') return;
+
+        function showCookieBanner() {
+            if (document.getElementById('cookie-consent')) return;
+
+            const banner = document.createElement('div');
+            banner.id = 'cookie-consent';
+            banner.className = 'cookie-consent';
+            banner.setAttribute('role', 'complementary');
+            banner.setAttribute('aria-label', 'Cookie consent');
+            banner.innerHTML = `
+                <div class="cookie-consent-text">
+                    <p>We use cookies to enhance your browsing experience and analyze site traffic. By clicking "Accept All", you consent to our use of cookies. Read our <a href="/privacy-policy">Privacy Policy</a> for more information.</p>
+                </div>
+                <div class="cookie-consent-actions">
+                    <button class="btn-cookie-accept" type="button">Accept All</button>
+                    <button class="btn-cookie-decline" type="button">Decline</button>
+                </div>
+            `;
+            document.body.appendChild(banner);
+
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    banner.classList.add('visible');
+                });
+            });
+
+            banner.querySelector('.btn-cookie-accept').addEventListener('click', () => {
+                localStorage.setItem(COOKIE_KEY, 'accepted');
+                banner.classList.remove('visible');
+                setTimeout(() => banner.remove(), 400);
+            });
+
+            banner.querySelector('.btn-cookie-decline').addEventListener('click', () => {
+                localStorage.setItem(COOKIE_KEY, 'declined');
+                banner.classList.remove('visible');
+                setTimeout(() => banner.remove(), 400);
+            });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', showCookieBanner);
+        } else {
+            showCookieBanner();
+        }
+    })();
+
     // PWA Install Banner
     (function () {
         const DISMISSED_KEY = 'lawn-craft-install-dismissed';

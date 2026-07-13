@@ -17,7 +17,8 @@ const rewrites = {
   '/': 'index.html', '/about': 'about.html', '/contact': 'contact.html',
   '/insights': 'insights.html', '/process': 'process.html', '/privacy-policy': 'privacy-policy.html',
   '/service-area': 'service-area.html', '/services': 'services.html',
-  '/login': 'login.html', '/signup': 'signup.html',
+  '/login': 'login.html', '/signup': 'signup.html', '/tos': 'tos.html',
+  '/portfolio': 'portfolio.html',
   '/manifest.json': 'manifest.json', '/sw.js': 'sw.js', '/offline.html': 'offline.html',
 };
 
@@ -42,6 +43,8 @@ const TESTS = [
   { path: '/process', expect: 'Process', name: 'GET /process' },
   { path: '/service-area', expect: 'Service Area', name: 'GET /service-area' },
   { path: '/privacy-policy', expect: 'Privacy Policy', name: 'GET /privacy-policy' },
+  { path: '/tos', expect: 'Terms of Service', name: 'GET /tos' },
+  { path: '/portfolio', expect: 'Portfolio', name: 'GET /portfolio' },
   { path: '/login', expect: 'Sign In', name: 'GET /login' },
   { path: '/signup', expect: 'Create Account', name: 'GET /signup' },
   { path: '/nonexistent', expect: 'Page Not Found', name: 'GET /nonexistent -> 404' },
