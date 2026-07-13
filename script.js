@@ -1104,7 +1104,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Cookie Consent Banner
     (function () {
         const COOKIE_KEY = 'lawn-craft-cookies-accepted';
-        if (localStorage.getItem(COOKIE_KEY) === '1') return;
+        if (localStorage.getItem(COOKIE_KEY) !== null) return;
 
         function showCookieBanner() {
             if (document.getElementById('cookie-consent')) return;

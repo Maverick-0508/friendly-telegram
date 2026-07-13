@@ -2923,6 +2923,10 @@ body.pwa-standalone {
     max-width: 100vw !important;
 }
 
+body.pwa-standalone .mobile-menu-toggle {
+    display: flex !important;
+}
+
 body.pwa-standalone .nav-menu {
     position: absolute !important;
     top: 80px !important;
