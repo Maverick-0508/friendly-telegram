@@ -3,7 +3,18 @@ const navMenu = document.querySelector('.nav-menu');
 
 // PWA standalone detection — force mobile layout when installed as app
 (function () {
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+    // Fallback: if standalone detection fails but screen is phone-sized, also force mobile
+    if (!isStandalone && window.matchMedia('(display-mode: standalone)').media !== 'not all') {
+        // matchMedia is supported but didn't match — check if we're in a TWA or other wrapper
+        try {
+            if (document.referrer && document.referrer.indexOf('android-app://') === 0) {
+                isStandalone = true;
+            }
+        } catch (e) {}
+    }
+
     if (isStandalone) {
         document.documentElement.classList.add('pwa-standalone');
         document.body.classList.add('pwa-standalone');
@@ -23,6 +34,12 @@ const navMenu = document.querySelector('.nav-menu');
                 }
             }, 200);
         });
+
+        // Constrain body width to prevent desktop layout bleed
+        document.documentElement.style.maxWidth = '100vw';
+        document.documentElement.style.overflowX = 'hidden';
+        document.body.style.maxWidth = '100vw';
+        document.body.style.overflowX = 'hidden';
     }
 })();
 
