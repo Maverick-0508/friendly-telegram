@@ -1,6 +1,10 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "rewrites": [
+    { "source": "/tos", "destination": "/tos.html" },
+    { "source": "/portfolio", "destination": "/portfolio.html" }
+  ],
   "headers": [
     {
       "source": "/sw.js",
