@@ -1,0 +1,6 @@
+{
+  "name": "Lawn Craft",
+  "description": "Professional lawn care and mowing services website with consultation booking, service areas, and customer portal",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -254,11 +254,6 @@ function resolveApiBase() {
     if (typeof window === 'undefined') return '/api';
     if (window.LAWNCRAFT_API_BASE) return window.LAWNCRAFT_API_BASE;
 
-    const { protocol, hostname } = window.location;
-
-    if (protocol === 'file:') return 'http://127.0.0.1:3001/api';
-    if (hostname === 'localhost' || hostname === '127.0.0.1') return 'http://127.0.0.1:3001/api';
-
     return '/api';
 }
 
