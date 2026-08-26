@@ -282,22 +282,6 @@ a:focus {
     color: white;
 }
 
-.mobile-menu-toggle {
-    display: none;
-    flex-direction: column;
-    gap: 4px;
-    background: none;
-    border: none;
-    cursor: pointer;
-}
-
-.mobile-menu-toggle span {
-    width: 24px;
-    height: 2px;
-    background: var(--text-dark);
-    transition: var(--transition);
-}
-
 .menu-toggle {
     display: inline-flex;
     align-items: center;
@@ -2911,10 +2895,6 @@ section {
 body.pwa-standalone {
     overflow-x: hidden !important;
     max-width: 100vw !important;
-}
-
-body.pwa-standalone .mobile-menu-toggle {
-    display: flex !important;
 }
 
 body.pwa-standalone .nav-menu {

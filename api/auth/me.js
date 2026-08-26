@@ -2,7 +2,7 @@ function send(res, status, body) {
   res.status(status).json(body);
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', ['GET']);
     return send(res, 405, { success: false, error: { message: 'Method not allowed', code: 'METHOD_NOT_ALLOWED' } });
