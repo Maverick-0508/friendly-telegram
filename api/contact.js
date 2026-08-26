@@ -6,7 +6,7 @@ function validateContactPayload(payload) {
   const name = normalizeText(payload?.name || payload?.full_name);
   const email = normalizeText(payload?.email);
   const phone = normalizeText(payload?.phone);
-  const message = normalizeText(payload?.message);
+  let message = normalizeText(payload?.message);
 
   const errors = {};
 
@@ -29,9 +29,7 @@ function validateContactPayload(payload) {
   }
 
   if (!message) {
-    errors.message = 'Message is required.';
-  } else if (message.length < 10) {
-    errors.message = 'Message must be at least 10 characters long.';
+    message = 'Website consultation request for lawn care services.';
   }
 
   return {

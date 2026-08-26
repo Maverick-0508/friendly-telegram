@@ -357,7 +357,11 @@ function showFormError(message) {
 async function parseApiError(response, fallbackMessage) {
     try {
         const body = await response.json();
-        return body?.error?.message || body?.detail || fallbackMessage;
+        if (body?.error?.fields && typeof body.error.fields === 'object') {
+            const fieldMsgs = Object.values(body.error.fields).filter(Boolean);
+            if (fieldMsgs.length > 0) return fieldMsgs.join(' ');
+        }
+        return body?.error?.message || body?.message || body?.detail || fallbackMessage;
     } catch (_) {
         return fallbackMessage;
     }
@@ -370,16 +374,21 @@ function buildContactPayload(formData) {
     if (formData.propertyType) contextLines.push(`Property Type: ${formData.propertyType}`);
     if (formData.preferredDate) contextLines.push(`Preferred Start Date: ${formData.preferredDate}`);
 
-    const userMessage = formData.message.trim();
+    const userMessage = (formData.message || '').trim();
     const contextMessage = contextLines.join('\n');
-    const message = userMessage
-        ? (contextMessage ? `${userMessage}\n\n${contextMessage}` : userMessage)
-        : (contextMessage || 'Website consultation request.');
+    let message = userMessage;
+    if (userMessage && contextMessage) {
+        message = `${userMessage}\n\n${contextMessage}`;
+    } else if (contextMessage) {
+        message = `Consultation request:\n${contextMessage}`;
+    } else if (!userMessage) {
+        message = 'Website consultation request for lawn care services.';
+    }
 
     return {
-        name: formData.name.trim(),
-        email: formData.email.trim(),
-        phone: formData.phone.trim(),
+        name: (formData.name || '').trim(),
+        email: (formData.email || '').trim(),
+        phone: (formData.phone || '').trim(),
         message,
     };
 }
@@ -551,7 +560,7 @@ if (contactForm && nameInput && emailInput && phoneInput && messageInput) {
             if (!response.ok) {
                 const detail = await parseApiError(
                     response,
-                    `We could not submit your request right now. Please try again. (${contactSubmitUrl})`
+                    'We could not submit your request right now. Please check your connection and try again.'
                 );
                 throw new Error(detail);
             }
