@@ -582,19 +582,23 @@ if (contactForm && nameInput && emailInput && phoneInput && messageInput) {
         }
     });
 }
-window.addEventListener('scroll', () => {
-    if (!ticking) {
-        window.requestAnimationFrame(() => {
-            const scrolled = window.pageYOffset;
-            const heroBackground = document.querySelector('.hero-background');
-            
-            if (heroBackground) {
-                heroBackground.style.transform = `translateY(${scrolled * 0.5}px)`;
-            }
-            ticking = false;
-        });
-    }
-});
+(function initParallaxScroll() {
+    let scrollTicking = false;
+    window.addEventListener('scroll', () => {
+        if (!scrollTicking) {
+            window.requestAnimationFrame(() => {
+                const scrolled = window.pageYOffset || document.documentElement.scrollTop || 0;
+                const heroBackground = document.querySelector('.hero-background');
+                
+                if (heroBackground) {
+                    heroBackground.style.transform = `translateY(${scrolled * 0.5}px)`;
+                }
+                scrollTicking = false;
+            });
+            scrollTicking = true;
+        }
+    }, { passive: true });
+})();
 
 // Counter animation for stats
 const animateCounter = (element, target, duration = 2000) => {

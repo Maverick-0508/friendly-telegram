@@ -1,4 +1,4 @@
-const CACHE = 'lawncraft-v4';
+const CACHE = 'lawncraft-v6';
 
 const PRECACHE_URLS = [
   '/',
@@ -37,31 +37,18 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // API calls — network first, fall back to cache
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(networkFirst(request));
-    return;
-  }
-
-  // Static assets — cache first
+  // API calls & scripts/styles — network first, fall back to cache
   if (
-    request.destination === 'style' ||
+    url.pathname.startsWith('/api/') ||
     request.destination === 'script' ||
-    request.destination === 'image' ||
-    request.destination === 'font' ||
-    url.pathname.startsWith('/assets/')
+    request.destination === 'style' ||
+    request.mode === 'navigate'
   ) {
-    event.respondWith(cacheFirst(request));
-    return;
-  }
-
-  // Navigation — network first, fall back to cached version
-  if (request.mode === 'navigate') {
     event.respondWith(networkFirst(request));
     return;
   }
 
-  // Everything else
+  // Static assets (images, fonts, etc.) — cache first
   event.respondWith(cacheFirst(request));
 });
 
