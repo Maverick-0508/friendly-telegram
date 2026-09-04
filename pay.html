@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settle Invoice | Lawn Craft Secure Payments</title>
+    <meta name="description" content="Settle your Lawn Craft lawn care invoice securely via Lipa Na M-Pesa or Card.">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    
+    <!-- Google Fonts & Font Awesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="/styles.css">
+
+    <style>
+        body {
+            background-color: #f4f6f4;
+            color: #1a1a1a;
+            font-family: 'Lato', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .pay-header {
+            background: #1a3a1a;
+            color: #ffffff;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .pay-logo-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.15rem;
+        }
+
+        .pay-logo-link img {
+            height: 38px;
+            width: auto;
+        }
+
+        .pay-container {
+            max-width: 960px;
+            margin: 40px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 30px;
+        }
+
+        @media (max-width: 860px) {
+            .pay-container {
+                grid-template-columns: 1fr;
+                margin: 20px auto;
+            }
+        }
+
+        .pay-card {
+            background: #ffffff;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            padding: 28px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        }
+
+        .pay-card h2 {
+            margin-top: 0;
+            font-size: 1.4rem;
+            color: #1a3a1a;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Tabs for Payment Methods */
+        .payment-tabs {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0 24px;
+            border-bottom: 2px solid #edf2f7;
+            padding-bottom: 12px;
+        }
+
+        .pay-tab {
+            background: none;
+            border: none;
+            padding: 10px 18px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #64748b;
+            cursor: pointer;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .pay-tab.active {
+            background: #e8f5e9;
+            color: #15803d;
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* Form elements */
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 6px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            box-sizing: border-box;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #15803d;
+            box-shadow: 0 0 0 3px rgba(21, 128, 61, 0.15);
+        }
+
+        .btn-mpesa-submit {
+            background: #00b04f;
+            color: #ffffff;
+            border: none;
+            width: 100%;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: background 0.2s ease;
+        }
+
+        .btn-mpesa-submit:hover {
+            background: #009341;
+        }
+
+        .btn-card-submit {
+            background: #15803d;
+            color: #ffffff;
+            border: none;
+            width: 100%;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: background 0.2s ease;
+        }
+
+        .btn-card-submit:hover {
+            background: #166534;
+        }
+
+        /* Order Summary Side */
+        .summary-card {
+            background: #ffffff;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            padding: 24px;
+            height: fit-content;
+        }
+
+        .summary-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin: 0 0 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .item-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 16px;
+        }
+
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            color: #475569;
+        }
+
+        .summary-total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 14px;
+            border-top: 2px solid #e2e8f0;
+            font-size: 1.25rem;
+            font-weight: 900;
+            color: #15803d;
+        }
+
+        .secure-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 16px;
+            justify-content: center;
+        }
+
+        /* Processing view */
+        .processing-box {
+            text-align: center;
+            padding: 30px 10px;
+            display: none;
+        }
+
+        .processing-box i {
+            font-size: 3rem;
+            color: #15803d;
+            margin-bottom: 16px;
+        }
+
+        /* Success view */
+        .success-box {
+            text-align: center;
+            padding: 30px 10px;
+            display: none;
+        }
+
+        .success-box .checkmark-circle {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: #dcfce7;
+            color: #15803d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            margin: 0 auto 18px;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="pay-header">
+        <a href="/" class="pay-logo-link">
+            <img src="/assets/images/logo-64.png" alt="Lawn Craft">
+            <span>Lawn Craft Secure Checkout</span>
+        </a>
+        <a href="/" class="tracker-back-btn">
+            <i class="fa-solid fa-arrow-left"></i> Return to Client Hub
+        </a>
+    </header>
+
+    <div class="pay-container">
+        <!-- Main Form Area -->
+        <div class="pay-card" id="payment-main-view">
+            <h2><i class="fa-solid fa-shield-halved text-green"></i> Choose Payment Method</h2>
+
+            <div class="payment-tabs">
+                <button class="pay-tab active" data-tab="mpesa">
+                    <i class="fa-solid fa-mobile-screen-button"></i> Lipa Na M-Pesa
+                </button>
+                <button class="pay-tab" data-tab="card">
+                    <i class="fa-regular fa-credit-card"></i> Credit / Debit Card
+                </button>
+            </div>
+
+            <!-- M-Pesa Tab -->
+            <div class="tab-pane active" id="pane-mpesa">
+                <p style="font-size:0.9rem; color:#475569; margin-bottom:18px;">
+                    We will initiate an instant Safaricom M-Pesa STK Push directly to your phone. Enter your MPesa PIN when prompted.
+                </p>
+                <div class="form-group">
+                    <label for="mpesa-phone">M-Pesa Phone Number</label>
+                    <input type="tel" id="mpesa-phone" class="form-control" value="0712345678" placeholder="e.g. 0712345678">
+                </div>
+                <button class="btn-mpesa-submit" id="submit-mpesa-btn">
+                    <i class="fa-solid fa-bolt"></i> Send STK PIN Prompt to Phone
+                </button>
+            </div>
+
+            <!-- Card Tab -->
+            <div class="tab-pane" id="pane-card">
+                <p style="font-size:0.9rem; color:#475569; margin-bottom:18px;">
+                    All major Visa, Mastercard, and American Express cards are accepted with 256-bit encryption.
+                </p>
+                <div class="form-group">
+                    <label for="card-name">Cardholder Name</label>
+                    <input type="text" id="card-name" class="form-control" value="Sarah Wanjiru" placeholder="Name on Card">
+                </div>
+                <div class="form-group">
+                    <label for="card-num">Card Number</label>
+                    <input type="text" id="card-num" class="form-control" value="•••• •••• •••• 4242" placeholder="4532 0000 0000 0000">
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
+                    <div class="form-group">
+                        <label for="card-exp">Expiry Date</label>
+                        <input type="text" id="card-exp" class="form-control" value="12/28" placeholder="MM/YY">
+                    </div>
+                    <div class="form-group">
+                        <label for="card-cvc">CVC / Security Code</label>
+                        <input type="text" id="card-cvc" class="form-control" value="882" placeholder="CVC">
+                    </div>
+                </div>
+                <button class="btn-card-submit" id="submit-card-btn">
+                    <i class="fa-solid fa-lock"></i> Pay Balance via Card
+                </button>
+            </div>
+
+            <!-- Error Box -->
+            <div id="pay-error-banner" style="display:none; background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; border-radius:8px; padding:12px 16px; margin-bottom:16px; font-size:0.9rem;">
+                <i class="fa-solid fa-triangle-exclamation"></i> <span id="pay-error-msg">Payment failed. Please try again.</span>
+            </div>
+
+            <!-- In-Progress Spinner Box -->
+            <div class="processing-box" id="pay-processing-box">
+                <i class="fa-solid fa-spinner fa-spin"></i>
+                <h3 id="proc-title">Processing M-Pesa STK Push...</h3>
+                <p id="proc-desc">Please unlock your phone and enter your 4-digit M-Pesa PIN.</p>
+                <div style="font-size:0.85rem; color:#15803d; font-weight:bold; margin-top:10px;">
+                    Simulating real-time network confirmation...
+                </div>
+            </div>
+
+            <!-- Success Box -->
+            <div class="success-box" id="pay-success-box">
+                <div class="checkmark-circle"><i class="fa-solid fa-check"></i></div>
+                <h2>Payment Settled!</h2>
+                <p>Your invoice has been marked as fully paid in the Lawn Craft ERP.</p>
+                <div style="background:#f8faf8; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin:16px 0; font-size:0.9rem;">
+                    <div>Transaction Ref: <strong id="succ-receipt-code">NLM35581043X</strong></div>
+                    <div>Account: <span id="succ-client-name">Sarah Wanjiru</span></div>
+                </div>
+                <div style="display:flex; gap:12px; justify-content:center; margin-top:20px;">
+                    <a href="#" id="view-receipt-link" class="btn btn-primary" style="padding:10px 20px;">
+                        <i class="fa-solid fa-receipt"></i> View Official Tax Receipt
+                    </a>
+                    <a href="/" class="btn btn-secondary" style="padding:10px 20px;">Return to Hub</a>
+                </div>
+            </div>
+
+            <div class="secure-badge">
+                <i class="fa-solid fa-shield"></i> 256-Bit SSL Encrypted • Powered by Safaricom Daraja & Stripe
+            </div>
+        </div>
+
+        <!-- Sidebar Summary -->
+        <aside class="summary-card">
+            <h3 class="summary-title">Invoice Summary</h3>
+            <div style="font-size:0.85rem; color:#64748b; margin-bottom:12px;" id="inv-meta">
+                Invoice: <strong id="inv-num">INV-2026-1042</strong><br>
+                Due Date: <span id="inv-due">2026-09-10</span>
+            </div>
+
+            <ul class="item-list" id="inv-item-list">
+                <li class="item-row">
+                    <span>Precision Lawn Mowing (8,500 sq ft)</span>
+                    <strong>$65.00</strong>
+                </li>
+                <li class="item-row">
+                    <span>Perimeter Hedge Shaping & Green Hauling</span>
+                    <strong>$30.00</strong>
+                </li>
+            </ul>
+
+            <div class="summary-total-row">
+                <span>Balance Due</span>
+                <span id="inv-balance">$95.00</span>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const pathSegments = window.location.pathname.split('/');
+            let invoiceId = pathSegments[pathSegments.length - 1];
+            if (!invoiceId || invoiceId === 'pay' || invoiceId === 'pay.html') {
+                const params = new URLSearchParams(window.location.search);
+                invoiceId = params.get('invoiceId') || 'inv_1042';
+            }
+
+            let invoiceData = null;
+            try {
+                const res = await fetch(`/api/invoices/${invoiceId}`);
+                const json = await res.json();
+                if (json.success && json.data) {
+                    invoiceData = json.data;
+                    document.getElementById('inv-num').textContent = invoiceData.invoice_number;
+                    document.getElementById('inv-due').textContent = invoiceData.due_date;
+                    document.getElementById('inv-balance').textContent = `$${Number(invoiceData.balance_due || invoiceData.total_amount).toFixed(2)}`;
+                    
+                    if (invoiceData.client_phone) {
+                        document.getElementById('mpesa-phone').value = invoiceData.client_phone;
+                    }
+
+                    if (invoiceData.items && invoiceData.items.length > 0) {
+                        const list = document.getElementById('inv-item-list');
+                        list.innerHTML = invoiceData.items.map(it => `
+                            <li class="item-row">
+                                <span>${it.description}</span>
+                                <strong>$${Number(it.amount).toFixed(2)}</strong>
+                            </li>
+                        `).join('');
+                    }
+                }
+            } catch (err) {
+                console.warn('Failed to load invoice', err);
+            }
+
+            // Tab Switching
+            const tabs = document.querySelectorAll('.pay-tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+                    tab.classList.add('active');
+                    const targetPane = document.getElementById(`pane-${tab.dataset.tab}`);
+                    if (targetPane) targetPane.classList.add('active');
+                });
+            });
+
+            // M-Pesa STK Push
+            document.getElementById('submit-mpesa-btn').addEventListener('click', async () => {
+                const phone = document.getElementById('mpesa-phone').value.trim();
+                const btn = document.getElementById('submit-mpesa-btn');
+                btn.disabled = true;
+
+                // Hide tabs, show processing
+                document.querySelector('.payment-tabs').style.display = 'none';
+                document.getElementById('pane-mpesa').style.display = 'none';
+                document.getElementById('pay-processing-box').style.display = 'block';
+
+                try {
+                    const res = await fetch('/api/mpesa/stkpush', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            phone,
+                            amount: invoiceData?.balance_due || 95.00,
+                            invoice_id: invoiceId
+                        })
+                    });
+                    const json = await res.json();
+
+                    setTimeout(() => {
+                        document.getElementById('pay-processing-box').style.display = 'none';
+                        document.getElementById('pay-success-box').style.display = 'block';
+                        document.getElementById('succ-receipt-code').textContent = json.mpesa_receipt || 'NLM89218XK';
+                        document.getElementById('view-receipt-link').href = `/receipt/${invoiceId}`;
+                    }, 2500);
+                } catch (e) {
+                    document.getElementById('pay-processing-box').style.display = 'none';
+                    document.querySelector('.payment-tabs').style.display = 'flex';
+                    document.getElementById('pane-mpesa').style.display = 'block';
+                    btn.disabled = false;
+                    const errBanner = document.getElementById('pay-error-banner');
+                    document.getElementById('pay-error-msg').textContent = 'Unable to complete M-Pesa request. Please verify network and phone number.';
+                    errBanner.style.display = 'block';
+                }
+            });
+
+            // Card Settle
+            document.getElementById('submit-card-btn').addEventListener('click', async () => {
+                document.querySelector('.payment-tabs').style.display = 'none';
+                document.getElementById('pane-card').style.display = 'none';
+                document.getElementById('pay-processing-box').style.display = 'block';
+                document.getElementById('proc-title').textContent = 'Authorizing Card Payment...';
+                document.getElementById('proc-desc').textContent = 'Connecting with payment gateway...';
+
+                try {
+                    const res = await fetch(`/api/invoices/${invoiceId}/pay`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            payment_method: 'Card (•••• 4242)',
+                            card_last4: '4242'
+                        })
+                    });
+                    const json = await res.json();
+
+                    setTimeout(() => {
+                        document.getElementById('pay-processing-box').style.display = 'none';
+                        document.getElementById('pay-success-box').style.display = 'block';
+                        document.getElementById('succ-receipt-code').textContent = json.data?.mpesa_receipt || 'TX_CARD_99218';
+                        document.getElementById('view-receipt-link').href = `/receipt/${invoiceId}`;
+                    }, 2000);
+                } catch (e) {
+                    document.getElementById('pay-processing-box').style.display = 'none';
+                    document.querySelector('.payment-tabs').style.display = 'flex';
+                    document.getElementById('pane-card').style.display = 'block';
+                    const errBanner = document.getElementById('pay-error-banner');
+                    document.getElementById('pay-error-msg').textContent = 'Card settlement failed. Please check card credentials.';
+                    errBanner.style.display = 'block';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

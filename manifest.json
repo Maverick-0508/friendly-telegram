@@ -1,16 +1,43 @@
 {
-  "name": "Lawn Craft - Lawn Bliss",
+  "id": "/",
+  "name": "Lawn Craft",
   "short_name": "Lawn Craft",
-  "description": "Professional lawn care and mowing services for residential and commercial properties in Nairobi, Kenya.",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#1a1a1a",
-  "orientation": "portrait-primary",
-  "categories": ["lifestyle", "utilities"],
-  "lang": "en-KE",
+  "description": "Professional lawn care, precision mowing, instant pricing, and client portal.",
+  "start_url": "/?source=pwa",
   "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "window-controls-overlay"],
+  "background_color": "#ffffff",
+  "theme_color": "#15803d",
+  "orientation": "any",
+  "dir": "ltr",
+  "lang": "en",
+  "categories": ["lifestyle", "utilities", "business"],
   "icons": [
+    {
+      "src": "/assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/maskable-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/maskable-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
     {
       "src": "/assets/images/icon-192.png",
       "sizes": "192x192",
@@ -22,21 +49,29 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
-    },
-    {
-      "src": "/assets/images/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
     }
   ],
-  "screenshots": [
+  "shortcuts": [
     {
-      "src": "/assets/images/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Lawn Craft home page"
+      "name": "Instant Pricing",
+      "short_name": "Pricing",
+      "description": "Calculate instant lawn mowing pricing",
+      "url": "/calculator?source=shortcut",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Client Hub",
+      "short_name": "Client Hub",
+      "description": "View your lawn care status, schedule, and invoices",
+      "url": "/?client_portal=open&source=shortcut",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Book Consultation",
+      "short_name": "Contact",
+      "description": "Book a lawn inspection or service consultation",
+      "url": "/contact?source=shortcut",
+      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
     }
   ],
   "prefer_related_applications": false,

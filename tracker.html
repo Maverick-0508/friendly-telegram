@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live GPS Crew Tracker | Lawn Craft</title>
+    <meta name="description" content="Track your assigned Lawn Craft maintenance crew in real-time as they service your property.">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    
+    <!-- Google Fonts & Font Awesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+    <link rel="stylesheet" href="/styles.css">
+
+    <style>
+        body {
+            background-color: #f8faf8;
+            color: #1a1a1a;
+            font-family: 'Lato', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .tracker-header {
+            background: #1a3a1a;
+            color: #ffffff;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .tracker-logo-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.15rem;
+        }
+
+        .tracker-logo-link img {
+            height: 38px;
+            width: auto;
+        }
+
+        .tracker-back-btn {
+            background: rgba(255,255,255,0.15);
+            color: #ffffff;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 8px;
+            padding: 8px 16px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .tracker-back-btn:hover {
+            background: rgba(255,255,255,0.25);
+            color: #ffffff;
+        }
+
+        .tracker-layout {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            height: calc(100vh - 70px);
+            position: relative;
+        }
+
+        @media (max-width: 900px) {
+            .tracker-layout {
+                grid-template-columns: 1fr;
+                height: auto;
+                min-height: calc(100vh - 70px);
+            }
+        }
+
+        #tracker-map {
+            width: 100%;
+            height: 100%;
+            min-height: 450px;
+            background: #e2e8f0;
+        }
+
+        .tracker-sidebar {
+            background: #ffffff;
+            border-left: 1px solid #e2e8f0;
+            padding: 24px;
+            overflow-y: auto;
+            box-shadow: -4px 0 25px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .status-pill-large {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+            padding: 8px 14px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .pulse-beacon {
+            width: 10px;
+            height: 10px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            animation: pulse-ring 1.8s infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .crew-card {
+            background: #fdfbf7;
+            border: 1px solid #ede8e1;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .crew-header-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 12px;
+        }
+
+        .crew-avatar-large {
+            width: 52px;
+            height: 52px;
+            background: #1a3a1a;
+            color: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+        }
+
+        .crew-info-text h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: #1a1a1a;
+        }
+
+        .crew-info-text p {
+            margin: 2px 0 0;
+            font-size: 0.85rem;
+            color: #555555;
+        }
+
+        .crew-contact-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .btn-call, .btn-whatsapp {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.88rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-call {
+            background: #f1f5f9;
+            color: #1e293b;
+            border: 1px solid #cbd5e1;
+        }
+
+        .btn-call:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-whatsapp {
+            background: #25d366;
+            color: #ffffff;
+        }
+
+        .btn-whatsapp:hover {
+            background: #1ebc59;
+            color: #ffffff;
+        }
+
+        .eta-banner {
+            background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+            color: #ffffff;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .eta-banner .eta-sub {
+            font-size: 0.82rem;
+            opacity: 0.85;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .eta-banner .eta-time {
+            font-size: 2rem;
+            font-weight: 900;
+            margin: 4px 0;
+        }
+
+        .eta-banner .eta-desc {
+            font-size: 0.85rem;
+            opacity: 0.95;
+            margin: 0;
+        }
+
+        .checklist-box {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .checklist-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .task-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-size: 0.88rem;
+        }
+
+        .task-icon {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .task-item.completed .task-icon {
+            background: #10b981;
+            color: #ffffff;
+        }
+
+        .task-item.in_progress .task-icon {
+            background: #3b82f6;
+            color: #ffffff;
+            animation: pulse-ring 1.5s infinite;
+        }
+
+        .task-item.pending .task-icon {
+            background: #f1f5f9;
+            color: #94a3b8;
+            border: 1px solid #cbd5e1;
+        }
+
+        .task-text strong {
+            display: block;
+            color: #1e293b;
+        }
+
+        .task-text span {
+            font-size: 0.78rem;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="tracker-header">
+        <a href="/" class="tracker-logo-link">
+            <img src="/assets/images/logo-64.png" alt="Lawn Craft">
+            <span>Lawn Craft Live Tracker</span>
+        </a>
+        <a href="/" class="tracker-back-btn">
+            <i class="fa-solid fa-arrow-left"></i> Return to Client Hub
+        </a>
+    </header>
+
+    <div class="tracker-layout">
+        <!-- Interactive Map Container -->
+        <div id="tracker-map"></div>
+
+        <!-- Sidebar with Crew and Checklist -->
+        <aside class="tracker-sidebar">
+            <div>
+                <span class="status-pill-large" id="tracker-status-badge">
+                    <span class="pulse-beacon"></span>
+                    <span id="tracker-status-text">Crew On-Site</span>
+                </span>
+            </div>
+
+            <!-- ETA Banner -->
+            <div class="eta-banner">
+                <div class="eta-sub">Service Progress</div>
+                <div class="eta-time" id="tracker-eta">Active On-Site</div>
+                <p class="eta-desc" id="tracker-eta-desc">Team is currently executing precision mowing.</p>
+            </div>
+
+            <!-- Assigned Crew Profile -->
+            <div class="crew-card">
+                <div class="crew-header-row">
+                    <div class="crew-avatar-large">
+                        <i class="fa-solid fa-user-shield"></i>
+                    </div>
+                    <div class="crew-info-text">
+                        <h3 id="crew-lead-name">Jackson Mwangi</h3>
+                        <p id="crew-team-title">Lead Specialist • Alpha Care Crew</p>
+                        <p id="crew-vehicle">Vehicle: Toyota Hilux (KDG 892A)</p>
+                    </div>
+                </div>
+                <div class="crew-contact-buttons">
+                    <a href="tel:+254700889911" class="btn-call" id="crew-call-btn">
+                        <i class="fa-solid fa-phone"></i> Call Lead
+                    </a>
+                    <a href="https://wa.me/254700889911?text=Hi%20Jackson,%20regarding%20our%20lawn%20service%20today" target="_blank" rel="noopener" class="btn-whatsapp" id="crew-wa-btn">
+                        <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                    </a>
+                </div>
+            </div>
+
+            <!-- Live Checklist -->
+            <div class="checklist-box">
+                <div class="checklist-title">
+                    <span>Task Checklist</span>
+                    <span class="text-muted" id="checklist-counter" style="font-size: 0.8rem; font-weight: normal;">3 of 5 Completed</span>
+                </div>
+                <ul class="task-list" id="tracker-checklist">
+                    <li class="task-item completed">
+                        <div class="task-icon"><i class="fa-solid fa-check"></i></div>
+                        <div class="task-text">
+                            <strong>Perimeter Boundary & Safety Sweep</strong>
+                            <span>Completed at 10:35 AM</span>
+                        </div>
+                    </li>
+                    <li class="task-item completed">
+                        <div class="task-icon"><i class="fa-solid fa-check"></i></div>
+                        <div class="task-text">
+                            <strong>Border Edging & Concrete Trimming</strong>
+                            <span>Completed at 10:48 AM</span>
+                        </div>
+                    </li>
+                    <li class="task-item in_progress">
+                        <div class="task-icon"><i class="fa-solid fa-spinner fa-spin"></i></div>
+                        <div class="task-text">
+                            <strong>Rotary Precision Cut (2.5 inches)</strong>
+                            <span>In Progress Now</span>
+                        </div>
+                    </li>
+                    <li class="task-item pending">
+                        <div class="task-icon"><i class="fa-solid fa-circle"></i></div>
+                        <div class="task-text">
+                            <strong>Cuttings Vacuuming & Bagging</strong>
+                            <span>Pending</span>
+                        </div>
+                    </li>
+                    <li class="task-item pending">
+                        <div class="task-icon"><i class="fa-solid fa-circle"></i></div>
+                        <div class="task-text">
+                            <strong>Driveway & Pathway Blower Cleanup</strong>
+                            <span>Pending</span>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Extract orderId from URL: /tracker/:orderId or ?orderId=
+            const pathSegments = window.location.pathname.split('/');
+            let orderId = pathSegments[pathSegments.length - 1];
+            if (!orderId || orderId === 'tracker' || orderId === 'tracker.html') {
+                const params = new URLSearchParams(window.location.search);
+                orderId = params.get('orderId') || 'wo_902';
+            }
+
+            let orderData = null;
+            try {
+                const res = await fetch(`/api/work-orders/${orderId}`);
+                const json = await res.json();
+                if (json.success && json.data) {
+                    orderData = json.data;
+                }
+            } catch (err) {
+                console.warn('Using default demo tracking data', err);
+            }
+
+            // Coordinates for Nairobi / Karen demo
+            const propertyLat = orderData?.property_lat || -1.3198;
+            const propertyLng = orderData?.property_lng || 36.7085;
+            let crewLat = orderData?.crew_lat || -1.3193;
+            let crewLng = orderData?.crew_lng || 36.7080;
+
+            // Initialize Leaflet Map
+            const map = L.map('tracker-map').setView([propertyLat, propertyLng], 16);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors | Lawn Craft Precision GPS'
+            }).addTo(map);
+
+            // Property destination marker (House Icon)
+            const propertyIcon = L.divIcon({
+                className: 'custom-property-pin',
+                html: `<div style="background:#15803d; color:#fff; border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 15px rgba(0,0,0,0.3); border:3px solid #fff;"><i class="fa-solid fa-house" style="font-size:18px;"></i></div>`,
+                iconSize: [40, 40],
+                iconAnchor: [20, 20]
+            });
+            const propMarker = L.marker([propertyLat, propertyLng], { icon: propertyIcon }).addTo(map);
+            propMarker.bindPopup(`<b>Your Property</b><br>42 Karen Country Club Lane`).openPopup();
+
+            // Crew vehicle marker (Truck with pulse)
+            const crewIcon = L.divIcon({
+                className: 'custom-crew-pin',
+                html: `<div style="background:#2563eb; color:#fff; border-radius:50%; width:44px; height:44px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 6px rgba(37,99,235,0.35); border:3px solid #fff;"><i class="fa-solid fa-truck-pickup" style="font-size:18px;"></i></div>`,
+                iconSize: [44, 44],
+                iconAnchor: [22, 22]
+            });
+            const crewMarker = L.marker([crewLat, crewLng], { icon: crewIcon }).addTo(map);
+            crewMarker.bindPopup(`<b>Alpha Crew Vehicle</b><br>Active on-site servicing turf`);
+
+            // Draw route connection line
+            const routeLine = L.polyline([[crewLat, crewLng], [propertyLat, propertyLng]], {
+                color: '#15803d',
+                weight: 4,
+                dashArray: '8, 8',
+                opacity: 0.8
+            }).addTo(map);
+
+            // Fit bounds
+            map.fitBounds(L.latLngBounds([[crewLat, crewLng], [propertyLat, propertyLng]]), { padding: [60, 60] });
+
+            // Simulated live position micro-drift
+            setInterval(() => {
+                const deltaLat = (Math.random() - 0.5) * 0.0001;
+                const deltaLng = (Math.random() - 0.5) * 0.0001;
+                crewLat += deltaLat;
+                crewLng += deltaLng;
+                crewMarker.setLatLng([crewLat, crewLng]);
+                routeLine.setLatLngs([[crewLat, crewLng], [propertyLat, propertyLng]]);
+            }, 3000);
+        });
+    </script>
+</body>
+</html>

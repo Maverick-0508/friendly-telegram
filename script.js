@@ -19,21 +19,11 @@ const navMenu = document.querySelector('.nav-menu');
         document.documentElement.classList.add('pwa-standalone');
         document.body.classList.add('pwa-standalone');
 
-        // Force the viewport meta tag to prevent desktop layout in standalone mode
+        // Maintain standard responsive viewport
         var viewport = document.querySelector('meta[name="viewport"]');
         if (viewport) {
-            viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+            viewport.setAttribute('content', 'width=device-width, initial-scale=1.0');
         }
-
-        // Also ensure the viewport is applied on orientation change
-        window.addEventListener('orientationchange', function () {
-            setTimeout(function () {
-                var vp = document.querySelector('meta[name="viewport"]');
-                if (vp) {
-                    vp.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
-                }
-            }, 200);
-        });
 
         // Constrain body width to prevent desktop layout bleed
         document.documentElement.style.maxWidth = '100vw';
@@ -117,21 +107,62 @@ window.addEventListener('scroll', () => {
     updateScrollProgress();
 });
 
-// Smooth scroll for anchor links
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            const offset = 80; // Account for fixed navbar
-            const targetPosition = target.getBoundingClientRect().top + window.pageYOffset - offset;
-            
-            window.scrollTo({
-                top: targetPosition,
-                behavior: 'smooth'
-            });
-        }
+// Seamless smooth scroll for anchor links and in-page sections
+function scrollToTargetWithOffset(target, hash) {
+    if (!target) return;
+    const offset = 80; // Account for fixed navbar
+    const targetPosition = target.getBoundingClientRect().top + window.pageYOffset - offset;
+    
+    window.scrollTo({
+        top: Math.max(0, targetPosition),
+        behavior: 'smooth'
     });
+
+    if (hash && window.history && window.history.pushState) {
+        window.history.pushState(null, '', hash);
+    }
+}
+
+// Global click handler for anchor navigation
+document.addEventListener('click', function (e) {
+    const anchor = e.target.closest('a[href*="#"]');
+    if (!anchor) return;
+
+    const href = anchor.getAttribute('href');
+    if (!href) return;
+
+    // Determine target selector
+    let targetSelector = null;
+    if (href.startsWith('#')) {
+        targetSelector = href;
+    } else if (href.startsWith('/#') && (window.location.pathname === '/' || window.location.pathname.endsWith('index.html'))) {
+        targetSelector = href.substring(1);
+    }
+
+    if (targetSelector && targetSelector.length > 1) {
+        const target = document.querySelector(targetSelector);
+        if (target) {
+            e.preventDefault();
+            scrollToTargetWithOffset(target, targetSelector);
+
+            // Close directory menu if open
+            if (typeof setDirectoryMenuState === 'function') {
+                setDirectoryMenuState(false);
+            }
+        }
+    }
+});
+
+// Handle hash landing on page load
+window.addEventListener('DOMContentLoaded', () => {
+    if (window.location.hash) {
+        setTimeout(() => {
+            const target = document.querySelector(window.location.hash);
+            if (target) {
+                scrollToTargetWithOffset(target);
+            }
+        }, 200);
+    }
 });
 
 // Intersection Observer for scroll animations
@@ -637,27 +668,63 @@ if ('IntersectionObserver' in window) {
 }
 
 // Add active state to navigation based on scroll position
-const sections = document.querySelectorAll('section[id]');
+const highlightSections = Array.from(document.querySelectorAll('section[id]'));
+let scrollSpyTicking = false;
 
 const highlightNavigation = () => {
     const scrollY = window.pageYOffset;
-    
-    sections.forEach(section => {
-        const sectionHeight = section.offsetHeight;
-        const sectionTop = section.offsetTop - 100;
-        const sectionId = section.getAttribute('id');
-        const navLink = document.querySelector(`.nav-link[href="#${sectionId}"]`);
-        
-        if (scrollY > sectionTop && scrollY <= sectionTop + sectionHeight) {
-            navLinks.forEach(link => link.classList.remove('active'));
-            if (navLink) {
-                navLink.classList.add('active');
+    const headerOffset = 100;
+    const navItems = Array.from(document.querySelectorAll('.nav-links a, .hero-quick-chip'));
+
+    if (!navItems.length) return;
+
+    let activeId = '';
+    if (scrollY < 200) {
+        activeId = 'home';
+    } else {
+        for (let i = highlightSections.length - 1; i >= 0; i--) {
+            const section = highlightSections[i];
+            const top = section.offsetTop - headerOffset;
+            if (scrollY >= top) {
+                activeId = section.getAttribute('id');
+                break;
             }
         }
-    });
+    }
+
+    if (activeId) {
+        navItems.forEach(link => {
+            const href = link.getAttribute('href');
+            if (!href) return;
+            const isMatch = href === `#${activeId}` ||
+                           href === `/#${activeId}` ||
+                           (activeId === 'home' && (href === '/' || href === '#home')) ||
+                           (activeId === 'services' && (href === '/services' || href === '#services')) ||
+                           (activeId === 'pricing-calculator' && (href === '/calculator' || href === '#pricing-calculator')) ||
+                           (activeId === 'insights' && (href === '/insights' || href === '#insights')) ||
+                           (activeId === 'contact' && (href === '/contact' || href === '#contact'));
+
+            if (isMatch) {
+                link.classList.add('active');
+            } else if (!link.classList.contains('hero-quick-chip')) {
+                link.classList.remove('active');
+            }
+        });
+    }
 };
 
-window.addEventListener('scroll', highlightNavigation);
+window.addEventListener('scroll', () => {
+    if (!scrollSpyTicking) {
+        window.requestAnimationFrame(() => {
+            highlightNavigation();
+            scrollSpyTicking = false;
+        });
+        scrollSpyTicking = true;
+    }
+}, { passive: true });
+
+// Run initial highlight check
+highlightNavigation();
 
 // Initialize
 // Service Area — shared constants used by both the map and the chip panel
@@ -1014,8 +1081,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Send performance and hardware analytics
     if (perf) {
-        fetch('https://dash.cloudflare.com/e81c2b492502fc5e4fe0cd0b992c7c8c/workers/services/view/divine-smoke-7e2b/production', {
+        fetch('/api/analytics', {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 page: window.location.pathname,
                 referrer: document.referrer || "Direct",
@@ -1027,8 +1095,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 memory: navigator.deviceMemory || "unknown",
             }),
             keepalive: true 
-        }).catch(error => {
-            console.log('Analytics sent (keepalive mode):', error);
+        }).catch(() => {
+            // Non-blocking telemetry
         });
     }
     
@@ -1084,21 +1152,177 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     })();
 
-    // PWA Install Banner
+    // =========================================================
+    // Enhanced PWA Install & Android Safety System
+    // =========================================================
     (function () {
-        const DISMISSED_KEY = 'lawn-craft-install-dismissed';
-        if (localStorage.getItem(DISMISSED_KEY) === '1') return;
-
+        const DISMISSED_KEY = 'lawn-craft-install-dismissed-v2';
         let deferredPrompt = null;
+        window.deferredPwaPrompt = null;
+
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                             window.navigator.standalone === true ||
+                             document.referrer.includes('android-app://');
 
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            showInstallBanner();
+            window.deferredPwaPrompt = e;
+            
+            // If user hasn't dismissed and not already installed, show banner
+            if (!isStandalone && localStorage.getItem(DISMISSED_KEY) !== '1') {
+                showInstallBanner();
+            }
+            updateInstallButtonStates();
         });
 
+        function updateInstallButtonStates() {
+            document.querySelectorAll('.btn-pwa-install').forEach(btn => {
+                btn.classList.add('ready');
+            });
+        }
+
+        // Global opener for PWA Install & Safety Modal
+        window.openPwaInstallModal = function (focusNotice) {
+            let modalBackdrop = document.getElementById('pwa-install-modal');
+            if (!modalBackdrop) {
+                modalBackdrop = createPwaModal();
+            }
+
+            modalBackdrop.classList.add('active');
+            document.body.style.overflow = 'hidden';
+
+            if (focusNotice) {
+                const noticeEl = modalBackdrop.querySelector('.pwa-android-notice');
+                if (noticeEl) {
+                    setTimeout(() => {
+                        noticeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        noticeEl.classList.add('highlight-pulse');
+                        setTimeout(() => noticeEl.classList.remove('highlight-pulse'), 1500);
+                    }, 200);
+                }
+            }
+        };
+
+        window.closePwaInstallModal = function () {
+            const modalBackdrop = document.getElementById('pwa-install-modal');
+            if (modalBackdrop) {
+                modalBackdrop.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        };
+
+        function createPwaModal() {
+            const backdrop = document.createElement('div');
+            backdrop.id = 'pwa-install-modal';
+            backdrop.className = 'pwa-modal-backdrop';
+            backdrop.innerHTML = `
+                <div class="pwa-modal-card" role="dialog" aria-modal="true" aria-labelledby="pwa-modal-title">
+                    <button class="pwa-modal-close" type="button" aria-label="Close Install Modal">&times;</button>
+                    
+                    <div class="pwa-modal-header">
+                        <img src="/assets/icons/icon-192.png" alt="Lawn Craft Logo" class="pwa-modal-icon" width="60" height="60">
+                        <div>
+                            <h3 id="pwa-modal-title">Install Lawn Craft App</h3>
+                            <p class="pwa-modal-subtitle">Instant booking, price calculator, and lawn care scheduling right from your home screen.</p>
+                        </div>
+                    </div>
+
+                    <div class="pwa-security-guarantee">
+                        <div class="sec-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                        <div class="sec-text">
+                            <strong>100% Certified Safe Progressive Web App</strong>
+                            <p>Runs entirely inside your browser's secure sandbox. Zero access to your personal files, zero background tracking, zero native APK risks.</p>
+                        </div>
+                    </div>
+
+                    <!-- Android Safety & Play Protect Clarity Section -->
+                    <div class="pwa-android-notice">
+                        <div class="notice-badge"><i class="fa-brands fa-android"></i> Important Android Safety Notice</div>
+                        <h4>Seeing: "App built for an older version of Android / doesn't include latest privacy protections"?</h4>
+                        <p><strong>Why this happens:</strong> On certain Android devices (especially Samsung Galaxy phones using Samsung Internet or older WebAPK handlers), Google Play Protect displays an automated generic warning when adding a web shortcut.</p>
+                        <p><strong>Is Lawn Craft safe?</strong> <span class="badge-safe">YES, 100% SAFE</span>. Lawn Craft does NOT install native code or binaries. It is an encrypted web app adhering to current W3C standards.</p>
+                        <div class="notice-action-tip">
+                            <i class="fa-solid fa-circle-check"></i> <strong>How to proceed:</strong> Simply tap <strong>"Install anyway"</strong> or follow the browser steps below.
+                        </div>
+                    </div>
+
+                    <div class="pwa-action-block">
+                        <button class="btn btn-primary btn-pwa-direct-install" type="button">
+                            <i class="fa-solid fa-download"></i> <span>Install to Home Screen</span>
+                        </button>
+                        <span class="pwa-action-caption">No app store account required • Less than 1MB storage</span>
+                    </div>
+
+                    <!-- Platform Step-by-Step Instructions -->
+                    <div class="pwa-tabs-section">
+                        <h4>Manual Installation Guide</h4>
+                        <div class="pwa-platform-grid">
+                            <div class="platform-guide-item">
+                                <div class="platform-icon"><i class="fa-brands fa-chrome"></i> Chrome / Android</div>
+                                <ol>
+                                    <li>Tap the <strong>three dots (⋮)</strong> at the top right of Chrome.</li>
+                                    <li>Select <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong>.</li>
+                                    <li>If prompted, confirm by tapping <strong>Install anyway</strong>.</li>
+                                </ol>
+                            </div>
+                            <div class="platform-guide-item">
+                                <div class="platform-icon"><i class="fa-solid fa-mobile-screen-button"></i> Samsung Internet</div>
+                                <ol>
+                                    <li>Tap the <strong>Menu icon (☰)</strong> at the bottom bar.</li>
+                                    <li>Select <strong>"Add page to"</strong> &rarr; <strong>"Home screen"</strong>.</li>
+                                    <li>Tap <strong>"Add"</strong> to place the icon on your screen.</li>
+                                </ol>
+                            </div>
+                            <div class="platform-guide-item">
+                                <div class="platform-icon"><i class="fa-brands fa-apple"></i> iPhone & iPad (Safari)</div>
+                                <ol>
+                                    <li>Tap the <strong>Share button (<i class="fa-solid fa-arrow-up-from-bracket"></i>)</strong> in Safari.</li>
+                                    <li>Scroll down and select <strong>"Add to Home Screen"</strong>.</li>
+                                    <li>Tap <strong>"Add"</strong> in the top right corner.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pwa-modal-footer">
+                        <button class="btn-pwa-dismiss-modal" type="button">Got it, close</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(backdrop);
+
+            // Bind events
+            backdrop.querySelector('.pwa-modal-close').addEventListener('click', window.closePwaInstallModal);
+            backdrop.querySelector('.btn-pwa-dismiss-modal').addEventListener('click', window.closePwaInstallModal);
+            backdrop.addEventListener('click', (e) => {
+                if (e.target === backdrop) {
+                    window.closePwaInstallModal();
+                }
+            });
+
+            // Direct install button
+            backdrop.querySelector('.btn-pwa-direct-install').addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        window.closePwaInstallModal();
+                        hideInstallBanner();
+                    }
+                    deferredPrompt = null;
+                } else {
+                    // Explain manual fallback
+                    alert('To install, tap your browser menu (three dots ⋮ or Share icon) and select "Add to Home Screen" or "Install App".');
+                }
+            });
+
+            return backdrop;
+        }
+
         function showInstallBanner() {
-            if (document.getElementById('install-banner')) return;
+            if (document.getElementById('install-banner') || isStandalone) return;
 
             const banner = document.createElement('div');
             banner.id = 'install-banner';
@@ -1107,14 +1331,17 @@ document.addEventListener('DOMContentLoaded', () => {
             banner.setAttribute('aria-label', 'Install Lawn Craft app');
             banner.innerHTML = `
                 <div class="install-banner-icon">
-                    <img src="/assets/icons/icon-192.svg" alt="" width="40" height="40">
+                    <img src="/assets/icons/icon-192.png" alt="" width="40" height="40">
                 </div>
                 <div class="install-banner-text">
-                    <strong>Install Lawn Craft</strong>
-                    <span>Add to your home screen for quick access</span>
+                    <strong>Install Lawn Craft App</strong>
+                    <span>Fast booking, lawn tracking & offline access • 100% Secure PWA</span>
                 </div>
                 <div class="install-banner-actions">
-                    <button class="btn-install" type="button">Install</button>
+                    <button class="btn-install" type="button"><i class="fa-solid fa-download"></i> Install</button>
+                    <button class="btn-safety-info" type="button" title="View device safety & privacy information">
+                        <i class="fa-solid fa-shield-halved"></i> Safety Info
+                    </button>
                     <button class="btn-dismiss" type="button" aria-label="Dismiss install prompt">&times;</button>
                 </div>
             `;
@@ -1127,30 +1354,50 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             banner.querySelector('.btn-install').addEventListener('click', async () => {
-                if (!deferredPrompt) return;
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    banner.classList.remove('visible');
-                    setTimeout(() => banner.remove(), 400);
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        hideInstallBanner();
+                    }
+                    deferredPrompt = null;
+                } else {
+                    window.openPwaInstallModal(false);
                 }
-                deferredPrompt = null;
+            });
+
+            banner.querySelector('.btn-safety-info').addEventListener('click', () => {
+                window.openPwaInstallModal(true);
             });
 
             banner.querySelector('.btn-dismiss').addEventListener('click', () => {
                 localStorage.setItem(DISMISSED_KEY, '1');
-                banner.classList.remove('visible');
-                setTimeout(() => banner.remove(), 400);
+                hideInstallBanner();
             });
         }
 
-        window.addEventListener('appinstalled', () => {
-            deferredPrompt = null;
+        function hideInstallBanner() {
             const banner = document.getElementById('install-banner');
             if (banner) {
                 banner.classList.remove('visible');
                 setTimeout(() => banner.remove(), 400);
             }
+        }
+
+        // Global trigger for any .btn-pwa-install button
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.btn-pwa-install');
+            if (btn) {
+                e.preventDefault();
+                window.openPwaInstallModal(false);
+            }
+        });
+
+        window.addEventListener('appinstalled', () => {
+            deferredPrompt = null;
+            window.deferredPwaPrompt = null;
+            hideInstallBanner();
+            window.closePwaInstallModal();
         });
     })();
 });

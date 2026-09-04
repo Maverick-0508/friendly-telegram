@@ -8,10 +8,10 @@
 
     <link rel="stylesheet" href="/styles.css">
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#1a1a1a">
+    <meta name="theme-color" content="#15803d">
 
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Lawn Craft">
     <link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,6 +31,7 @@
                 <ul class="nav-links">
                     <li><a href="/">Home</a></li>
                     <li><a href="/services" class="active">Services</a></li>
+                    <li><a href="/calculator">Instant Pricing</a></li>
                     <li><a href="/insights">Insights</a></li>
                     <li><a href="/contact">Contact Us</a></li>
                 </ul>
@@ -54,6 +55,7 @@
                     </div>
                     <div class="directory-column">
                         <h3>Resources</h3>
+                        <a href="/calculator">Instant Pricing Tool</a>
                         <a href="/property-check-guide.docx" download="property-check-guide.docx">Property Check Guide</a>
                         <a href="/#faq">FAQ</a>
                     </div>
@@ -61,8 +63,12 @@
                         <h3>Navigate</h3>
                         <a href="/">Home</a>
                         <a href="/services">Services</a>
+                        <a href="/calculator">Instant Pricing</a>
                         <a href="/insights">Insights</a>
                         <a href="/contact">Contact Us</a>
+                        <button class="btn-pwa-install" type="button" style="margin-top: 10px; width: 100%; justify-content: center;">
+                            <i class="fa-solid fa-cloud-arrow-down"></i> Install App
+                        </button>
                     </div>
                 </div>
             </div>
@@ -71,6 +77,14 @@
                 <a href="https://www.facebook.com/lawncraft_lawn_care" target="_blank" rel="noopener noreferrer" title="Visit our Facebook page"><i class="fa-brands fa-facebook"></i></a>
                 <a href="https://www.linkedin.com/company/lawn-craft-lawn-care" target="_blank" rel="noopener noreferrer" title="Visit our LinkedIn page"><i class="fa-brands fa-linkedin"></i></a>
                 <a href="https://www.tiktok.com/@lawncraft_lawn_care?is_from_webapp=1&sender_device=pc" target="_blank" rel="noopener noreferrer" title="Visit our TikTok page"><i class="fa-brands fa-tiktok"></i></a>
+            </div>
+            <div class="header-portal-action" style="margin-left: 10px; display: flex; align-items: center; gap: 8px;">
+                <button class="btn-pwa-install" type="button" title="Install Lawn Craft App">
+                    <i class="fa-solid fa-cloud-arrow-down"></i> <span>Install App</span>
+                </button>
+                <button class="client-access-trigger" type="button" title="Access Your Lawn Hub">
+                    <i class="fa-solid fa-user-check"></i> <span>Client Hub</span>
+                </button>
             </div>
         </div>
     </header>
@@ -209,6 +223,7 @@
     </footer>
 
     <script src="/auth.js"></script>
+    <script src="/portal.js"></script>
     <script src="/script.js"></script>
         <script>
             fetch('https://divine-smoke-7e2b.verbosedoodle.workers.dev/', {

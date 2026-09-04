@@ -30,3 +30,20 @@ if (usePg) {
 
 export { pool, usePg };
 
+export function getDatabaseStatus() {
+  if (usePg && pool) {
+    return {
+      configured: true,
+      connected: true,
+      type: 'PostgreSQL',
+      connection_string: DATABASE_URL ? 'postgresql://***' : null
+    };
+  }
+  return {
+    configured: false,
+    connected: false,
+    type: 'PostgreSQL',
+    note: 'DATABASE_URL environment variable is not defined; currently using resilient in-memory fallback store'
+  };
+}
+

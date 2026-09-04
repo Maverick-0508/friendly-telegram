@@ -1,5 +1,6 @@
 import { supabase } from '../config/supabase.js';
 import { pool, usePg } from '../config/db.js';
+import { registerQuoteInPortal } from './portalController.js';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -131,6 +132,17 @@ export async function submitContactForm(req, res, next) {
     };
     mockLeads.push(mockLead);
 
+    // Also register in portal store so client hub recognizes this client's consultation
+    registerQuoteInPortal({
+      id: mockLead.id,
+      full_name: data.name,
+      email: data.email,
+      phone: data.phone,
+      service_type: 'Consultation Request',
+      message: data.message,
+      created_at: mockLead.created_at
+    });
+
     return res.status(201).json({
       success: true,
       message: 'Your message has been sent successfully.',
@@ -158,6 +170,40 @@ export async function submitQuoteForm(req, res, next) {
       });
     }
 
+    if (supabase) {
+      try {
+        const { data: insertedQuote, error } = await supabase
+          .from('quotes')
+          .insert([
+            {
+              full_name: fullName,
+              email,
+              phone,
+              address: normalizeText(payload.address),
+              property_size: payload.property_size || null,
+              property_type: normalizeText(payload.property_type),
+              service_type: normalizeText(payload.service_type),
+              service_frequency: normalizeText(payload.service_frequency),
+              preferred_start_date: payload.preferred_start_date || null,
+              additional_details: normalizeText(payload.additional_details || payload.message),
+            },
+          ])
+          .select()
+          .single();
+
+        if (!error && insertedQuote) {
+          registerQuoteInPortal(insertedQuote);
+          return res.status(201).json({
+            success: true,
+            message: 'Quote request submitted successfully.',
+            data: insertedQuote,
+          });
+        }
+      } catch (sbErr) {
+        console.warn('Supabase quote insert failed, falling back:', sbErr.message);
+      }
+    }
+
     const mockQuote = {
       id: 'quote_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
       full_name: fullName,
@@ -173,6 +219,9 @@ export async function submitQuoteForm(req, res, next) {
       created_at: new Date().toISOString(),
     };
     mockQuotes.push(mockQuote);
+
+    // Also register in portal store so client hub immediately lists this quote
+    registerQuoteInPortal(mockQuote);
 
     return res.status(201).json({
       success: true,

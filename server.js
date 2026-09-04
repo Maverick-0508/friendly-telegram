@@ -44,8 +44,30 @@ app.get('/health', (_req, res) => {
   });
 });
 
+// Home alias redirect
+app.get('/home', (_req, res) => {
+  res.redirect(301, '/');
+});
+
 // API routes
 app.use('/api', apiRoutes);
+
+// Dedicated dynamic client hub routes
+app.get('/tracker/:orderId', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'tracker.html'));
+});
+
+app.get('/pay/:invoiceId', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'pay.html'));
+});
+
+app.get('/receipt/:invoiceId', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'receipt.html'));
+});
+
+app.get('/calculator', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'calculator.html'));
+});
 
 // Static file serving with clean URLs
 app.use(express.static(__dirname, {

@@ -1,6 +1,6 @@
 {
   "name": "Lawn Craft",
-  "description": "Professional lawn care and mowing services website with consultation booking, service areas, and customer portal",
+  "description": "Dynamic lawn care client hub with passwordless access, live GPS crew tracker, instant pricing calculator, loyalty perks, and M-Pesa invoice settlement",
   "requestFramePermissions": ["geolocation"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

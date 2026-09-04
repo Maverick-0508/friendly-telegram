@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instant Lawn Pricing Calculator | Lawn Craft</title>
+    <meta name="description" content="Calculate real-time pricing for professional lawn mowing, core aeration, and turf care tailored to your exact property size.">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#15803d">
+    <link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
+    
+    <!-- Google Fonts & Font Awesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header class="header">
+        <div class="header-container">
+            <a href="/" class="logo-link">
+                <img src="/assets/images/logo-64.png" alt="Lawn Craft Logo" class="logo-image" width="47" height="56">
+                <span class="logo-text">Lawn Craft</span>
+            </a>
+            <nav class="nav-menu">
+                <ul class="nav-links">
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/services">Services</a></li>
+                    <li><a href="/calculator" class="active">Instant Pricing</a></li>
+                    <li><a href="/insights">Insights</a></li>
+                    <li><a href="/contact">Contact Us</a></li>
+                </ul>
+            </nav>
+
+            <div class="header-right-actions" style="display: flex; align-items: center; gap: 8px;">
+                <button class="btn-pwa-install" type="button" title="Install Lawn Craft App">
+                    <i class="fa-solid fa-cloud-arrow-down"></i> <span>Install App</span>
+                </button>
+                <button class="btn btn-outline-nav client-access-trigger" title="Access Your Client Hub">
+                    <i class="fa-solid fa-user-check"></i> <span>Client Hub</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="page-main">
+        <section class="page-hero">
+            <div class="container">
+                <span class="hero-category">Transparent Engineering</span>
+                <h1>Instant Lawn Pricing Calculator</h1>
+                <p>Configure your exact lawn dimensions, grass variety, and desired service cadence to generate guaranteed upfront pricing in seconds.</p>
+            </div>
+        </section>
+
+        <section class="calculator-page-section">
+            <div class="container">
+                <div id="instant-calculator" class="calc-wrapper">
+                    <!-- Calculator Grid -->
+                    <div class="calc-layout-grid">
+                        
+                        <!-- Left Inputs -->
+                        <div class="calc-inputs-col">
+                            
+                            <!-- 1. Property Size Slider -->
+                            <div class="calc-card-panel">
+                                <div class="panel-header">
+                                    <span class="step-num">1</span>
+                                    <div>
+                                        <h3>Property Lawn Surface Area</h3>
+                                        <p>Adjust to match your manicured turf size</p>
+                                    </div>
+                                </div>
+                                <div class="size-display-wrap">
+                                    <span class="size-big" id="calc-size-val">5,000 sq ft</span>
+                                    <span class="size-hint">Approx. 1/8 acre residential lot</span>
+                                </div>
+                                <input type="range" id="calc-size-slider" min="1000" max="30000" step="500" value="5000" class="calc-range-slider">
+                                <div class="slider-ticks">
+                                    <span>1,000 sq ft</span>
+                                    <span>10,000 sq ft</span>
+                                    <span>20,000 sq ft</span>
+                                    <span>30,000+ sq ft</span>
+                                </div>
+                            </div>
+
+                            <!-- 2. Grass Variety -->
+                            <div class="calc-card-panel">
+                                <div class="panel-header">
+                                    <span class="step-num">2</span>
+                                    <div>
+                                        <h3>Select Grass Variety</h3>
+                                        <p>Different turf requires custom blade height and rotary speeds</p>
+                                    </div>
+                                </div>
+                                <div class="chips-group">
+                                    <button type="button" class="calc-chip active" data-grass="kikuyu">
+                                        <i class="fa-solid fa-leaf"></i> Kikuyu Grass
+                                    </button>
+                                    <button type="button" class="calc-chip" data-grass="bermuda">
+                                        <i class="fa-solid fa-seedling"></i> Bermuda Tifway
+                                    </button>
+                                    <button type="button" class="calc-chip" data-grass="paspalum">
+                                        <i class="fa-solid fa-wheat-awn"></i> Paspalum
+                                    </button>
+                                    <button type="button" class="calc-chip" data-grass="buffalo">
+                                        <i class="fa-solid fa-tree"></i> Buffalo Grass
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 3. Frequency Cadence -->
+                            <div class="calc-card-panel">
+                                <div class="panel-header">
+                                    <span class="step-num">3</span>
+                                    <div>
+                                        <h3>Maintenance Frequency</h3>
+                                        <p>Regular maintenance unlocks preferential recurring rates</p>
+                                    </div>
+                                </div>
+                                <div class="chips-group">
+                                    <button type="button" class="calc-chip" data-freq="weekly">
+                                        Weekly (Best Lawn Health -15%)
+                                    </button>
+                                    <button type="button" class="calc-chip active" data-freq="biweekly">
+                                        Bi-Weekly (Most Popular)
+                                    </button>
+                                    <button type="button" class="calc-chip" data-freq="monthly">
+                                        Monthly Maintenance
+                                    </button>
+                                    <button type="button" class="calc-chip" data-freq="onetime">
+                                        One-Time Precision Cut
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 4. Add-Ons -->
+                            <div class="calc-card-panel">
+                                <div class="panel-header">
+                                    <span class="step-num">4</span>
+                                    <div>
+                                        <h3>Optional Care Enhancements</h3>
+                                        <p>Combine with your mowing visit for maximum convenience</p>
+                                    </div>
+                                </div>
+                                <div class="addons-check-list">
+                                    <label class="addon-checkbox-label">
+                                        <input type="checkbox" class="calc-addon-check" data-addon="edging">
+                                        <div class="addon-info">
+                                            <strong>Laser-Straight Edge Trimming</strong>
+                                            <span>Concrete curbs, stone pathways, and flowerbeds</span>
+                                        </div>
+                                        <div class="addon-rate-tag">+$15.00</div>
+                                    </label>
+                                    <label class="addon-checkbox-label">
+                                        <input type="checkbox" class="calc-addon-check" data-addon="fertilizer">
+                                        <div class="addon-info">
+                                            <strong>Organic Slow-Release Fertilizer</strong>
+                                            <span>Eco-friendly nitrogen & potassium root feeder</span>
+                                        </div>
+                                        <div class="addon-rate-tag">+$35.00</div>
+                                    </label>
+                                    <label class="addon-checkbox-label">
+                                        <input type="checkbox" class="calc-addon-check" data-addon="aeration">
+                                        <div class="addon-info">
+                                            <strong>Deep Core Soil Aeration</strong>
+                                            <span>Relieves compacted soil for oxygen absorption</span>
+                                        </div>
+                                        <div class="addon-rate-tag">+$55.00</div>
+                                    </label>
+                                    <label class="addon-checkbox-label">
+                                        <input type="checkbox" class="calc-addon-check" data-addon="hedges">
+                                        <div class="addon-info">
+                                            <strong>Perimeter Hedge Sculpting</strong>
+                                            <span>Boundary pruning and complete debris removal</span>
+                                        </div>
+                                        <div class="addon-rate-tag">+$30.00</div>
+                                    </label>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Right Summary & Checkout Column -->
+                        <div class="calc-summary-col">
+                            <div class="sticky-calc-summary">
+                                <h3>Quote Summary</h3>
+
+                                <div class="summary-line">
+                                    <span>Base Care Subtotal:</span>
+                                    <strong id="calc-subtotal">$45.00</strong>
+                                </div>
+
+                                <div class="summary-line discount-line" id="calc-discount-row" style="display:none; color:#15803d;">
+                                    <span>Promo Discount Applied:</span>
+                                    <strong id="calc-discount-amount">-$0.00</strong>
+                                </div>
+
+                                <div class="summary-total-big">
+                                    <span>Estimated Price:</span>
+                                    <strong id="calc-total">$45.00</strong>
+                                </div>
+                                <div class="tax-note">Inclusive of equipment, fuel, crew dispatch & 16% VAT</div>
+
+                                <!-- Promo Code Box -->
+                                <div class="promo-code-wrap">
+                                    <label for="calc-coupon-input"><i class="fa-solid fa-tag"></i> Have a Promo Code?</label>
+                                    <div class="coupon-input-group">
+                                        <input type="text" id="calc-coupon-input" placeholder="e.g. SPRING20" class="coupon-field">
+                                        <button type="button" id="calc-coupon-btn" class="btn btn-apply-coupon">Apply</button>
+                                    </div>
+                                    <div id="calc-coupon-msg" class="coupon-message"></div>
+                                    <div class="coupon-hints">
+                                        Try: <code>SPRING20</code> (20% off) or <code>FIRSTCUT</code> ($15 off)
+                                    </div>
+                                </div>
+
+                                <!-- Booking Action -->
+                                <button type="button" id="calc-book-btn" class="btn btn-primary btn-block btn-calc-action">
+                                    <i class="fa-solid fa-calendar-check"></i> Instant Book Lawn Service
+                                </button>
+                                <p class="action-caption">Feeds directly to supervisor dispatch queue with zero delay.</p>
+
+                                <div class="calc-perks-list">
+                                    <div><i class="fa-solid fa-shield-check text-green"></i> 100% Satisfaction Guarantee</div>
+                                    <div><i class="fa-solid fa-bolt text-green"></i> Same-Week Crew Dispatch Available</div>
+                                    <div><i class="fa-solid fa-mobile-screen text-green"></i> Live GPS Tracking on Service Day</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom" style="text-align:center;">
+                <p>&copy; 2026 Lawn Craft. All rights reserved. | Sustainable Turf Management & Landscaping Ltd</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="/portal.js"></script>
+</body>
+</html>
