@@ -1,267 +1,214 @@
-// In-memory ERP database for Lawn Craft Client Hub & Dispatch
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { supabase } from '../config/supabase.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const DATA_FILE = path.join(__dirname, '../../data/portal-store.json');
+
+// In-memory runtime cache for Lawn Craft Client Hub & Dispatch
 const clients = new Map();
 const workOrders = new Map();
 const invoices = new Map();
 const quotes = new Map();
 
 // Helper to normalize phone / email
-function normalizeIdentifier(raw) {
+export function normalizeIdentifier(raw) {
   if (!raw) return '';
   const str = String(raw).trim().toLowerCase();
-  // If it's an email
   if (str.includes('@')) return str;
-  // If phone, strip non-digits
   const digits = str.replace(/\D/g, '');
-  // Standardize 2547XXXXXXXX or 07XXXXXXXX
   if (digits.startsWith('254') && digits.length === 12) {
     return '0' + digits.slice(3);
   }
   return digits;
 }
 
-// Seed initial ERP data
-function seedInitialData() {
-  // Client 1: Sarah Wanjiru (Active crew on-site & unpaid bill demo)
-  const sarah = {
-    id: 'cl_sarah_001',
-    name: 'Sarah Wanjiru',
-    phone: '0712345678',
-    email: 'sarah.wanjiru@example.com',
-    address: '42 Karen Country Club Lane, Karen, Nairobi',
-    property_size: 8500,
-    grass_type: 'Kikuyu Grass (Fine Cut)',
-    service_plan: 'Bi-Weekly Precision Care',
-    customer_since: 'March 2024',
-    loyalty: {
-      points_balance: 340,
-      tier: 'Gold',
-      rate_per_point: 0.50,
-      dollar_value: 170.00,
-      referral_code: 'LAWN-SARAH-42',
-      next_tier: 'Platinum',
-      points_to_next_tier: 160
+// Persist data store to disk
+function persistToDisk() {
+  try {
+    const dir = path.dirname(DATA_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
     }
-  };
 
-  // Client 2: David Kimani (Platinum VIP with upcoming scheduled visit)
-  const david = {
-    id: 'cl_david_002',
-    name: 'David Kimani',
-    phone: '0722334455',
-    email: 'david.kimani@runda.co.ke',
-    address: '18 Runda Mimosa Ridge, Runda, Nairobi',
-    property_size: 14000,
-    grass_type: 'Bermuda Tifway 419',
-    service_plan: 'Weekly Estate Management',
-    customer_since: 'January 2023',
-    loyalty: {
-      points_balance: 780,
-      tier: 'Platinum',
-      rate_per_point: 0.50,
-      dollar_value: 390.00,
-      referral_code: 'LAWN-DAVID-18',
-      next_tier: 'Diamond VIP',
-      points_to_next_tier: 220
-    }
-  };
+    // Deduplicate objects by their primary ID to prevent phone/email key aliasing duplicates
+    const uniqueClients = Array.from(new Map(
+      Array.from(clients.values()).filter(c => c && c.id).map(c => [c.id, c])
+    ).values());
+    const uniqueWorkOrders = Array.from(new Map(
+      Array.from(workOrders.values()).filter(w => w && w.id).map(w => [w.id, w])
+    ).values());
+    const uniqueInvoices = Array.from(new Map(
+      Array.from(invoices.values()).filter(i => i && i.id).map(i => [i.id, i])
+    ).values());
+    const uniqueQuotes = Array.from(new Map(
+      Array.from(quotes.values()).filter(q => q && q.id).map(q => [q.id, q])
+    ).values());
 
-  // Client 3: Elena Gomez (Bronze client with fresh quote)
-  const elena = {
-    id: 'cl_elena_003',
-    name: 'Elena Gomez',
-    phone: '0733445566',
-    email: 'elena.gomez@gmail.com',
-    address: '7 Wood Avenue, Kilimani, Nairobi',
-    property_size: 4200,
-    grass_type: 'Paspalum Notatum',
-    service_plan: 'Monthly Seasonal Care',
-    customer_since: 'July 2025',
-    loyalty: {
-      points_balance: 140,
-      tier: 'Bronze',
-      rate_per_point: 0.50,
-      dollar_value: 70.00,
-      referral_code: 'LAWN-ELENA-07',
-      next_tier: 'Silver',
-      points_to_next_tier: 110
-    }
-  };
+    const payload = {
+      clients: uniqueClients,
+      workOrders: uniqueWorkOrders,
+      invoices: uniqueInvoices,
+      quotes: uniqueQuotes,
+      updated_at: new Date().toISOString()
+    };
 
-  clients.set('0712345678', sarah);
-  clients.set('sarah.wanjiru@example.com', sarah);
-  clients.set(sarah.id, sarah);
-
-  clients.set('0722334455', david);
-  clients.set('david.kimani@runda.co.ke', david);
-  clients.set(david.id, david);
-
-  clients.set('0733445566', elena);
-  clients.set('elena.gomez@gmail.com', elena);
-  clients.set(elena.id, elena);
-
-  // Work Orders for Sarah
-  const wo1 = {
-    id: 'wo_902',
-    client_id: sarah.id,
-    client_name: sarah.name,
-    title: 'Bi-Weekly Precision Mowing & Perimeter Trimming',
-    service_type: 'Precision Lawn Mowing',
-    status: 'in_progress', // triggers Crew On-Site pulsing badge
-    scheduled_date: 'Today, 10:30 AM',
-    total_price: 45.00,
-    crew_name: 'Alpha Crew (Lead: Jackson M.)',
-    crew_lead: 'Jackson Mwangi',
-    crew_phone: '+254 700 889911',
-    crew_vehicle: 'Toyota Hilux - Reg: KDG 892A',
-    crew_members: ['Jackson M. (Lead Specialist)', 'David K. (Mower Operator)', 'Peter O. (Edging & Blower)'],
-    crew_lat: -1.3195,
-    crew_lng: 36.7082,
-    property_lat: -1.3198,
-    property_lng: 36.7085,
-    eta_minutes: 6,
-    started_at: '10:32 AM',
-    notes: 'Front gate code #4210 provided. Guard briefed on team arrival.',
-    checklist: [
-      { task: 'Perimeter Boundary & Obstacle Check', status: 'completed', time: '10:35 AM' },
-      { task: 'Border Edging & Concrete Trimming', status: 'completed', time: '10:48 AM' },
-      { task: 'Rotary Precision Cut (Height: 2.5 inches)', status: 'in_progress', time: 'Active' },
-      { task: 'Cuttings Vacuuming & Bagging', status: 'pending', time: 'Scheduled' },
-      { task: 'Blower Cleanup for Pathways & Driveway', status: 'pending', time: 'Scheduled' }
-    ]
-  };
-
-  const wo2 = {
-    id: 'wo_889',
-    client_id: sarah.id,
-    client_name: sarah.name,
-    title: 'Seasonal Deep Core Aeration & Bio-Fertilization',
-    service_type: 'Soil & Turf Nutrition',
-    status: 'scheduled',
-    scheduled_date: 'Sep 15, 2026, 09:00 AM',
-    total_price: 85.00,
-    crew_name: 'Eco-Care Special Ops Team',
-    crew_lead: 'Martin Njoroge',
-    crew_phone: '+254 700 889922',
-    checklist: [
-      { task: 'Turf Moisture Testing', status: 'pending' },
-      { task: 'Hollow Tine Mechanical Aeration', status: 'pending' },
-      { task: 'Organic Slow-Release Fertilizer Application', status: 'pending' }
-    ]
-  };
-
-  const wo3 = {
-    id: 'wo_840',
-    client_id: sarah.id,
-    client_name: sarah.name,
-    title: 'End-of-Month Hedge Trimming & Mulch Replenishment',
-    service_type: 'Hedge & Shrub Care',
-    status: 'completed',
-    scheduled_date: 'Aug 22, 2026',
-    total_price: 65.00,
-    completed_at: '2026-08-22 12:45 PM',
-    crew_name: 'Alpha Crew'
-  };
-
-  workOrders.set(wo1.id, wo1);
-  workOrders.set(wo2.id, wo2);
-  workOrders.set(wo3.id, wo3);
-
-  // Invoices for Sarah
-  const inv1 = {
-    id: 'inv_1042',
-    invoice_number: 'INV-2026-1042',
-    client_id: sarah.id,
-    client_name: sarah.name,
-    client_phone: sarah.phone,
-    client_email: sarah.email,
-    client_address: sarah.address,
-    service_title: 'Bi-Weekly Precision Care & Hedge Trim',
-    total_amount: 95.00,
-    balance_due: 95.00,
-    status: 'unpaid',
-    issue_date: '2026-09-01',
-    due_date: '2026-09-10',
-    subtotal: 81.90,
-    tax_vat: 13.10,
-    pin_number: 'P051239841K',
-    items: [
-      { description: 'Precision Lawn Mowing (8,500 sq ft)', quantity: 1, unit_price: 65.00, amount: 65.00 },
-      { description: 'Perimeter Hedge Shaping & Green Waste Removal', quantity: 1, unit_price: 30.00, amount: 30.00 }
-    ]
-  };
-
-  const inv2 = {
-    id: 'inv_1018',
-    invoice_number: 'INV-2026-1018',
-    client_id: sarah.id,
-    client_name: sarah.name,
-    client_phone: sarah.phone,
-    client_email: sarah.email,
-    client_address: sarah.address,
-    service_title: 'Turf Conditioning & Weed Treatment',
-    total_amount: 120.00,
-    balance_due: 0.00,
-    status: 'paid',
-    issue_date: '2026-08-15',
-    due_date: '2026-08-25',
-    paid_at: '2026-08-23 14:10 EAT',
-    payment_method: 'Lipa Na M-Pesa (Till 789210)',
-    mpesa_receipt: 'QKJ82910TX',
-    subtotal: 103.45,
-    tax_vat: 16.55,
-    pin_number: 'P051239841K',
-    items: [
-      { description: 'Turf Aeration & Organic Treatment', quantity: 1, unit_price: 120.00, amount: 120.00 }
-    ]
-  };
-
-  invoices.set(inv1.id, inv1);
-  invoices.set(inv2.id, inv2);
-
-  // Quotes for Sarah
-  const qt1 = {
-    id: 'qt_501',
-    quote_number: 'QT-2026-0501',
-    client_id: sarah.id,
-    title: 'Automated Smart Sprinkler Zone Optimization',
-    status: 'approved',
-    total_amount: 180.00,
-    items: [
-      { description: 'Rain Bird Rotor Head Replacement (4 Units)', amount: 100.00 },
-      { description: 'Smart Rain Sensor Controller Setup', amount: 80.00 }
-    ],
-    created_at: '2026-08-15'
-  };
-  quotes.set(qt1.id, qt1);
-
-  // Work order for David
-  const woDavid = {
-    id: 'wo_915',
-    client_id: david.id,
-    client_name: david.name,
-    title: 'Weekly Estate Mowing & Green Waste Removal',
-    service_type: 'Estate Maintenance',
-    status: 'scheduled',
-    scheduled_date: 'Tomorrow, 08:30 AM',
-    total_price: 90.00,
-    crew_name: 'Delta Precision Team (Lead: Samuel W.)',
-    crew_lead: 'Samuel Wambua',
-    crew_phone: '+254 711 223344',
-    crew_vehicle: 'Isuzu D-Max - Reg: KDJ 402B',
-    crew_members: ['Samuel W.', 'Ken N.', 'Boniface M.'],
-    checklist: [
-      { task: 'Perimeter Trimming', status: 'pending' },
-      { task: 'Wide-Deck Mowing (14,000 sq ft)', status: 'pending' },
-      { task: 'Blow & Detail', status: 'pending' }
-    ]
-  };
-  workOrders.set(woDavid.id, woDavid);
+    fs.writeFileSync(DATA_FILE, JSON.stringify(payload, null, 2), 'utf8');
+  } catch (err) {
+    console.error('[portalController] Error persisting data store:', err.message);
+  }
 }
 
-// Run seed immediately
-seedInitialData();
+// Load data store from disk
+function loadFromDisk() {
+  try {
+    if (!fs.existsSync(DATA_FILE)) return;
+    const raw = fs.readFileSync(DATA_FILE, 'utf8');
+    if (!raw.trim()) return;
+    const parsed = JSON.parse(raw);
 
-// Lookup Client by Phone or Email
+    if (Array.isArray(parsed.clients)) {
+      for (const c of parsed.clients) {
+        if (!c || !c.id) continue;
+        clients.set(c.id, c);
+        if (c.phone) clients.set(normalizeIdentifier(c.phone), c);
+        if (c.email) clients.set(c.email.toLowerCase().trim(), c);
+      }
+    }
+
+    if (Array.isArray(parsed.workOrders)) {
+      for (const w of parsed.workOrders) {
+        if (w && w.id) workOrders.set(w.id, w);
+      }
+    }
+
+    if (Array.isArray(parsed.invoices)) {
+      for (const i of parsed.invoices) {
+        if (i && i.id) invoices.set(i.id, i);
+      }
+    }
+
+    if (Array.isArray(parsed.quotes)) {
+      for (const q of parsed.quotes) {
+        if (q && q.id) quotes.set(q.id, q);
+      }
+    }
+  } catch (err) {
+    console.error('[portalController] Error loading data from disk:', err.message);
+  }
+}
+
+// Initialize data from disk on module load
+loadFromDisk();
+
+// Helper to index a client in memory
+function indexClient(client) {
+  if (!client || !client.id) return;
+  clients.set(client.id, client);
+  if (client.phone) {
+    clients.set(normalizeIdentifier(client.phone), client);
+  }
+  if (client.email) {
+    clients.set(client.email.toLowerCase().trim(), client);
+  }
+}
+
+// Create or Register a Client Profile
+export async function createClientProfile(req, res) {
+  try {
+    const { name, phone, email, address, property_size, grass_type, service_plan } = req.body || {};
+
+    if (!name || name.trim().length < 2) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Client full name is required (at least 2 characters).', code: 'INVALID_NAME' }
+      });
+    }
+
+    if (!phone || phone.trim().length < 7) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'A valid phone number is required.', code: 'INVALID_PHONE' }
+      });
+    }
+
+    const normPhone = normalizeIdentifier(phone);
+    const cleanEmail = email ? email.toLowerCase().trim() : '';
+
+    // Check if already exists
+    let existing = clients.get(normPhone) || (cleanEmail ? clients.get(cleanEmail) : null);
+    if (existing) {
+      // Update fields if provided
+      if (address) existing.address = address;
+      if (property_size) existing.property_size = Number(property_size);
+      if (grass_type) existing.grass_type = grass_type;
+      if (service_plan) existing.service_plan = service_plan;
+      if (cleanEmail && !existing.email) existing.email = cleanEmail;
+      persistToDisk();
+
+      return res.status(200).json({
+        success: true,
+        message: 'Client profile updated successfully.',
+        client: existing
+      });
+    }
+
+    const clientId = 'cl_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const newClient = {
+      id: clientId,
+      name: name.trim(),
+      phone: phone.trim(),
+      email: cleanEmail,
+      address: address ? address.trim() : '',
+      property_size: Number(property_size) || 0,
+      grass_type: grass_type || 'Kikuyu Turf',
+      service_plan: service_plan || 'Custom Care',
+      customer_since: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+      loyalty: {
+        points_balance: 100, // Welcome enrollment reward (KSh 5,000 value)
+        tier: 'Bronze',
+        rate_per_point: 50.00,
+        dollar_value: 5000.00,
+        cash_value: 5000.00,
+        referral_code: 'LAWN-' + (normPhone.slice(-4) || 'VIP'),
+        next_tier: 'Silver',
+        points_to_next_tier: 150
+      }
+    };
+
+    indexClient(newClient);
+    persistToDisk();
+
+    // Async sync to Supabase if available
+    if (supabase) {
+      try {
+        await supabase.from('clients').insert([{
+          name: newClient.name,
+          phone: newClient.phone,
+          email: newClient.email || null
+        }]);
+      } catch (sbErr) {
+        console.warn('[portalController] Supabase client sync note:', sbErr.message);
+      }
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: 'Client profile registered successfully.',
+      client: newClient
+    });
+  } catch (err) {
+    console.error('[createClientProfile Error]', err);
+    return res.status(500).json({
+      success: false,
+      error: { message: 'Failed to create client profile.', code: 'CLIENT_CREATE_FAILED' }
+    });
+  }
+}
+
+// Lookup Client by Phone or Email (Strict Real Data, No Mock Synthetics)
 export async function lookupClient(req, res) {
   try {
     const rawIdentifier = req.body?.identifier || req.query?.identifier || '';
@@ -289,42 +236,60 @@ export async function lookupClient(req, res) {
       }
     }
 
-    // If still not found, create an active personalized record so any user phone can test
-    if (!client) {
-      const isEmail = rawIdentifier.includes('@');
-      const generatedName = isEmail 
-        ? rawIdentifier.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-        : 'Valued Client';
-      const cleanPhone = isEmail ? '07' + Math.floor(10000000 + Math.random() * 90000000) : rawIdentifier;
-      const cleanEmail = isEmail ? rawIdentifier.trim().toLowerCase() : `client.${cleanPhone.slice(-4)}@lawncraft.co.ke`;
-
-      client = {
-        id: 'cl_dyn_' + Date.now().toString(36),
-        name: generatedName,
-        phone: cleanPhone,
-        email: cleanEmail,
-        address: 'Nairobi Resident Property',
-        property_size: 5000,
-        grass_type: 'Kikuyu Turf',
-        service_plan: 'On-Demand Care',
-        customer_since: 'New Client',
-        loyalty: {
-          points_balance: 50,
-          tier: 'Bronze',
-          rate_per_point: 0.50,
-          dollar_value: 25.00,
-          referral_code: 'LAWN-' + (cleanPhone.slice(-4) || 'GIFT'),
-          next_tier: 'Silver',
-          points_to_next_tier: 200
+    // Try Supabase lookup if not in local store
+    if (!client && supabase) {
+      try {
+        const isEmail = rawIdentifier.includes('@');
+        let query = supabase.from('clients').select('*');
+        if (isEmail) {
+          query = query.eq('email', rawIdentifier.trim().toLowerCase());
+        } else {
+          query = query.or(`phone.eq.${rawIdentifier},phone.eq.${normalized}`);
         }
-      };
-      // Save for subsequent calls in current session
-      clients.set(normalized, client);
-      clients.set(client.phone, client);
-      if (client.email) clients.set(client.email, client);
+        const { data: dbMatches } = await query.limit(1);
+
+        if (dbMatches && dbMatches.length > 0) {
+          const dbC = dbMatches[0];
+          client = {
+            id: 'cl_db_' + dbC.id,
+            name: dbC.name,
+            phone: dbC.phone,
+            email: dbC.email || '',
+            address: 'Property Address on File',
+            property_size: 5000,
+            grass_type: 'Turf Lawn',
+            service_plan: 'Standard Precision Care',
+            customer_since: dbC.created_at ? new Date(dbC.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Registered Client',
+            loyalty: {
+              points_balance: 100,
+              tier: 'Bronze',
+              rate_per_point: 50.00,
+              dollar_value: 5000.00,
+              cash_value: 5000.00,
+              referral_code: 'LAWN-' + (normalizeIdentifier(dbC.phone).slice(-4) || 'VIP'),
+              next_tier: 'Silver',
+              points_to_next_tier: 150
+            }
+          };
+          indexClient(client);
+          persistToDisk();
+        }
+      } catch (sbErr) {
+        console.warn('[portalController] Supabase lookup fallback note:', sbErr.message);
+      }
     }
 
-    // Gather client work orders (match by client ID or normalized phone/email)
+    // If not found in either store, return a clean 404 (No fake profiles)
+    if (!client) {
+      return res.status(404).json({
+        success: false,
+        not_found: true,
+        message: 'No registered client profile found for this phone number or email.',
+        identifier: rawIdentifier
+      });
+    }
+
+    // Gather client work orders
     const clientWorkOrders = Array.from(workOrders.values())
       .filter(w => (
         (client.id && w.client_id === client.id) ||
@@ -333,7 +298,7 @@ export async function lookupClient(req, res) {
       ))
       .sort((a, b) => (a.status === 'in_progress' ? -1 : 1));
 
-    // Gather client invoices (match by client ID or normalized phone/email)
+    // Gather client invoices
     const clientInvoices = Array.from(invoices.values())
       .filter(i => (
         (client.id && i.client_id === client.id) ||
@@ -342,7 +307,7 @@ export async function lookupClient(req, res) {
       ))
       .sort((a, b) => (a.status === 'unpaid' ? -1 : 1));
 
-    // Gather client quotes (match by client ID or normalized phone/email)
+    // Gather client quotes
     const clientQuotes = Array.from(quotes.values())
       .filter(q => (
         (client.id && q.client_id === client.id) ||
@@ -377,62 +342,91 @@ export async function lookupClient(req, res) {
   }
 }
 
-// 1-Click Work Order Booking (Seamless Add-on or Anonymous Booking)
+// 1-Click Work Order Booking (Creates Real Client + Order + Invoice)
 export async function createWorkOrder(req, res) {
   try {
     const payload = req.body || {};
-    const serviceType = payload.service_type || payload.title || 'Lawn Care Service';
-    const clientName = payload.client_name || payload.name || 'Valued Client';
-    const clientPhone = payload.phone || payload.client_phone || '0700000000';
-    const clientEmail = payload.email || payload.client_email || '';
-    const address = payload.address || 'Client Address on File';
-    const propertySize = Number(payload.property_size) || 5000;
-    const price = Number(payload.price || payload.total_price || 65);
+    const serviceType = payload.service_type || payload.title || 'Precision Lawn Care';
+    const clientName = (payload.client_name || payload.name || '').trim();
+    const clientPhone = (payload.phone || payload.client_phone || '').trim();
+    const clientEmail = (payload.email || payload.client_email || '').trim().toLowerCase();
+    const address = (payload.address || '').trim() || 'Property Location Pending';
+    const propertySize = Number(payload.property_size) || 0;
+    const price = Number(payload.price || payload.total_price || 4500);
     let clientId = payload.client_id || null;
+
+    if (!clientName) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Client name is required for booking.', code: 'NAME_REQUIRED' }
+      });
+    }
+
+    if (!clientPhone) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Phone number is required for dispatch notification.', code: 'PHONE_REQUIRED' }
+      });
+    }
 
     const normPhone = normalizeIdentifier(clientPhone);
 
-    // If no client_id was supplied, look up or create client automatically
-    if (!clientId && normPhone) {
-      let matchedClient = clients.get(normPhone);
-      if (!matchedClient && clientEmail) {
-        matchedClient = clients.get(clientEmail.toLowerCase().trim());
-      }
+    // Look up or create client record
+    let matchedClient = normPhone ? clients.get(normPhone) : null;
+    if (!matchedClient && clientEmail) {
+      matchedClient = clients.get(clientEmail);
+    }
 
-      if (matchedClient) {
-        clientId = matchedClient.id;
-      } else {
-        const isEmail = clientEmail.includes('@');
-        const newClient = {
-          id: 'cl_dyn_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
-          name: clientName,
-          phone: clientPhone,
-          email: clientEmail || `client.${normPhone.slice(-4)}@lawncraft.co.ke`,
-          address: address,
-          property_size: propertySize,
-          grass_type: 'Kikuyu Turf',
-          service_plan: 'On-Demand Care',
-          customer_since: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-          loyalty: {
-            points_balance: 75, // initial bonus + order reward
-            tier: 'Bronze',
-            rate_per_point: 0.50,
-            dollar_value: 37.50,
-            referral_code: 'LAWN-' + (normPhone.slice(-4) || 'GIFT'),
-            next_tier: 'Silver',
-            points_to_next_tier: 175
-          }
-        };
-        clients.set(normPhone, newClient);
-        clients.set(newClient.id, newClient);
-        if (newClient.email) clients.set(newClient.email.toLowerCase(), newClient);
-        clientId = newClient.id;
+    if (matchedClient) {
+      clientId = matchedClient.id;
+      if (address && !matchedClient.address) matchedClient.address = address;
+      if (propertySize && !matchedClient.property_size) matchedClient.property_size = propertySize;
+      if (matchedClient.loyalty) {
+        matchedClient.loyalty.points_balance += 30; // +30 points for booking
+        matchedClient.loyalty.dollar_value = matchedClient.loyalty.points_balance * matchedClient.loyalty.rate_per_point;
+        matchedClient.loyalty.cash_value = matchedClient.loyalty.dollar_value;
+      }
+    } else {
+      const newClientId = 'cl_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+      const newClient = {
+        id: newClientId,
+        name: clientName,
+        phone: clientPhone,
+        email: clientEmail,
+        address: address,
+        property_size: propertySize,
+        grass_type: payload.grass_type || 'Turf Grass',
+        service_plan: payload.service_plan || 'On-Demand Precision Care',
+        customer_since: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        loyalty: {
+          points_balance: 100, // 100 points enrollment + order reward (KSh 5,000 value)
+          tier: 'Bronze',
+          rate_per_point: 50.00,
+          dollar_value: 5000.00,
+          cash_value: 5000.00,
+          referral_code: 'LAWN-' + (normPhone.slice(-4) || 'CARE'),
+          next_tier: 'Silver',
+          points_to_next_tier: 150
+        }
+      };
+      indexClient(newClient);
+      clientId = newClient.id;
+
+      // Sync to Supabase
+      if (supabase) {
+        try {
+          supabase.from('clients').insert([{
+            name: newClient.name,
+            phone: newClient.phone,
+            email: newClient.email || null
+          }]).then(() => {}).catch(() => {});
+        } catch {}
       }
     }
 
     const newOrderId = 'wo_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
     const invoiceId = 'inv_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
-    
+
     const workOrder = {
       id: newOrderId,
       client_id: clientId,
@@ -441,25 +435,26 @@ export async function createWorkOrder(req, res) {
       client_email: clientEmail,
       title: `${serviceType} - ${clientName}`,
       service_type: serviceType,
-      status: payload.status || 'incoming', // 'incoming' feeds supervisor dispatch queue
-      scheduled_date: payload.scheduled_date || 'Scheduled for Next Available Slot (within 48 hrs)',
+      status: payload.status || 'incoming',
+      scheduled_date: payload.scheduled_date || 'Next Available Slot (within 48 hrs)',
       total_price: price,
       property_size: propertySize,
-      address,
+      address: address,
       invoice_id: invoiceId,
-      notes: payload.notes || 'Booked directly via Lawn Craft Client Portal',
-      created_at: new Date().toISOString(),
+      notes: payload.notes || 'Service booked online via Lawn Craft portal.',
       crew_name: 'Pending Supervisor Dispatch',
       checklist: [
-        { task: 'Site Inspection & Safety Sweep', status: 'pending' },
-        { task: serviceType, status: 'pending' },
-        { task: 'Site Cleanup & Customer Signoff', status: 'pending' }
+        { task: 'Perimeter Safety Sweep & Obstacle Verification', status: 'pending' },
+        { task: 'Precision Edge Detailing & Border Trim', status: 'pending' },
+        { task: 'Core Precision Mowing (Standard Cut Height)', status: 'pending' },
+        { task: 'Clippings Vacuuming & Green Waste Bagging', status: 'pending' },
+        { task: 'Walkway, Patio & Driveway Blower Detailing', status: 'pending' }
       ]
     };
 
     workOrders.set(workOrder.id, workOrder);
 
-    // Auto-generate invoice for client convenience and immediate payment
+    // Auto-generate invoice
     const subtotal = Math.round((price / 1.16) * 100) / 100;
     const taxVat = Math.round((price - subtotal) * 100) / 100;
     const invoiceRecord = {
@@ -480,18 +475,37 @@ export async function createWorkOrder(req, res) {
       tax_vat: taxVat,
       pin_number: 'P051239841K',
       items: [
-        { description: `${serviceType} (${propertySize.toLocaleString()} sq ft)`, quantity: 1, unit_price: price, amount: price }
+        {
+          description: propertySize ? `${serviceType} (${propertySize.toLocaleString()} sq ft)` : serviceType,
+          quantity: 1,
+          unit_price: price,
+          amount: price
+        }
       ]
     };
-    invoices.set(invoiceId, invoiceRecord);
 
-    // If existing client, reward loyalty points (+25 pts)
-    if (clientId && clients.has(clientId)) {
-      const client = clients.get(clientId);
-      if (client.loyalty) {
-        client.loyalty.points_balance += 25;
-        client.loyalty.dollar_value = client.loyalty.points_balance * client.loyalty.rate_per_point;
-      }
+    invoices.set(invoiceId, invoiceRecord);
+    persistToDisk();
+
+    // Sync to Supabase work_orders
+    if (supabase) {
+      try {
+        supabase.from('work_orders').insert([{
+          id: workOrder.id,
+          client_id: clientId,
+          client_name: clientName,
+          client_phone: clientPhone,
+          client_email: clientEmail || null,
+          title: workOrder.title,
+          service_type: workOrder.service_type,
+          status: workOrder.status,
+          scheduled_date: workOrder.scheduled_date,
+          total_price: workOrder.total_price,
+          property_size: propertySize || null,
+          address: address,
+          invoice_id: invoiceId
+        }]).then(() => {}).catch(() => {});
+      } catch {}
     }
 
     return res.status(201).json({
@@ -509,42 +523,31 @@ export async function createWorkOrder(req, res) {
   }
 }
 
-// Get Single Work Order (for live GPS tracker)
+// Get Single Work Order (Strict Real Data, No Mock Fallback)
 export async function getWorkOrder(req, res) {
   try {
     const { orderId } = req.params;
-    const order = workOrders.get(orderId);
+    let order = workOrders.get(orderId);
+
+    if (!order && supabase) {
+      try {
+        const { data: dbOrders } = await supabase
+          .from('work_orders')
+          .select('*')
+          .eq('id', orderId)
+          .limit(1);
+
+        if (dbOrders && dbOrders.length > 0) {
+          order = dbOrders[0];
+          workOrders.set(orderId, order);
+        }
+      } catch {}
+    }
 
     if (!order) {
-      // Fallback demo order for tracker preview
-      return res.status(200).json({
-        success: true,
-        data: {
-          id: orderId,
-          title: 'Precision Mowing & Edge Detailing',
-          service_type: 'Precision Lawn Mowing',
-          status: 'in_progress',
-          scheduled_date: 'Today, 10:30 AM',
-          total_price: 45.00,
-          crew_name: 'Alpha Crew (Lead: Jackson M.)',
-          crew_lead: 'Jackson Mwangi',
-          crew_phone: '+254 700 889911',
-          crew_vehicle: 'Toyota Hilux - Reg: KDG 892A',
-          crew_members: ['Jackson M. (Lead Specialist)', 'David K.', 'Peter O.'],
-          crew_lat: -1.3195,
-          crew_lng: 36.7082,
-          property_lat: -1.3198,
-          property_lng: 36.7085,
-          eta_minutes: 5,
-          notes: 'Team is active on-site.',
-          checklist: [
-            { task: 'Perimeter Boundary Inspection', status: 'completed', time: '10:35 AM' },
-            { task: 'Border Edging & Trimming', status: 'completed', time: '10:48 AM' },
-            { task: 'Rotary Precision Cut', status: 'in_progress', time: 'Active Now' },
-            { task: 'Clippings Vacuuming', status: 'pending', time: 'Scheduled' },
-            { task: 'Site Cleanup & Leaf Blowing', status: 'pending', time: 'Scheduled' }
-          ]
-        }
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Work order not found.', code: 'WORK_ORDER_NOT_FOUND' }
       });
     }
 
@@ -584,6 +587,7 @@ export async function stkPushMpesa(req, res) {
       inv.paid_at = new Date().toISOString();
       inv.payment_method = `Lipa Na M-Pesa (${cleanPhone})`;
       inv.mpesa_receipt = mpesaReceipt;
+      persistToDisk();
     }
 
     return res.status(200).json({
@@ -591,48 +595,28 @@ export async function stkPushMpesa(req, res) {
       message: `STK Push initiated successfully to ${phone}. Please enter your M-Pesa PIN on your handset.`,
       checkout_request_id: checkoutRequestId,
       mpesa_receipt: mpesaReceipt,
-      amount: amount || 95.00,
+      amount: amount || 4500.00,
       account_reference: account_reference || 'LAWNCRAFT'
     });
   } catch (err) {
-    console.error('[stkPushMpesa Error]', err);
     return res.status(500).json({
       success: false,
-      error: { message: 'M-Pesa transaction processing failed.', code: 'MPESA_FAILED' }
+      error: { message: 'STK push initiation failed.', code: 'STK_PUSH_FAILED' }
     });
   }
 }
 
-// Get Single Invoice for Payment or Receipt
+// Get Single Invoice (Strict Real Data, No Mock Fallback)
 export async function getInvoice(req, res) {
   try {
     const { invoiceId } = req.params;
-    let inv = invoices.get(invoiceId);
+    const inv = invoices.get(invoiceId);
 
     if (!inv) {
-      // Fallback demo invoice
-      inv = {
-        id: invoiceId,
-        invoice_number: 'INV-2026-' + invoiceId.replace(/\D/g, '').padStart(4, '0'),
-        client_name: 'Sarah Wanjiru',
-        client_phone: '0712345678',
-        client_email: 'sarah.wanjiru@example.com',
-        client_address: '42 Karen Country Club Lane, Karen, Nairobi',
-        service_title: 'Bi-Weekly Precision Care & Hedge Trim',
-        total_amount: 95.00,
-        balance_due: 95.00,
-        status: 'unpaid',
-        issue_date: '2026-09-01',
-        due_date: '2026-09-10',
-        subtotal: 81.90,
-        tax_vat: 13.10,
-        pin_number: 'P051239841K',
-        items: [
-          { description: 'Precision Lawn Mowing (8,500 sq ft)', quantity: 1, unit_price: 65.00, amount: 65.00 },
-          { description: 'Hedge Shaping & Debris Disposal', quantity: 1, unit_price: 30.00, amount: 30.00 }
-        ]
-      };
-      invoices.set(invoiceId, inv);
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Invoice not found.', code: 'INVOICE_NOT_FOUND' }
+      });
     }
 
     return res.status(200).json({
@@ -647,23 +631,18 @@ export async function getInvoice(req, res) {
   }
 }
 
-// Settle Invoice (Card or Manual simulation)
+// Settle Invoice
 export async function settleInvoice(req, res) {
   try {
     const { invoiceId } = req.params;
     const { payment_method, card_last4 } = req.body || {};
 
-    let inv = invoices.get(invoiceId);
+    const inv = invoices.get(invoiceId);
     if (!inv) {
-      inv = {
-        id: invoiceId,
-        invoice_number: 'INV-2026-' + invoiceId.replace(/\D/g, '').padStart(4, '0'),
-        total_amount: 95.00,
-        balance_due: 95.00,
-        status: 'unpaid',
-        items: [{ description: 'Lawn Care Service', quantity: 1, unit_price: 95.00, amount: 95.00 }]
-      };
-      invoices.set(invoiceId, inv);
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Invoice record not found.', code: 'INVOICE_NOT_FOUND' }
+      });
     }
 
     inv.status = 'paid';
@@ -671,6 +650,7 @@ export async function settleInvoice(req, res) {
     inv.paid_at = new Date().toISOString();
     inv.payment_method = payment_method || (card_last4 ? `Card (•••• ${card_last4})` : 'Instant Online Payment');
     inv.mpesa_receipt = 'TX_' + Math.floor(10000000 + Math.random() * 90000000).toString();
+    persistToDisk();
 
     return res.status(200).json({
       success: true,
@@ -689,13 +669,13 @@ export async function settleInvoice(req, res) {
 export async function validateCoupon(req, res) {
   try {
     const code = String(req.body?.code || '').trim().toUpperCase();
-    const orderAmount = Number(req.body?.amount || 100);
+    const orderAmount = Number(req.body?.amount || 4500);
 
     const validCoupons = {
       'SPRING20': { type: 'percent', value: 20, desc: '20% Spring Refresh Discount' },
-      'FIRSTCUT': { type: 'fixed', value: 15, desc: '$15 Off Your First Lawn Cut' },
+      'FIRSTCUT': { type: 'fixed', value: 1500, desc: 'KSh 1,500 Off Your First Lawn Cut' },
       'VIPLAWN': { type: 'percent', value: 15, desc: '15% Loyalty Member Perks' },
-      'GREEN50': { type: 'fixed', value: 50, minAmount: 150, desc: '$50 Off Orders Over $150' },
+      'GREEN50': { type: 'fixed', value: 5000, minAmount: 15000, desc: 'KSh 5,000 Off Orders Over KSh 15,000' },
       'KAREN10': { type: 'percent', value: 10, desc: '10% Karen & Runda Neighborhood Special' }
     };
 
@@ -712,7 +692,7 @@ export async function validateCoupon(req, res) {
     if (coupon.minAmount && orderAmount < coupon.minAmount) {
       return res.status(400).json({
         valid: false,
-        message: `Promo code ${code} requires a minimum order of $${coupon.minAmount}.`,
+        message: `Promo code ${code} requires a minimum order of KSh ${coupon.minAmount.toLocaleString()}.`,
         code: 'MIN_ORDER_NOT_MET'
       });
     }
@@ -750,43 +730,42 @@ export function registerQuoteInPortal(quoteData) {
   try {
     const rawPhone = quoteData.phone || '';
     const normPhone = normalizeIdentifier(rawPhone);
-    const clientName = quoteData.full_name || quoteData.name || 'Valued Client';
-    const clientEmail = quoteData.email || '';
+    const clientName = (quoteData.full_name || quoteData.name || '').trim() || 'Client';
+    const clientEmail = (quoteData.email || '').trim().toLowerCase();
     const serviceType = quoteData.service_type || quoteData.service || 'Precision Lawn Care';
 
     let client = normPhone ? clients.get(normPhone) : null;
     if (!client && clientEmail) {
-      client = clients.get(clientEmail.toLowerCase().trim());
+      client = clients.get(clientEmail);
     }
 
     if (!client && normPhone) {
       client = {
-        id: 'cl_dyn_' + Date.now().toString(36),
+        id: 'cl_' + Date.now().toString(36),
         name: clientName,
         phone: rawPhone,
         email: clientEmail,
-        address: quoteData.address || 'Nairobi Area',
-        property_size: Number(quoteData.property_size) || 5000,
-        grass_type: 'Kikuyu Turf',
+        address: quoteData.address || '',
+        property_size: Number(quoteData.property_size) || 0,
+        grass_type: 'Turf Grass',
         service_plan: 'Custom Care',
-        customer_since: 'New Client',
+        customer_since: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
         loyalty: {
           points_balance: 50,
           tier: 'Bronze',
-          rate_per_point: 0.50,
-          dollar_value: 25.00,
-          referral_code: 'LAWN-' + (normPhone.slice(-4) || 'GIFT'),
+          rate_per_point: 50.00,
+          dollar_value: 2500.00,
+          cash_value: 2500.00,
+          referral_code: 'LAWN-' + (normPhone.slice(-4) || 'CARE'),
           next_tier: 'Silver',
           points_to_next_tier: 200
         }
       };
-      clients.set(normPhone, client);
-      clients.set(client.id, client);
-      if (clientEmail) clients.set(clientEmail.toLowerCase(), client);
+      indexClient(client);
     }
 
     const quoteId = quoteData.id || ('qt_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5));
-    const estimatedPrice = Number(quoteData.property_size) ? Math.max(35, Math.round(Number(quoteData.property_size) * 0.008)) : 65.00;
+    const estimatedPrice = Number(quoteData.total_amount) || (Number(quoteData.property_size) ? Math.max(3500, Math.round(Number(quoteData.property_size) * 0.8)) : 4500.00);
 
     const newQuote = {
       id: quoteId,
@@ -812,6 +791,7 @@ export function registerQuoteInPortal(quoteData) {
     };
 
     quotes.set(quoteId, newQuote);
+    persistToDisk();
     return newQuote;
   } catch (err) {
     console.error('[registerQuoteInPortal Error]', err);

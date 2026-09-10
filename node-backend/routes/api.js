@@ -4,6 +4,7 @@ import { submitContactForm, submitQuoteForm } from '../controllers/formControlle
 import { register, login, me } from '../controllers/authController.js';
 import {
   lookupClient,
+  createClientProfile,
   createWorkOrder,
   getWorkOrder,
   stkPushMpesa,
@@ -62,6 +63,7 @@ router.post('/analytics', (_req, res) => {
 // Portal & Client Recognition
 router.post('/portal/lookup', lookupClient);
 router.get('/portal/lookup', lookupClient);
+router.post('/portal/clients', createClientProfile);
 
 // Work Orders & Dispatch Queue
 router.post('/work-orders', createWorkOrder);

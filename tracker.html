@@ -353,16 +353,16 @@
                         <i class="fa-solid fa-user-shield"></i>
                     </div>
                     <div class="crew-info-text">
-                        <h3 id="crew-lead-name">Jackson Mwangi</h3>
-                        <p id="crew-team-title">Lead Specialist • Alpha Care Crew</p>
-                        <p id="crew-vehicle">Vehicle: Toyota Hilux (KDG 892A)</p>
+                        <h3 id="crew-lead-name">Assigned Field Specialist</h3>
+                        <p id="crew-team-title">Lead Specialist • Lawn Craft Dispatch</p>
+                        <p id="crew-vehicle">Vehicle: Service Unit Dispatched</p>
                     </div>
                 </div>
                 <div class="crew-contact-buttons">
-                    <a href="tel:+254700889911" class="btn-call" id="crew-call-btn">
+                    <a href="tel:+254700000000" class="btn-call" id="crew-call-btn">
                         <i class="fa-solid fa-phone"></i> Call Lead
                     </a>
-                    <a href="https://wa.me/254700889911?text=Hi%20Jackson,%20regarding%20our%20lawn%20service%20today" target="_blank" rel="noopener" class="btn-whatsapp" id="crew-wa-btn">
+                    <a href="https://wa.me/254700000000?text=Hi,%20regarding%20our%20lawn%20service%20today" target="_blank" rel="noopener" class="btn-whatsapp" id="crew-wa-btn">
                         <i class="fa-brands fa-whatsapp"></i> WhatsApp
                     </a>
                 </div>
@@ -424,21 +424,49 @@
             let orderId = pathSegments[pathSegments.length - 1];
             if (!orderId || orderId === 'tracker' || orderId === 'tracker.html') {
                 const params = new URLSearchParams(window.location.search);
-                orderId = params.get('orderId') || 'wo_902';
+                orderId = params.get('orderId') || '';
             }
 
             let orderData = null;
-            try {
-                const res = await fetch(`/api/work-orders/${orderId}`);
-                const json = await res.json();
-                if (json.success && json.data) {
-                    orderData = json.data;
+            if (orderId) {
+                try {
+                    const res = await fetch(`/api/work-orders/${orderId}`);
+                    const json = await res.json();
+                    if (json.success && json.data) {
+                        orderData = json.data;
+                    }
+                } catch (err) {
+                    console.warn('Could not fetch work order', err);
                 }
-            } catch (err) {
-                console.warn('Using default demo tracking data', err);
             }
 
-            // Coordinates for Nairobi / Karen demo
+            if (orderData) {
+                if (orderData.crew_lead) document.getElementById('crew-lead-name').textContent = orderData.crew_lead;
+                if (orderData.crew_name) document.getElementById('crew-team-title').textContent = orderData.crew_name;
+                if (orderData.crew_vehicle) document.getElementById('crew-vehicle').textContent = `Vehicle: ${orderData.crew_vehicle}`;
+                if (orderData.crew_phone) {
+                    const cleanPhone = orderData.crew_phone.replace(/[^0-9+]/g, '');
+                    document.getElementById('crew-call-btn').href = `tel:${cleanPhone}`;
+                    document.getElementById('crew-wa-btn').href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent('Hi, regarding our scheduled lawn service today')}`;
+                }
+                if (orderData.status) {
+                    const statusMap = {
+                        'in_progress': 'Active On-Site',
+                        'scheduled': 'Scheduled / Dispatched',
+                        'completed': 'Service Completed',
+                        'pending': 'Queued for Dispatch'
+                    };
+                    document.getElementById('tracker-eta').textContent = statusMap[orderData.status] || orderData.status;
+                }
+                if (orderData.service_type) {
+                    document.getElementById('tracker-eta-desc').textContent = `${orderData.service_type} • ${orderData.address || 'Client Address'}`;
+                }
+            } else if (!orderId) {
+                document.getElementById('tracker-eta').textContent = 'No Order Selected';
+                document.getElementById('tracker-eta-desc').textContent = 'Please open tracking via your active job link in the Lawn Craft Client Hub.';
+            }
+
+            // Coordinates for Nairobi / Karen property
             const propertyLat = orderData?.property_lat || -1.3198;
             const propertyLng = orderData?.property_lng || 36.7085;
             let crewLat = orderData?.crew_lat || -1.3193;
@@ -460,7 +488,9 @@
                 iconAnchor: [20, 20]
             });
             const propMarker = L.marker([propertyLat, propertyLng], { icon: propertyIcon }).addTo(map);
-            propMarker.bindPopup(`<b>Your Property</b><br>42 Karen Country Club Lane`).openPopup();
+            const propLabel = orderData?.client_name ? `${orderData.client_name}'s Property` : 'Client Service Location';
+            const propAddr = orderData?.address || 'Nairobi, Kenya';
+            propMarker.bindPopup(`<b>${propLabel}</b><br>${propAddr}`).openPopup();
 
             // Crew vehicle marker (Truck with pulse)
             const crewIcon = L.divIcon({
@@ -470,7 +500,7 @@
                 iconAnchor: [22, 22]
             });
             const crewMarker = L.marker([crewLat, crewLng], { icon: crewIcon }).addTo(map);
-            crewMarker.bindPopup(`<b>Alpha Crew Vehicle</b><br>Active on-site servicing turf`);
+            crewMarker.bindPopup(`<b>${orderData?.crew_name || 'Assigned Crew'}</b><br>Active on-site servicing turf`);
 
             // Draw route connection line
             const routeLine = L.polyline([[crewLat, crewLng], [propertyLat, propertyLng]], {

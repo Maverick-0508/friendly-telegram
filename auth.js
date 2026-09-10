@@ -28,6 +28,9 @@
     try {
       localStorage.setItem(STORAGE_KEY_TOKEN, token);
       localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
+      if (user && user.email) {
+        localStorage.setItem('lawncraft_client_identifier', user.email.toLowerCase().trim());
+      }
     } catch {}
   }
 
@@ -35,6 +38,11 @@
     try {
       localStorage.removeItem(STORAGE_KEY_TOKEN);
       localStorage.removeItem(STORAGE_KEY_USER);
+      localStorage.removeItem('lawncraft_client_identifier');
+      sessionStorage.clear();
+      
+      const dash = document.getElementById('personalized-dashboard');
+      if (dash) dash.remove();
     } catch {}
   }
 
@@ -64,8 +72,33 @@
   // ── Client-side auth functions ──
 
   async function signup(email, password, fullName) {
+    const cleanEmail = email.toLowerCase().trim();
+    // 1. Try server-side Supabase Auth API
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail, password, fullName })
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.user) {
+        const token = data.session?.access_token || generateToken();
+        const safeUser = { id: data.user.id, email: data.user.email, fullName: data.user.fullName || fullName };
+        setSession(token, safeUser);
+        return { user: safeUser };
+      } else if (data && data.error && res.status < 500) {
+        throw new Error(data.error.message || 'Registration failed');
+      }
+    } catch (err) {
+      if (err.message && !err.message.includes('Failed to fetch') && !err.message.includes('NetworkError')) {
+        throw err;
+      }
+      console.warn('Backend registration failed or unreachable, using local fallback store:', err.message);
+    }
+
+    // 2. Fallback to resilient local store
     const users = getUsers();
-    const existing = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const existing = users.find(u => u.email.toLowerCase() === cleanEmail);
     if (existing) {
       throw new Error('An account with this email already exists');
     }
@@ -85,7 +118,7 @@
 
     const user = {
       id: crypto.randomUUID ? crypto.randomUUID() : 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2),
-      email: email.toLowerCase(),
+      email: cleanEmail,
       fullName,
       passwordHash,
       salt: saltHex,
@@ -102,8 +135,33 @@
   }
 
   async function login(email, password) {
+    const cleanEmail = email.toLowerCase().trim();
+    // 1. Try server-side Supabase Auth API
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanEmail, password })
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.user) {
+        const token = data.session?.access_token || generateToken();
+        const safeUser = { id: data.user.id, email: data.user.email, fullName: data.user.fullName };
+        setSession(token, safeUser);
+        return { user: safeUser };
+      } else if (data && data.error && res.status < 500) {
+        throw new Error(data.error.message || 'Invalid email or password');
+      }
+    } catch (err) {
+      if (err.message && !err.message.includes('Failed to fetch') && !err.message.includes('NetworkError')) {
+        throw err;
+      }
+      console.warn('Backend login unreachable or failed, falling back to local store:', err.message);
+    }
+
+    // 2. Fallback to resilient local store
     const users = getUsers();
-    const user = users.find(u => u.email === email.toLowerCase());
+    const user = users.find(u => u.email === cleanEmail);
     if (!user) {
       throw new Error('No account found with this email');
     }
@@ -132,7 +190,11 @@
 
   function logout() {
     clearSession();
-    window.location.href = '/';
+    if (window.LawnCraftPortal && typeof window.LawnCraftPortal.logout === 'function') {
+      window.LawnCraftPortal.logout();
+    } else {
+      window.location.href = '/';
+    }
   }
 
   function isLoggedIn() {

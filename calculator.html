@@ -20,7 +20,7 @@
 <body>
 
     <!-- Header Navigation -->
-    <header class="header">
+    <header id="main-header">
         <div class="header-container">
             <a href="/" class="logo-link">
                 <img src="/assets/images/logo-64.png" alt="Lawn Craft Logo" class="logo-image" width="47" height="56">
@@ -35,14 +35,57 @@
                     <li><a href="/contact">Contact Us</a></li>
                 </ul>
             </nav>
-
-            <div class="header-right-actions" style="display: flex; align-items: center; gap: 8px;">
-                <button class="btn-pwa-install" type="button" title="Install Lawn Craft App">
-                    <i class="fa-solid fa-cloud-arrow-down"></i> <span>Install App</span>
+            <div class="header-actions-group">
+                <div class="socials">
+                    <a href="https://www.instagram.com/_lawncraft?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noopener noreferrer" title="Visit our Instagram page"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="https://www.facebook.com/lawncraft_lawn_care" target="_blank" rel="noopener noreferrer" title="Visit our Facebook page"><i class="fa-brands fa-facebook"></i></a>
+                    <a href="https://www.linkedin.com/company/lawn-craft-lawn-care" target="_blank" rel="noopener noreferrer" title="Visit our LinkedIn page"><i class="fa-brands fa-linkedin"></i></a>
+                    <a href="https://www.tiktok.com/@lawncraft_lawn_care?is_from_webapp=1&sender_device=pc" target="_blank" rel="noopener noreferrer" title="Visit our TikTok page"><i class="fa-brands fa-tiktok"></i></a>
+                </div>
+                <div class="header-portal-action">
+                    <button class="btn-pwa-install" type="button" title="Install Lawn Craft App">
+                        <i class="fa-solid fa-cloud-arrow-down"></i> <span>Install App</span>
+                    </button>
+                    <button class="client-access-trigger" type="button" title="Access Your Lawn Hub">
+                        <i class="fa-solid fa-user-check"></i> <span>Client Hub</span>
+                    </button>
+                </div>
+                <button class="menu-toggle directory-toggle" type="button" aria-expanded="false" aria-controls="directory-panel" aria-label="Open menu">
+                    <span>Menu</span>
+                    <i class="fa-solid fa-bars"></i>
                 </button>
-                <button class="btn btn-outline-nav client-access-trigger" title="Access Your Client Hub">
-                    <i class="fa-solid fa-user-check"></i> <span>Client Hub</span>
-                </button>
+            </div>
+            <div class="directory-panel" id="directory-panel" aria-hidden="true">
+                <div class="directory-grid">
+                    <div class="directory-column">
+                        <h3>Company</h3>
+                        <a href="/about">About Us</a>
+                        <a href="/process">Our Process</a>
+                    </div>
+                    <div class="directory-column">
+                        <h3>Operations</h3>
+                        <a href="/service-area">Service Area</a>
+                        <a href="/portfolio">Project Gallery</a>
+                        <a href="/contact">Book Consultation</a>
+                    </div>
+                    <div class="directory-column">
+                        <h3>Resources</h3>
+                        <a href="/calculator" class="active">Instant Pricing Tool</a>
+                        <a href="/property-check-guide.docx" download="property-check-guide.docx">Property Check Guide</a>
+                        <a href="/#faq">FAQ</a>
+                    </div>
+                    <div class="directory-column directory-mobile-nav">
+                        <h3>Navigate</h3>
+                        <a href="/">Home</a>
+                        <a href="/services">Services</a>
+                        <a href="/calculator" class="active">Instant Pricing</a>
+                        <a href="/insights">Insights</a>
+                        <a href="/contact">Contact Us</a>
+                        <button class="btn-pwa-install" type="button" style="margin-top: 10px; width: 100%; justify-content: center;">
+                            <i class="fa-solid fa-cloud-arrow-down"></i> Install App
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </header>
@@ -53,6 +96,18 @@
                 <span class="hero-category">Transparent Engineering</span>
                 <h1>Instant Lawn Pricing Calculator</h1>
                 <p>Configure your exact lawn dimensions, grass variety, and desired service cadence to generate guaranteed upfront pricing in seconds.</p>
+                <nav class="page-hero-nav" aria-label="Page Navigation">
+                    <div class="page-hero-breadcrumbs">
+                        <a href="/"><i class="fa-solid fa-house"></i> Home</a>
+                        <span class="sep"><i class="fa-solid fa-chevron-right"></i></span>
+                        <span class="current">Instant Pricing</span>
+                    </div>
+                    <div class="page-hero-quick-links">
+                        <a href="/services" class="page-hero-chip"><i class="fa-solid fa-leaf"></i> Services</a>
+                        <a href="/service-area" class="page-hero-chip"><i class="fa-solid fa-map-location-dot"></i> Service Area</a>
+                        <a href="/contact" class="page-hero-chip"><i class="fa-solid fa-envelope"></i> Book Consultation</a>
+                    </div>
+                </nav>
             </div>
         </section>
 
@@ -153,7 +208,7 @@
                                             <strong>Laser-Straight Edge Trimming</strong>
                                             <span>Concrete curbs, stone pathways, and flowerbeds</span>
                                         </div>
-                                        <div class="addon-rate-tag">+$15.00</div>
+                                        <div class="addon-rate-tag">+KSh 1,500</div>
                                     </label>
                                     <label class="addon-checkbox-label">
                                         <input type="checkbox" class="calc-addon-check" data-addon="fertilizer">
@@ -161,7 +216,7 @@
                                             <strong>Organic Slow-Release Fertilizer</strong>
                                             <span>Eco-friendly nitrogen & potassium root feeder</span>
                                         </div>
-                                        <div class="addon-rate-tag">+$35.00</div>
+                                        <div class="addon-rate-tag">+KSh 3,500</div>
                                     </label>
                                     <label class="addon-checkbox-label">
                                         <input type="checkbox" class="calc-addon-check" data-addon="aeration">
@@ -169,7 +224,7 @@
                                             <strong>Deep Core Soil Aeration</strong>
                                             <span>Relieves compacted soil for oxygen absorption</span>
                                         </div>
-                                        <div class="addon-rate-tag">+$55.00</div>
+                                        <div class="addon-rate-tag">+KSh 5,500</div>
                                     </label>
                                     <label class="addon-checkbox-label">
                                         <input type="checkbox" class="calc-addon-check" data-addon="hedges">
@@ -177,7 +232,7 @@
                                             <strong>Perimeter Hedge Sculpting</strong>
                                             <span>Boundary pruning and complete debris removal</span>
                                         </div>
-                                        <div class="addon-rate-tag">+$30.00</div>
+                                        <div class="addon-rate-tag">+KSh 3,000</div>
                                     </label>
                                 </div>
                             </div>
@@ -191,17 +246,17 @@
 
                                 <div class="summary-line">
                                     <span>Base Care Subtotal:</span>
-                                    <strong id="calc-subtotal">$45.00</strong>
+                                    <strong id="calc-subtotal">KSh 3,500</strong>
                                 </div>
 
                                 <div class="summary-line discount-line" id="calc-discount-row" style="display:none; color:#15803d;">
                                     <span>Promo Discount Applied:</span>
-                                    <strong id="calc-discount-amount">-$0.00</strong>
+                                    <strong id="calc-discount-amount">-KSh 0</strong>
                                 </div>
 
                                 <div class="summary-total-big">
                                     <span>Estimated Price:</span>
-                                    <strong id="calc-total">$45.00</strong>
+                                    <strong id="calc-total">KSh 3,500</strong>
                                 </div>
                                 <div class="tax-note">Inclusive of equipment, fuel, crew dispatch & 16% VAT</div>
 
@@ -214,7 +269,7 @@
                                     </div>
                                     <div id="calc-coupon-msg" class="coupon-message"></div>
                                     <div class="coupon-hints">
-                                        Try: <code>SPRING20</code> (20% off) or <code>FIRSTCUT</code> ($15 off)
+                                        Try: <code>SPRING20</code> (20% off) or <code>FIRSTCUT</code> (KSh 1,500 off)
                                     </div>
                                 </div>
 

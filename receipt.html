@@ -252,8 +252,8 @@
                 </div>
                 <div class="invoice-doc-meta">
                     <div class="doc-title">TAX RECEIPT</div>
-                    <div class="doc-num" id="r-inv-num">INV-2026-1042</div>
-                    <p style="margin:2px 0; font-size:0.85rem; color:#64748b;" id="r-date">Date: 2026-09-01</p>
+                    <div class="doc-num" id="r-inv-num">—</div>
+                    <p style="margin:2px 0; font-size:0.85rem; color:#64748b;" id="r-date">Date: —</p>
                     <div class="paid-stamp" id="r-paid-badge">
                         <i class="fa-solid fa-circle-check"></i> PAID IN FULL
                     </div>
@@ -263,14 +263,14 @@
             <div class="client-info-grid">
                 <div class="info-col">
                     <h4>Billed To</h4>
-                    <p><strong id="r-client-name">Sarah Wanjiru</strong></p>
-                    <p id="r-client-address">42 Karen Country Club Lane, Karen, Nairobi</p>
-                    <p id="r-client-phone">Phone: 0712345678</p>
+                    <p><strong id="r-client-name">Loading client...</strong></p>
+                    <p id="r-client-address">—</p>
+                    <p id="r-client-phone">—</p>
                 </div>
                 <div class="info-col">
                     <h4>Payment Verification</h4>
-                    <p>Method: <strong id="r-method">Lipa Na M-Pesa</strong></p>
-                    <p>Transaction Code: <strong id="r-receipt-ref" style="color:#15803d;">QKJ82910TX</strong></p>
+                    <p>Method: <strong id="r-method">—</strong></p>
+                    <p>Transaction Code: <strong id="r-receipt-ref" style="color:#15803d;">—</strong></p>
                     <p>Status: <span style="color:#059669; font-weight:bold;">Settled & Reconciled</span></p>
                 </div>
             </div>
@@ -281,21 +281,12 @@
                         <th>Service Description</th>
                         <th class="text-right">Qty</th>
                         <th class="text-right">Unit Price</th>
-                        <th class="text-right">Amount (USD)</th>
+                        <th class="text-right">Amount (KES)</th>
                     </tr>
                 </thead>
                 <tbody id="r-items-body">
                     <tr>
-                        <td>Precision Lawn Mowing (8,500 sq ft) - Bi-Weekly Care</td>
-                        <td class="text-right">1</td>
-                        <td class="text-right">$65.00</td>
-                        <td class="text-right">$65.00</td>
-                    </tr>
-                    <tr>
-                        <td>Perimeter Hedge Shaping & Eco Waste Hauling</td>
-                        <td class="text-right">1</td>
-                        <td class="text-right">$30.00</td>
-                        <td class="text-right">$30.00</td>
+                        <td colspan="4" style="text-align:center; color:#64748b;">Loading receipt items...</td>
                     </tr>
                 </tbody>
             </table>
@@ -304,15 +295,15 @@
                 <div class="summary-totals">
                     <div class="total-row">
                         <span>Subtotal (Net)</span>
-                        <span id="r-subtotal">$81.90</span>
+                        <span id="r-subtotal">—</span>
                     </div>
                     <div class="total-row">
                         <span>VAT (16% Kenya)</span>
-                        <span id="r-vat">$13.10</span>
+                        <span id="r-vat">—</span>
                     </div>
                     <div class="total-row grand-total">
                         <span>Total Paid</span>
-                        <span id="r-total">$95.00</span>
+                        <span id="r-total">—</span>
                     </div>
                 </div>
             </div>
@@ -330,7 +321,14 @@
             let invoiceId = pathSegments[pathSegments.length - 1];
             if (!invoiceId || invoiceId === 'receipt' || invoiceId === 'receipt.html') {
                 const params = new URLSearchParams(window.location.search);
-                invoiceId = params.get('invoiceId') || 'inv_1042';
+                invoiceId = params.get('invoiceId') || '';
+            }
+
+            if (!invoiceId) {
+                document.getElementById('r-inv-num').textContent = 'None Provided';
+                document.getElementById('r-client-name').textContent = 'No Invoice ID Specified';
+                document.getElementById('r-items-body').innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#64748b;">Please open your receipt via your Client Hub or SMS receipt link.</td></tr>';
+                return;
             }
 
             try {
@@ -340,14 +338,17 @@
                     const inv = json.data;
                     document.getElementById('r-inv-num').textContent = inv.invoice_number;
                     document.getElementById('r-date').textContent = `Date: ${inv.paid_at ? inv.paid_at.slice(0, 10) : inv.issue_date}`;
-                    document.getElementById('r-client-name').textContent = inv.client_name || 'Sarah Wanjiru';
-                    document.getElementById('r-client-address').textContent = inv.client_address || 'Karen, Nairobi';
-                    document.getElementById('r-client-phone').textContent = `Phone: ${inv.client_phone || '0712345678'}`;
+                    document.getElementById('r-client-name').textContent = inv.client_name || 'Valued Client';
+                    document.getElementById('r-client-address').textContent = inv.client_address || 'Property Location on Record';
+                    document.getElementById('r-client-phone').textContent = `Phone: ${inv.client_phone || '—'}`;
                     document.getElementById('r-method').textContent = inv.payment_method || 'Lipa Na M-Pesa';
-                    document.getElementById('r-receipt-ref').textContent = inv.mpesa_receipt || 'NLM89218XK';
-                    document.getElementById('r-subtotal').textContent = `$${Number(inv.subtotal || (inv.total_amount * 0.862)).toFixed(2)}`;
-                    document.getElementById('r-vat').textContent = `$${Number(inv.tax_vat || (inv.total_amount * 0.138)).toFixed(2)}`;
-                    document.getElementById('r-total').textContent = `$${Number(inv.total_amount).toFixed(2)}`;
+                    document.getElementById('r-receipt-ref').textContent = inv.mpesa_receipt || 'NLM-VERIFIED';
+                    const subtotal = Math.round(Number(inv.subtotal || (inv.total_amount * 0.862)));
+                    const vat = Math.round(Number(inv.tax_vat || (inv.total_amount * 0.138)));
+                    const total = Math.round(Number(inv.total_amount));
+                    document.getElementById('r-subtotal').textContent = `KSh ${subtotal.toLocaleString()}`;
+                    document.getElementById('r-vat').textContent = `KSh ${vat.toLocaleString()}`;
+                    document.getElementById('r-total').textContent = `KSh ${total.toLocaleString()}`;
 
                     if (inv.items && inv.items.length > 0) {
                         const tbody = document.getElementById('r-items-body');
@@ -355,15 +356,22 @@
                             <tr>
                                 <td>${it.description}</td>
                                 <td class="text-right">${it.quantity || 1}</td>
-                                <td class="text-right">$${Number(it.unit_price || it.amount).toFixed(2)}</td>
-                                <td class="text-right">$${Number(it.amount).toFixed(2)}</td>
+                                <td class="text-right">KSh ${Math.round(Number(it.unit_price || it.amount)).toLocaleString()}</td>
+                                <td class="text-right">KSh ${Math.round(Number(it.amount)).toLocaleString()}</td>
                             </tr>
                         `).join('');
                     }
 
                     // Setup WhatsApp Share Link
-                    const shareText = `Hi! Here is my official Lawn Craft Tax Receipt for ${inv.invoice_number} (Amount: $${inv.total_amount.toFixed(2)} - Paid in full): ${window.location.href}`;
-                    document.getElementById('wa-share-btn').href = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
+                    const waShareBtn = document.getElementById('wa-share-btn');
+                    if (waShareBtn) {
+                        const shareText = `Hi! Here is my official Lawn Craft Tax Receipt for ${inv.invoice_number} (Amount: KSh ${total.toLocaleString()} - Paid in full): ${window.location.href}`;
+                        waShareBtn.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
+                    }
+                } else {
+                    document.getElementById('r-inv-num').textContent = invoiceId;
+                    document.getElementById('r-client-name').textContent = 'Invoice Not Found';
+                    document.getElementById('r-items-body').innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#b91c1c;">Invoice record could not be found in ERP database.</td></tr>';
                 }
             } catch (err) {
                 console.warn('Failed to load invoice receipt', err);

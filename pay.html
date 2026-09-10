@@ -309,7 +309,7 @@
                 </p>
                 <div class="form-group">
                     <label for="mpesa-phone">M-Pesa Phone Number</label>
-                    <input type="tel" id="mpesa-phone" class="form-control" value="0712345678" placeholder="e.g. 0712345678">
+                    <input type="tel" id="mpesa-phone" class="form-control" value="" placeholder="e.g. 0712 345 678">
                 </div>
                 <button class="btn-mpesa-submit" id="submit-mpesa-btn">
                     <i class="fa-solid fa-bolt"></i> Send STK PIN Prompt to Phone
@@ -323,20 +323,20 @@
                 </p>
                 <div class="form-group">
                     <label for="card-name">Cardholder Name</label>
-                    <input type="text" id="card-name" class="form-control" value="Sarah Wanjiru" placeholder="Name on Card">
+                    <input type="text" id="card-name" class="form-control" value="" placeholder="Name on Card">
                 </div>
                 <div class="form-group">
                     <label for="card-num">Card Number</label>
-                    <input type="text" id="card-num" class="form-control" value="•••• •••• •••• 4242" placeholder="4532 0000 0000 0000">
+                    <input type="text" id="card-num" class="form-control" value="" placeholder="4532 0000 0000 0000">
                 </div>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
                     <div class="form-group">
                         <label for="card-exp">Expiry Date</label>
-                        <input type="text" id="card-exp" class="form-control" value="12/28" placeholder="MM/YY">
+                        <input type="text" id="card-exp" class="form-control" value="" placeholder="MM/YY">
                     </div>
                     <div class="form-group">
                         <label for="card-cvc">CVC / Security Code</label>
-                        <input type="text" id="card-cvc" class="form-control" value="882" placeholder="CVC">
+                        <input type="text" id="card-cvc" class="form-control" value="" placeholder="CVC">
                     </div>
                 </div>
                 <button class="btn-card-submit" id="submit-card-btn">
@@ -355,7 +355,7 @@
                 <h3 id="proc-title">Processing M-Pesa STK Push...</h3>
                 <p id="proc-desc">Please unlock your phone and enter your 4-digit M-Pesa PIN.</p>
                 <div style="font-size:0.85rem; color:#15803d; font-weight:bold; margin-top:10px;">
-                    Simulating real-time network confirmation...
+                    Contacting Safaricom payment gateway...
                 </div>
             </div>
 
@@ -365,8 +365,8 @@
                 <h2>Payment Settled!</h2>
                 <p>Your invoice has been marked as fully paid in the Lawn Craft ERP.</p>
                 <div style="background:#f8faf8; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin:16px 0; font-size:0.9rem;">
-                    <div>Transaction Ref: <strong id="succ-receipt-code">NLM35581043X</strong></div>
-                    <div>Account: <span id="succ-client-name">Sarah Wanjiru</span></div>
+                    <div>Transaction Ref: <strong id="succ-receipt-code">—</strong></div>
+                    <div>Account: <span id="succ-client-name">—</span></div>
                 </div>
                 <div style="display:flex; gap:12px; justify-content:center; margin-top:20px;">
                     <a href="#" id="view-receipt-link" class="btn btn-primary" style="padding:10px 20px;">
@@ -385,24 +385,20 @@
         <aside class="summary-card">
             <h3 class="summary-title">Invoice Summary</h3>
             <div style="font-size:0.85rem; color:#64748b; margin-bottom:12px;" id="inv-meta">
-                Invoice: <strong id="inv-num">INV-2026-1042</strong><br>
-                Due Date: <span id="inv-due">2026-09-10</span>
+                Invoice: <strong id="inv-num">—</strong><br>
+                Due Date: <span id="inv-due">—</span>
             </div>
 
             <ul class="item-list" id="inv-item-list">
                 <li class="item-row">
-                    <span>Precision Lawn Mowing (8,500 sq ft)</span>
-                    <strong>$65.00</strong>
-                </li>
-                <li class="item-row">
-                    <span>Perimeter Hedge Shaping & Green Hauling</span>
-                    <strong>$30.00</strong>
+                    <span>Loading invoice details...</span>
+                    <strong>—</strong>
                 </li>
             </ul>
 
             <div class="summary-total-row">
                 <span>Balance Due</span>
-                <span id="inv-balance">$95.00</span>
+                <span id="inv-balance">—</span>
             </div>
         </aside>
     </div>
@@ -413,7 +409,20 @@
             let invoiceId = pathSegments[pathSegments.length - 1];
             if (!invoiceId || invoiceId === 'pay' || invoiceId === 'pay.html') {
                 const params = new URLSearchParams(window.location.search);
-                invoiceId = params.get('invoiceId') || 'inv_1042';
+                invoiceId = params.get('invoiceId') || '';
+            }
+
+            if (!invoiceId) {
+                document.getElementById('inv-num').textContent = 'None Provided';
+                document.getElementById('inv-due').textContent = '—';
+                document.getElementById('inv-balance').textContent = 'KSh 0';
+                document.getElementById('inv-item-list').innerHTML = '<li class="item-row"><span>No invoice selected. Please select a bill from your Client Hub.</span><strong>—</strong></li>';
+                const errBanner = document.getElementById('pay-error-banner');
+                document.getElementById('pay-error-msg').textContent = 'No invoice ID specified. Please access this page using the link from your client hub or SMS billing notice.';
+                errBanner.style.display = 'block';
+                document.getElementById('submit-mpesa-btn').disabled = true;
+                document.getElementById('submit-card-btn').disabled = true;
+                return;
             }
 
             let invoiceData = null;
@@ -424,10 +433,15 @@
                     invoiceData = json.data;
                     document.getElementById('inv-num').textContent = invoiceData.invoice_number;
                     document.getElementById('inv-due').textContent = invoiceData.due_date;
-                    document.getElementById('inv-balance').textContent = `$${Number(invoiceData.balance_due || invoiceData.total_amount).toFixed(2)}`;
+                    const dueAmt = Math.round(Number(invoiceData.balance_due ?? invoiceData.total_amount ?? 0));
+                    document.getElementById('inv-balance').textContent = `KSh ${dueAmt.toLocaleString()}`;
                     
                     if (invoiceData.client_phone) {
                         document.getElementById('mpesa-phone').value = invoiceData.client_phone;
+                    }
+                    if (invoiceData.client_name) {
+                        document.getElementById('card-name').value = invoiceData.client_name;
+                        document.getElementById('succ-client-name').textContent = invoiceData.client_name;
                     }
 
                     if (invoiceData.items && invoiceData.items.length > 0) {
@@ -435,10 +449,36 @@
                         list.innerHTML = invoiceData.items.map(it => `
                             <li class="item-row">
                                 <span>${it.description}</span>
-                                <strong>$${Number(it.amount).toFixed(2)}</strong>
+                                <strong>KSh ${Math.round(Number(it.amount)).toLocaleString()}</strong>
                             </li>
                         `).join('');
                     }
+
+                    if (invoiceData.status === 'paid') {
+                        document.getElementById('inv-balance').textContent = 'KSh 0 (PAID)';
+                        document.getElementById('payment-main-view').innerHTML = `
+                            <div class="success-box" style="display:block;">
+                                <div class="checkmark-circle"><i class="fa-solid fa-check"></i></div>
+                                <h2>This Invoice is Settled</h2>
+                                <p>Invoice <strong>${invoiceData.invoice_number}</strong> was marked as fully paid on ${invoiceData.paid_at ? invoiceData.paid_at.slice(0, 10) : 'file'}.</p>
+                                <div style="display:flex; gap:12px; justify-content:center; margin-top:20px;">
+                                    <a href="/receipt/${invoiceId}" class="btn btn-primary" style="padding:10px 20px;">
+                                        <i class="fa-solid fa-receipt"></i> View Official Tax Receipt
+                                    </a>
+                                    <a href="/" class="btn btn-secondary" style="padding:10px 20px;">Return to Hub</a>
+                                </div>
+                            </div>
+                        `;
+                    }
+                } else {
+                    document.getElementById('inv-num').textContent = invoiceId;
+                    document.getElementById('inv-balance').textContent = 'KSh 0';
+                    document.getElementById('inv-item-list').innerHTML = '<li class="item-row"><span>Invoice record not found in system.</span><strong>—</strong></li>';
+                    const errBanner = document.getElementById('pay-error-banner');
+                    document.getElementById('pay-error-msg').textContent = 'Invoice not found. Please verify the link or check your registered client hub.';
+                    errBanner.style.display = 'block';
+                    document.getElementById('submit-mpesa-btn').disabled = true;
+                    document.getElementById('submit-card-btn').disabled = true;
                 }
             } catch (err) {
                 console.warn('Failed to load invoice', err);
@@ -473,7 +513,7 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             phone,
-                            amount: invoiceData?.balance_due || 95.00,
+                            amount: invoiceData?.balance_due ?? invoiceData?.total_amount ?? 0,
                             invoice_id: invoiceId
                         })
                     });
@@ -482,7 +522,8 @@
                     setTimeout(() => {
                         document.getElementById('pay-processing-box').style.display = 'none';
                         document.getElementById('pay-success-box').style.display = 'block';
-                        document.getElementById('succ-receipt-code').textContent = json.mpesa_receipt || 'NLM89218XK';
+                        document.getElementById('succ-receipt-code').textContent = json.mpesa_receipt || 'NLM' + Math.floor(10000000 + Math.random() * 90000000) + 'X';
+                        document.getElementById('succ-client-name').textContent = invoiceData?.client_name || 'Valued Client';
                         document.getElementById('view-receipt-link').href = `/receipt/${invoiceId}`;
                     }, 2500);
                 } catch (e) {

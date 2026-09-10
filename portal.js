@@ -31,10 +31,16 @@
     } catch {}
   }
 
-  // Clear stored identifier
+  // Stored state
+  let originalHeroHTML = null;
+
+  // Clear stored identifier and session
   function clearStoredIdentifier() {
     try {
       localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem('lawncraft_access_token');
+      localStorage.removeItem('lawncraft_user');
+      sessionStorage.clear();
     } catch {}
   }
 
@@ -120,6 +126,9 @@
     // Swap Hero to Personalized Welcome
     const heroContent = document.querySelector('.hero-content');
     if (heroContent) {
+      if (!originalHeroHTML) {
+        originalHeroHTML = heroContent.innerHTML;
+      }
       heroContent.innerHTML = `
         <div class="client-welcome-badge">
           <span class="pulse-dot"></span>
@@ -192,7 +201,7 @@
           </div>
           <div class="loyalty-col loyalty-points-col">
             <div class="loyalty-stat-number">${loyalty.points_balance} <span class="pts-unit">pts</span></div>
-            <div class="loyalty-value-sub">Cash Value: <strong>$${loyalty.dollar_value.toFixed(2)}</strong> ($0.50/pt)</div>
+            <div class="loyalty-value-sub">Cash Value: <strong>KSh ${Math.round(loyalty.dollar_value || loyalty.cash_value || (loyalty.points_balance * 50)).toLocaleString()}</strong> (KSh 50/pt)</div>
           </div>
           <div class="loyalty-col loyalty-referral-col">
             <div class="loyalty-label">YOUR REFERRAL PERK</div>
@@ -245,7 +254,7 @@
                   </div>
                   <div class="meta-item">
                     <span class="meta-label">Total Price</span>
-                    <span class="meta-value text-accent">$${(activeOrder.total_price || 45).toFixed(2)}</span>
+                    <span class="meta-value text-accent">KSh ${Math.round(activeOrder.total_price || 4500).toLocaleString()}</span>
                   </div>
                 </div>
 
@@ -256,8 +265,8 @@
                         <i class="fa-solid fa-truck-pickup"></i>
                       </div>
                       <div class="crew-text">
-                        <strong>Crew Lead: ${activeOrder.crew_lead || 'Jackson Mwangi'}</strong>
-                        <p>Vehicle: ${activeOrder.crew_vehicle || 'Toyota Hilux KDG 892A'} • ETA on-site: Active Now</p>
+                        <strong>Crew Lead: ${activeOrder.crew_lead || 'Assigned Field Specialist'}</strong>
+                        <p>Vehicle: ${activeOrder.crew_vehicle || 'Lawn Craft Field Unit'} • ETA on-site: Active Now</p>
                       </div>
                     </div>
                     <a href="/tracker/${activeOrder.id}" class="btn btn-tracker-pulse">
@@ -306,7 +315,7 @@
                     </div>
                     <div class="inv-amount-box">
                       <span class="balance-label">Balance Due</span>
-                      <span class="balance-amount">$${unpaidInvoice.balance_due.toFixed(2)}</span>
+                      <span class="balance-amount">KSh ${Math.round(unpaidInvoice.balance_due).toLocaleString()}</span>
                     </div>
                   </div>
                   <div class="payment-action-buttons">
@@ -331,7 +340,7 @@
                       <span class="recent-label">Recent Official Receipts:</span>
                       ${invoices.slice(0, 2).map(inv => `
                         <a href="/receipt/${inv.id}" class="recent-receipt-link">
-                          <i class="fa-solid fa-file-invoice"></i> ${inv.invoice_number} ($${inv.total_amount.toFixed(2)}) — Tax Receipt
+                          <i class="fa-solid fa-file-invoice"></i> ${inv.invoice_number} (KSh ${Math.round(inv.total_amount).toLocaleString()}) — Tax Receipt
                         </a>
                       `).join('')}
                     </div>
@@ -359,9 +368,9 @@
               <div class="addon-details">
                 <h4>Seasonal Core Aeration</h4>
                 <p>Relieves compacted soil and increases nutrient absorption for healthier roots.</p>
-                <div class="addon-price">$85.00</div>
+                <div class="addon-price">KSh 8,500</div>
               </div>
-              <button class="btn btn-addon-book" data-service="Core Aeration" data-price="85">
+              <button class="btn btn-addon-book" data-service="Core Aeration" data-price="8500">
                 <i class="fa-solid fa-plus"></i> 1-Click Book
               </button>
             </div>
@@ -371,9 +380,9 @@
               <div class="addon-details">
                 <h4>Hedge & Shrub Sculpting</h4>
                 <p>Artisanal hedge trimming, formal shaping, and complete green debris hauling.</p>
-                <div class="addon-price">$45.00</div>
+                <div class="addon-price">KSh 4,500</div>
               </div>
-              <button class="btn btn-addon-book" data-service="Hedge Sculpting" data-price="45">
+              <button class="btn btn-addon-book" data-service="Hedge Sculpting" data-price="4500">
                 <i class="fa-solid fa-plus"></i> 1-Click Book
               </button>
             </div>
@@ -383,9 +392,9 @@
               <div class="addon-details">
                 <h4>Smart Sprinkler Tune-Up</h4>
                 <p>Nozzle alignment, water pressure audit, and automated leak detection.</p>
-                <div class="addon-price">$50.00</div>
+                <div class="addon-price">KSh 5,000</div>
               </div>
-              <button class="btn btn-addon-book" data-service="Sprinkler Tune-Up" data-price="50">
+              <button class="btn btn-addon-book" data-service="Sprinkler Tune-Up" data-price="5000">
                 <i class="fa-solid fa-plus"></i> 1-Click Book
               </button>
             </div>
@@ -395,9 +404,9 @@
               <div class="addon-details">
                 <h4>Organic Slow-Release Feed</h4>
                 <p>Eco-friendly micro-nutrient treatment for deep green vibrancy without chemical burn.</p>
-                <div class="addon-price">$65.00</div>
+                <div class="addon-price">KSh 6,500</div>
               </div>
-              <button class="btn btn-addon-book" data-service="Organic Bio-Fertilization" data-price="65">
+              <button class="btn btn-addon-book" data-service="Organic Bio-Fertilization" data-price="6500">
                 <i class="fa-solid fa-plus"></i> 1-Click Book
               </button>
             </div>
@@ -489,11 +498,33 @@
   function handleLogout() {
     clearStoredIdentifier();
     currentClientData = null;
-    showToast('Switched to public view. See you soon!', 'success');
+
+    // 1. Immediately remove personalized dashboard container from DOM
+    const dash = document.getElementById('personalized-dashboard');
+    if (dash) dash.remove();
+
+    // 2. Restore original public hero banner immediately
+    const heroContent = document.querySelector('.hero-content');
+    if (heroContent && originalHeroHTML) {
+      heroContent.innerHTML = originalHeroHTML;
+    }
+
+    // 3. Reset top nav user trigger to public state
+    updateTopNavUser(null);
+
+    // 4. Reset auth link in navigation bar
+    const authLink = document.querySelector('.nav-auth-link');
+    if (authLink) {
+      authLink.textContent = 'Sign In';
+      authLink.href = '/login';
+      authLink.removeAttribute('data-auth-handler');
+    }
+
+    showToast('Signed out successfully. Switched to public view.', 'success');
     setTimeout(() => {
-      // Remove query params and reload cleanly
+      // Remove query params and reload cleanly to public page
       window.location.href = window.location.pathname;
-    }, 500);
+    }, 350);
   }
 
   // Open M-Pesa STK Push Modal
@@ -517,12 +548,12 @@
 
         <div class="mpesa-body" id="mpesa-body-step">
           <div class="mpesa-amount-display">
-            <span class="currency">USD</span>
-            <span class="figure">$${Number(amount).toFixed(2)}</span>
+            <span class="currency">KES</span>
+            <span class="figure">KSh ${Math.round(Number(amount)).toLocaleString()}</span>
           </div>
           <div class="form-group">
             <label for="mpesa-phone-input">M-Pesa Mobile Number</label>
-            <input type="tel" id="mpesa-phone-input" class="form-control" value="${defaultPhone || '0712345678'}" placeholder="e.g. 0712345678 or 254712345678">
+            <input type="tel" id="mpesa-phone-input" class="form-control" value="${defaultPhone || ''}" placeholder="e.g. 0712 345 678 or 254712345678">
           </div>
           <button class="btn btn-mpesa-trigger" id="send-stk-btn">
             <i class="fa-solid fa-paper-plane"></i> Send STK PIN Prompt
@@ -623,15 +654,16 @@
         <div class="client-modal-header">
           <div class="client-modal-icon"><i class="fa-solid fa-leaf"></i></div>
           <h3>Lawn Craft Client Hub</h3>
-          <p>Passwordless access for property owners. Enter your phone number or email to view your property specs, crew tracker, and loyalty perks.</p>
+          <p>Passwordless portal access for property owners. Enter your registered phone number or email to view your property details, live crew tracker, and loyalty points.</p>
         </div>
 
+        <!-- Lookup Form -->
         <form id="client-login-form">
           <div class="form-group">
             <label for="client-identifier-input">Phone Number or Email</label>
             <div class="input-with-icon">
               <i class="fa-solid fa-user-tag"></i>
-              <input type="text" id="client-identifier-input" class="form-control" placeholder="e.g. 0712345678 or your@email.com" required>
+              <input type="text" id="client-identifier-input" class="form-control" placeholder="e.g. 0712 345 678 or your@email.com" required>
             </div>
           </div>
           <button type="submit" class="btn btn-primary btn-block" id="client-login-submit-btn">
@@ -639,32 +671,116 @@
           </button>
         </form>
 
-        <div class="demo-switch-pills">
-          <span class="demo-pills-label"><i class="fa-solid fa-wand-magic-sparkles"></i> Try One-Click Demo Profiles:</span>
-          <div class="pills-grid">
-            <button class="demo-pill" data-id="0712345678">
-              <strong>Sarah Wanjiru</strong> (Karen)
-              <span class="pill-badge badge-active">Active Crew + Unpaid Bill</span>
-            </button>
-            <button class="demo-pill" data-id="0722334455">
-              <strong>David Kimani</strong> (Runda)
-              <span class="pill-badge badge-vip">Platinum VIP + Scheduled</span>
-            </button>
-            <button class="demo-pill" data-id="0733445566">
-              <strong>Elena Gomez</strong> (Kilimani)
-              <span class="pill-badge badge-bronze">Bronze + Fresh Quote</span>
+        <!-- Unregistered Alert Box (Hidden initially) -->
+        <div id="client-not-found-box" style="display:none; margin-top:16px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:14px; text-align:left;">
+          <h4 style="font-size:0.95rem; color:#166534; margin:0 0 6px 0; display:flex; align-items:center; gap:6px;">
+            <i class="fa-solid fa-circle-info"></i> Account Not Found
+          </h4>
+          <p style="font-size:0.85rem; color:#14532d; margin:0 0 10px 0;">
+            We could not find an existing account matching that contact. You can quickly register your property below to activate your hub with 100 welcome loyalty points.
+          </p>
+          <button type="button" class="btn btn-primary btn-sm" id="show-register-form-btn" style="width:100%;">
+            <i class="fa-solid fa-id-card"></i> Register Property Profile
+          </button>
+        </div>
+
+        <!-- Inline New Client Registration Form (Initially Hidden) -->
+        <div id="client-register-container" style="display:none; margin-top:20px; border-top:1px solid #e2e8f0; padding-top:18px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h4 style="font-size:1rem; color:#0f172a; margin:0; font-weight:700;">
+              <i class="fa-solid fa-user-plus text-accent"></i> Register Property Profile
+            </h4>
+            <button type="button" id="cancel-register-btn" style="background:none; border:none; color:#64748b; font-size:0.85rem; cursor:pointer;">
+              Cancel
             </button>
           </div>
+          <form id="client-register-form">
+            <div class="form-group" style="margin-bottom:10px;">
+              <label for="reg-name" style="font-size:0.8rem; font-weight:600;">Full Name</label>
+              <input type="text" id="reg-name" class="form-control" placeholder="e.g. John Kamau" required style="padding:8px 12px; font-size:0.9rem;">
+            </div>
+            <div class="form-group" style="margin-bottom:10px;">
+              <label for="reg-phone" style="font-size:0.8rem; font-weight:600;">Mobile Phone Number</label>
+              <input type="tel" id="reg-phone" class="form-control" placeholder="e.g. 0712 345 678" required style="padding:8px 12px; font-size:0.9rem;">
+            </div>
+            <div class="form-group" style="margin-bottom:10px;">
+              <label for="reg-email" style="font-size:0.8rem; font-weight:600;">Email Address (Optional)</label>
+              <input type="email" id="reg-email" class="form-control" placeholder="e.g. john@domain.co.ke" style="padding:8px 12px; font-size:0.9rem;">
+            </div>
+            <div class="form-group" style="margin-bottom:10px;">
+              <label for="reg-address" style="font-size:0.8rem; font-weight:600;">Property Estate / Address</label>
+              <input type="text" id="reg-address" class="form-control" placeholder="e.g. Karen, Runda, Muthaiga" required style="padding:8px 12px; font-size:0.9rem;">
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
+              <div class="form-group" style="margin-bottom:0;">
+                <label for="reg-size" style="font-size:0.8rem; font-weight:600;">Lawn Size (sq ft)</label>
+                <input type="number" id="reg-size" class="form-control" placeholder="e.g. 5000" style="padding:8px 12px; font-size:0.9rem;">
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label for="reg-grass" style="font-size:0.8rem; font-weight:600;">Grass Species</label>
+                <select id="reg-grass" class="form-control" style="padding:8px 12px; font-size:0.9rem;">
+                  <option value="Kikuyu Turf">Kikuyu Turf</option>
+                  <option value="Bermuda Grass">Bermuda Grass</option>
+                  <option value="Paspalum Vaginatum">Paspalum</option>
+                  <option value="St. Augustine">St. Augustine</option>
+                  <option value="Cape Royal Turf">Cape Royal Turf</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" id="reg-submit-btn">
+              <i class="fa-solid fa-sparkles"></i> Create Profile & Open Hub (+100 Pts)
+            </button>
+          </form>
+        </div>
+
+        <div style="margin-top:18px; text-align:center;">
+          <a href="#pricing-calculator" id="modal-calc-jump-btn" style="font-size:0.85rem; color:#15803d; text-decoration:underline; font-weight:600;">
+            <i class="fa-solid fa-calculator"></i> Or Get an Instant Pricing Estimate First
+          </a>
         </div>
       </div>
     `;
 
     modal.classList.add('active');
 
-    // Close
+    // Close Modal
     document.getElementById('close-login-modal').addEventListener('click', () => modal.classList.remove('active'));
 
-    // Form Submit
+    // Calculator link click
+    const calcLink = document.getElementById('modal-calc-jump-btn');
+    if (calcLink) {
+      calcLink.addEventListener('click', (e) => {
+        modal.classList.remove('active');
+      });
+    }
+
+    // Toggle Registration
+    const notFoundBox = document.getElementById('client-not-found-box');
+    const registerContainer = document.getElementById('client-register-container');
+    const showRegisterBtn = document.getElementById('show-register-form-btn');
+    const cancelRegisterBtn = document.getElementById('cancel-register-btn');
+
+    if (showRegisterBtn) {
+      showRegisterBtn.addEventListener('click', () => {
+        notFoundBox.style.display = 'none';
+        registerContainer.style.display = 'block';
+        const enteredId = document.getElementById('client-identifier-input').value.trim();
+        if (enteredId.includes('@')) {
+          document.getElementById('reg-email').value = enteredId;
+        } else if (enteredId) {
+          document.getElementById('reg-phone').value = enteredId;
+        }
+        document.getElementById('reg-name').focus();
+      });
+    }
+
+    if (cancelRegisterBtn) {
+      cancelRegisterBtn.addEventListener('click', () => {
+        registerContainer.style.display = 'none';
+      });
+    }
+
+    // Lookup Form Submit
     document.getElementById('client-login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const input = document.getElementById('client-identifier-input').value.trim();
@@ -672,7 +788,8 @@
 
       const submitBtn = document.getElementById('client-login-submit-btn');
       submitBtn.disabled = true;
-      submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Finding your lawn...`;
+      submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Checking records...`;
+      notFoundBox.style.display = 'none';
 
       const data = await fetchClientProfile(input);
       submitBtn.disabled = false;
@@ -684,28 +801,61 @@
         showToast(`Welcome back, ${data.client.name}!`, 'success');
         renderPersonalizedState(data);
       } else {
-        showToast('We could not find records for that number. Try one of our demo profiles below!', 'error');
+        notFoundBox.style.display = 'block';
       }
     });
 
-    // Demo Pills Click
-    modal.querySelectorAll('.demo-pill').forEach(pill => {
-      pill.addEventListener('click', async () => {
-        const id = pill.getAttribute('data-id');
-        document.getElementById('client-identifier-input').value = id;
-        pill.classList.add('loading');
+    // Registration Form Submit
+    const regForm = document.getElementById('client-register-form');
+    if (regForm) {
+      regForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('reg-name').value.trim();
+        const phone = document.getElementById('reg-phone').value.trim();
+        const email = document.getElementById('reg-email').value.trim();
+        const address = document.getElementById('reg-address').value.trim();
+        const size = Number(document.getElementById('reg-size').value) || 5000;
+        const grass = document.getElementById('reg-grass').value;
 
-        const data = await fetchClientProfile(id);
-        pill.classList.remove('loading');
+        const regBtn = document.getElementById('reg-submit-btn');
+        regBtn.disabled = true;
+        regBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Registering profile...`;
 
-        if (data) {
-          setStoredIdentifier(id);
-          modal.classList.remove('active');
-          showToast(`Loaded ${data.client.name}'s Client Hub!`, 'success');
-          renderPersonalizedState(data);
+        try {
+          const res = await fetch('/api/portal/clients', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name,
+              phone,
+              email,
+              address,
+              property_size: size,
+              grass_type: grass,
+              service_plan: 'Standard Precision Care'
+            })
+          });
+          const json = await res.json();
+          if (json.success && json.client) {
+            setStoredIdentifier(phone || email);
+            modal.classList.remove('active');
+            showToast(`Profile created! Welcome to Lawn Craft, ${json.client.name}!`, 'success');
+            const fullProfile = await fetchClientProfile(phone || email);
+            if (fullProfile) {
+              renderPersonalizedState(fullProfile);
+            }
+          } else {
+            showToast(json.error?.message || 'Failed to create profile.', 'error');
+            regBtn.disabled = false;
+            regBtn.innerHTML = `<i class="fa-solid fa-sparkles"></i> Create Profile & Open Hub (+100 Pts)`;
+          }
+        } catch (err) {
+          showToast('Network error during registration.', 'error');
+          regBtn.disabled = false;
+          regBtn.innerHTML = `<i class="fa-solid fa-sparkles"></i> Create Profile & Open Hub (+100 Pts)`;
         }
       });
-    });
+    }
   }
 
   // Setup Instant Lawn Pricing Calculator
@@ -720,10 +870,10 @@
     let selectedAddons = new Set();
 
     const grassRates = {
-      'kikuyu': { name: 'Kikuyu Turf', baseRate: 0.007 },
-      'bermuda': { name: 'Bermuda Tifway', baseRate: 0.008 },
-      'paspalum': { name: 'Paspalum', baseRate: 0.0075 },
-      'buffalo': { name: 'Buffalo Grass', baseRate: 0.009 }
+      'kikuyu': { name: 'Kikuyu Turf', baseRate: 0.70 },
+      'bermuda': { name: 'Bermuda Tifway', baseRate: 0.80 },
+      'paspalum': { name: 'Paspalum', baseRate: 0.75 },
+      'buffalo': { name: 'Buffalo Grass', baseRate: 0.90 }
     };
 
     const freqMultipliers = {
@@ -734,18 +884,18 @@
     };
 
     const addonRates = {
-      'edging': { name: 'Precision Edge Trimming', price: 15 },
-      'fertilizer': { name: 'Organic Feed Treatment', price: 35 },
-      'aeration': { name: 'Core Soil Aeration', price: 55 },
-      'hedges': { name: 'Perimeter Hedge Shaping', price: 30 }
+      'edging': { name: 'Precision Edge Trimming', price: 1500 },
+      'fertilizer': { name: 'Organic Feed Treatment', price: 3500 },
+      'aeration': { name: 'Core Soil Aeration', price: 5500 },
+      'hedges': { name: 'Perimeter Hedge Shaping', price: 3000 }
     };
 
     function calculateTotal() {
       const grass = grassRates[currentGrass] || grassRates.kikuyu;
       const freq = freqMultipliers[currentFrequency] || freqMultipliers.biweekly;
 
-      let subtotal = Math.max(35, currentSize * grass.baseRate);
-      subtotal = subtotal * freq.mult;
+      let subtotal = Math.max(3500, Math.round(currentSize * grass.baseRate));
+      subtotal = Math.round(subtotal * freq.mult);
 
       selectedAddons.forEach(addonKey => {
         if (addonRates[addonKey]) subtotal += addonRates[addonKey].price;
@@ -754,13 +904,13 @@
       let discount = 0;
       if (appliedCoupon && appliedCoupon.valid) {
         if (appliedCoupon.discount_type === 'percent') {
-          discount = subtotal * (appliedCoupon.discount_value / 100);
+          discount = Math.round(subtotal * (appliedCoupon.discount_value / 100));
         } else {
           discount = Math.min(appliedCoupon.discount_value, subtotal);
         }
       }
 
-      const total = Math.max(25, subtotal - discount);
+      const total = Math.max(2500, subtotal - discount);
 
       // Update DOM
       const subtotalEl = document.getElementById('calc-subtotal');
@@ -770,13 +920,13 @@
       const sizeValEl = document.getElementById('calc-size-val');
 
       if (sizeValEl) sizeValEl.textContent = `${currentSize.toLocaleString()} sq ft`;
-      if (subtotalEl) subtotalEl.textContent = `$${subtotal.toFixed(2)}`;
-      if (totalEl) totalEl.textContent = `$${total.toFixed(2)}`;
+      if (subtotalEl) subtotalEl.textContent = `KSh ${subtotal.toLocaleString()}`;
+      if (totalEl) totalEl.textContent = `KSh ${total.toLocaleString()}`;
 
       if (discountRow) {
         if (discount > 0) {
           discountRow.style.display = 'flex';
-          if (discountAmountEl) discountAmountEl.textContent = `-$${discount.toFixed(2)}`;
+          if (discountAmountEl) discountAmountEl.textContent = `-KSh ${discount.toLocaleString()}`;
         } else {
           discountRow.style.display = 'none';
         }
@@ -951,21 +1101,21 @@
           <div class="client-modal-icon"><i class="fa-solid fa-clipboard-check"></i></div>
           <h3>Confirm Your Lawn Service</h3>
           <p>${size.toLocaleString()} sq ft • ${grass} • ${frequency}</p>
-          <div class="anon-estimate-pill">Estimated Total: <strong>$${Number(price).toFixed(2)}</strong></div>
+          <div class="anon-estimate-pill">Estimated Total: <strong>KSh ${Math.round(Number(price)).toLocaleString()}</strong></div>
         </div>
 
         <form id="anon-booking-form">
           <div class="form-group">
             <label for="anon-name">Full Name</label>
-            <input type="text" id="anon-name" class="form-control" placeholder="e.g. Jane Doe" required>
+            <input type="text" id="anon-name" class="form-control" placeholder="Enter your full name" required>
           </div>
           <div class="form-group">
             <label for="anon-phone">Phone Number (WhatsApp or Call)</label>
-            <input type="tel" id="anon-phone" class="form-control" placeholder="e.g. 0712345678" required>
+            <input type="tel" id="anon-phone" class="form-control" placeholder="e.g. 0712 345 678" required>
           </div>
           <div class="form-group">
             <label for="anon-address">Property Address / Estate</label>
-            <input type="text" id="anon-address" class="form-control" placeholder="e.g. Karen, Runda, or Lavington" required>
+            <input type="text" id="anon-address" class="form-control" placeholder="e.g. Karen, Runda, Muthaiga, or Lavington" required>
           </div>
           <button type="submit" class="btn btn-primary btn-block" id="anon-submit-btn">
             <i class="fa-solid fa-paper-plane"></i> Submit to Supervisor Dispatch Queue
