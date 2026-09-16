@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.SUPABASE_URL || 'https://tguievntviuanworgcqc.supabase.co';
+const supabaseUrl = process.env.SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || null;
 
 let supabase = null;
@@ -29,12 +29,12 @@ export function getSupabaseStatus() {
     };
   }
   return {
-    configured: Boolean(supabaseUrl),
+    configured: Boolean(supabaseUrl && supabaseKey),
     connected: false,
     type: 'Supabase',
-    url: supabaseUrl,
+    url: supabaseUrl || null,
     note: supabaseKey
       ? 'Attempted connection with provided key'
-      : 'Supabase URL configured (https://tguievntviuanworgcqc.supabase.co). Awaiting SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY from your Supabase Dashboard (Project Settings -> API).'
+      : 'Supabase URL and key must be configured via environment variables.'
   };
 }

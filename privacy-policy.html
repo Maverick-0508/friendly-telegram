@@ -201,7 +201,7 @@
                 <p>Automatically collected analytics data (page views, screen sizes, etc.) is retained for up to 12 months.</p>
 
                 <h2>8. Security</h2>
-                <p>We take reasonable technical and organisational measures to protect your information from unauthorised access, alteration, or disclosure. Our API uses JWT authentication, bcrypt password hashing, and HTTPS-enforced transport. However, no method of transmission over the internet is 100% secure.</p>
+                <p>We take reasonable technical and organisational measures to protect your information from unauthorised access, alteration, or disclosure. Our production API applies origin allowlisting, security headers, request rate limiting, and token-based authentication provided through our configured authentication provider. We also require HTTPS in production environments at the hosting/platform edge. However, no method of transmission over the internet is 100% secure.</p>
 
                 <h2>9. Your Rights</h2>
                 <p>Depending on your location, you may have the right to:</p>

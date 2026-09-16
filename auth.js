@@ -3,7 +3,6 @@
 
   const STORAGE_KEY_TOKEN = 'lawncraft_access_token';
   const STORAGE_KEY_USER = 'lawncraft_user';
-  const STORAGE_KEY_USERS = 'lawncraft_users';
 
   // ── Session management ──
 
@@ -46,23 +45,6 @@
     } catch {}
   }
 
-  // ── Client-side user store ──
-
-  function getUsers() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY_USERS);
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  }
-
-  function saveUsers(users) {
-    try {
-      localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
-    } catch {}
-  }
-
   function generateToken() {
     const arr = new Uint8Array(32);
     crypto.getRandomValues(arr);
@@ -73,117 +55,38 @@
 
   async function signup(email, password, fullName) {
     const cleanEmail = email.toLowerCase().trim();
-    // 1. Try server-side Supabase Auth API
-    try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: cleanEmail, password, fullName })
-      });
-      const data = await res.json();
-      if (res.ok && data.success && data.user) {
-        const token = data.session?.access_token || generateToken();
-        const safeUser = { id: data.user.id, email: data.user.email, fullName: data.user.fullName || fullName };
-        setSession(token, safeUser);
-        return { user: safeUser };
-      } else if (data && data.error && res.status < 500) {
-        throw new Error(data.error.message || 'Registration failed');
-      }
-    } catch (err) {
-      if (err.message && !err.message.includes('Failed to fetch') && !err.message.includes('NetworkError')) {
-        throw err;
-      }
-      console.warn('Backend registration failed or unreachable, using local fallback store:', err.message);
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: cleanEmail, password, fullName })
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success || !data.user) {
+      throw new Error(data?.error?.message || 'Registration failed');
     }
 
-    // 2. Fallback to resilient local store
-    const users = getUsers();
-    const existing = users.find(u => u.email.toLowerCase() === cleanEmail);
-    if (existing) {
-      throw new Error('An account with this email already exists');
-    }
-
-    const encoder = new TextEncoder();
-    const salt = crypto.getRandomValues(new Uint8Array(16));
-    const keyMaterial = await crypto.subtle.importKey(
-      'raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits']
-    );
-    const hashBits = await crypto.subtle.deriveBits(
-      { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
-      keyMaterial, 256
-    );
-    const hashArray = Array.from(new Uint8Array(hashBits));
-    const passwordHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
-
-    const user = {
-      id: crypto.randomUUID ? crypto.randomUUID() : 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2),
-      email: cleanEmail,
-      fullName,
-      passwordHash,
-      salt: saltHex,
-      createdAt: new Date().toISOString(),
-    };
-
-    users.push(user);
-    saveUsers(users);
-
-    const token = generateToken();
-    const safeUser = { id: user.id, email: user.email, fullName: user.fullName };
+    const token = data.session?.access_token || generateToken();
+    const safeUser = { id: data.user.id, email: data.user.email, fullName: data.user.fullName || fullName };
     setSession(token, safeUser);
     return { user: safeUser };
   }
 
   async function login(email, password) {
     const cleanEmail = email.toLowerCase().trim();
-    // 1. Try server-side Supabase Auth API
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: cleanEmail, password })
-      });
-      const data = await res.json();
-      if (res.ok && data.success && data.user) {
-        const token = data.session?.access_token || generateToken();
-        const safeUser = { id: data.user.id, email: data.user.email, fullName: data.user.fullName };
-        setSession(token, safeUser);
-        return { user: safeUser };
-      } else if (data && data.error && res.status < 500) {
-        throw new Error(data.error.message || 'Invalid email or password');
-      }
-    } catch (err) {
-      if (err.message && !err.message.includes('Failed to fetch') && !err.message.includes('NetworkError')) {
-        throw err;
-      }
-      console.warn('Backend login unreachable or failed, falling back to local store:', err.message);
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: cleanEmail, password })
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success || !data.user) {
+      throw new Error(data?.error?.message || 'Invalid email or password');
     }
 
-    // 2. Fallback to resilient local store
-    const users = getUsers();
-    const user = users.find(u => u.email === cleanEmail);
-    if (!user) {
-      throw new Error('No account found with this email');
-    }
-
-    const encoder = new TextEncoder();
-    const salt = new Uint8Array(user.salt.match(/.{2}/g).map(h => parseInt(h, 16)));
-    const keyMaterial = await crypto.subtle.importKey(
-      'raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits']
-    );
-    const hashBits = await crypto.subtle.deriveBits(
-      { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
-      keyMaterial, 256
-    );
-    const hashArray = Array.from(new Uint8Array(hashBits));
-    const passwordHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-    if (passwordHash !== user.passwordHash) {
-      throw new Error('Incorrect password');
-    }
-
-    const token = generateToken();
-    const safeUser = { id: user.id, email: user.email, fullName: user.fullName };
+    const token = data.session?.access_token || generateToken();
+    const safeUser = { id: data.user.id, email: data.user.email, fullName: data.user.fullName };
     setSession(token, safeUser);
     return { user: safeUser };
   }
