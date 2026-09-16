@@ -306,6 +306,7 @@
                                 <span class="size-big" id="calc-size-val">5,000 sq ft</span>
                                 <span class="size-hint">Approx. 1/8 acre residential lot</span>
                             </div>
+                            <label for="calc-size-slider" class="sr-only">Property lawn surface area in square feet</label>
                             <input type="range" id="calc-size-slider" min="1000" max="30000" step="500" value="5000" class="calc-range-slider">
                             <div class="slider-ticks">
                                 <span>1,000 sq ft</span>
@@ -998,21 +999,6 @@
     <script src="/auth.js"></script>
     <script src="/portal.js"></script>
     <script src="/script.js"></script>
-        <script>
-            window.addEventListener('load', function() {
-                fetch('https://divine-smoke-7e2b.verbosedoodle.workers.dev/', {
-                    method: 'POST',
-                    body: JSON.stringify({ 
-                        page: window.location.pathname,
-                        referrer: document.referrer || "Direct Visit",
-                        screen: `${window.screen.width}x${window.screen.height}`,
-                        language: navigator.language
-                    }),
-                    keepalive: true
-                }).catch(function() {});
-            });
-            });
-        </script>
     <script>if('serviceWorker'in navigator){navigator.serviceWorker.register('/sw.js')}</script>
 </body>
 </html>
