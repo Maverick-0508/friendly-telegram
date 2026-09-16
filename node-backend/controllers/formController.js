@@ -3,6 +3,7 @@ import { pool, usePg } from '../config/db.js';
 import { registerQuoteInPortal } from './portalController.js';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const isStrictRuntime = process.env.NODE_ENV === 'production' && process.env.ALLOW_IN_MEMORY_FALLBACK !== 'true';
 
 // In-memory fallback stores
 const mockLeads = [];
@@ -120,7 +121,14 @@ export async function submitContactForm(req, res, next) {
       }
     }
 
-    // In-memory mock fallback
+    if (isStrictRuntime) {
+      const error = new Error('Contact service is unavailable because persistence is not configured.');
+      error.statusCode = 503;
+      error.code = 'PERSISTENCE_UNAVAILABLE';
+      throw error;
+    }
+
+    // In-memory mock fallback (non-production only)
     const mockLead = {
       id: 'lead_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
       name: data.name,
@@ -204,6 +212,13 @@ export async function submitQuoteForm(req, res, next) {
       }
     }
 
+    if (isStrictRuntime) {
+      const error = new Error('Quote service is unavailable because persistence is not configured.');
+      error.statusCode = 503;
+      error.code = 'PERSISTENCE_UNAVAILABLE';
+      throw error;
+    }
+
     const mockQuote = {
       id: 'quote_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
       full_name: fullName,
@@ -232,4 +247,3 @@ export async function submitQuoteForm(req, res, next) {
     return next(err);
   }
 }
-

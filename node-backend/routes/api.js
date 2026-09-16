@@ -22,6 +22,41 @@ router.get('/health', (_req, res) => {
   res.status(200).json({ success: true, message: 'Server is healthy' });
 });
 
+router.get('/ready', (_req, res) => {
+  const pgStatus = getDatabaseStatus();
+  const sbStatus = getSupabaseStatus();
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  const authConfigured = sbStatus.configured;
+  const persistenceConfigured = pgStatus.configured || sbStatus.configured;
+  const ready = authConfigured && persistenceConfigured;
+
+  if (!ready && isProduction) {
+    return res.status(503).json({
+      success: false,
+      ready: false,
+      error: {
+        message: 'Application is not ready for production traffic.',
+        code: 'READINESS_FAILED',
+      },
+      checks: {
+        auth_configured: authConfigured,
+        persistence_configured: persistenceConfigured,
+      },
+    });
+  }
+
+  return res.status(200).json({
+    success: true,
+    ready: ready || !isProduction,
+    degraded: !ready,
+    checks: {
+      auth_configured: authConfigured,
+      persistence_configured: persistenceConfigured,
+    },
+  });
+});
+
 // System & Database Diagnostic Status
 router.get('/system/status', (_req, res) => {
   const pgStatus = getDatabaseStatus();
@@ -37,7 +72,7 @@ router.get('/system/status', (_req, res) => {
   res.status(200).json({
     success: true,
     application: 'Lawn Craft Web Suite',
-    environment: process.env.NODE_ENV || 'production',
+    environment: process.env.NODE_ENV || 'development',
     database: {
       active_primary: activePrimary,
       postgresql: pgStatus,
@@ -87,5 +122,4 @@ router.post('/auth/login', login);
 router.get('/auth/me', me);
 
 export default router;
-
 

@@ -6,52 +6,66 @@ A modern lawn care website with a clean Express.js backend that sends contact fo
 
 ```text
 friendly-telegram/
-├── frontend/          # Static site files
-├── node-backend/      # Express + Supabase backend
+├── *.html, *.js, styles.css   # Static site assets (served by Express)
+├── node-backend/              # API routes, controllers, data integrations
+├── tests/                     # Node integration + smoke tests
 └── README.md
 ```
 
-## Frontend
+## Deployment Architecture
 
-The website lives in `frontend/` and serves the public pages for Lawn Craft.
+This repository uses a single backend model: **Node/Express** (`/home/runner/work/friendly-telegram/friendly-telegram/server.js` + `/home/runner/work/friendly-telegram/friendly-telegram/app.js`).
 
-## Backend
-
-The backend lives in `node-backend/` and exposes:
+The server hosts static pages and exposes API endpoints under `/api`, including:
 
 - `GET /health`
+- `GET /ready`
 - `POST /api/contact`
+- `POST /api/quotes`
+- `POST /api/work-orders`
+- `GET /api/work-orders/:orderId`
+- `POST /api/mpesa/stkpush`
+- `GET /api/invoices/:invoiceId`
+- `POST /api/invoices/:invoiceId/pay`
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
 
-It uses Express, CORS, dotenv, and the Supabase JS client.
+It uses Express, CORS, Helmet, rate limiting, dotenv, PostgreSQL (`pg`), and Supabase.
 
 ## Local Setup
 
-Start the frontend with a static file server and the backend with Node:
+Install dependencies and run the unified Express app:
 
 ```bash
-cd frontend
-python3 -m http.server 8080
-```
-
-```bash
-cd node-backend
+cd /home/runner/work/friendly-telegram/friendly-telegram
 npm install
 npm run dev
 ```
 
 ## Environment
 
-Create `node-backend/.env` from `node-backend/.env.example` and set:
+Create `/home/runner/work/friendly-telegram/friendly-telegram/.env` from `/home/runner/work/friendly-telegram/friendly-telegram/.env.example` and set:
 
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `DATABASE_URL` (optional if using Supabase for persistence)
 - `PORT`
 - `CORS_ORIGIN`
 
-## Contact Flow
+Production recommendations:
 
-The frontend contact form submits to `POST /api/contact`. When running locally, the script defaults to `http://127.0.0.1:3001/api/contact`.
+- Set `NODE_ENV=production`
+- Keep `ALLOW_IN_MEMORY_FALLBACK` unset (or `false`)
+- Set `ENFORCE_HTTPS=true`
+- Configure a strict `CORS_ORIGIN` allowlist
 
-## Notes
+## CI / Verification
 
-The old Python backend has been removed from this repository to avoid collisions with the new Node.js implementation.
+Run:
+
+```bash
+npm run lint
+npm test
+npm run test:smoke
+```

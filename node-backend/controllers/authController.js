@@ -1,12 +1,9 @@
 import { supabase } from '../config/supabase.js';
 
-// In-memory user fallback store
-const mockUsers = new Map();
-const mockTokens = new Map();
-
 function serviceError(message) {
   const err = new Error(message);
   err.statusCode = 503;
+  err.code = 'SERVICE_UNAVAILABLE';
   return err;
 }
 
@@ -18,19 +15,29 @@ function supabaseError(message, status) {
     'Unable to validate email address': { msg: 'Please enter a valid email address.', code: 422 },
     'fetch failed': { msg: 'Unable to connect to the authentication service. Please try again later.', code: 503 },
   };
+
   const entry = known[message];
   if (entry) {
     const err = new Error(entry.msg);
     err.statusCode = entry.code;
     return err;
   }
+
   const err = new Error(message || 'Authentication failed');
   err.statusCode = status && status >= 400 && status < 500 ? status : 503;
   return err;
 }
 
+function requireSupabase() {
+  if (!supabase) {
+    throw serviceError('Authentication service is not configured');
+  }
+}
+
 export async function register(req, res, next) {
   try {
+    requireSupabase();
+
     const { email, password, fullName } = req.body || {};
 
     if (!email || !password) {
@@ -45,55 +52,21 @@ export async function register(req, res, next) {
       throw err;
     }
 
-    if (supabase) {
-      try {
-        const { data, error } = await supabase.auth.admin.createUser({
-          email,
-          password,
-          email_confirm: true,
-          user_metadata: fullName ? { full_name: fullName } : undefined,
-        });
-
-        if (error) throw supabaseError(error.message, error.status);
-
-        return res.status(201).json({
-          success: true,
-          user: {
-            id: data.user.id,
-            email: data.user.email,
-            fullName: data.user.user_metadata?.full_name || null,
-          },
-        });
-      } catch (err) {
-        if (err.statusCode && err.statusCode < 500) throw err;
-        console.warn('Supabase register failed, falling back to in-memory auth:', err.message);
-      }
-    }
-
-    // In-memory fallback
-    const normalizedEmail = email.toLowerCase().trim();
-    if (mockUsers.has(normalizedEmail)) {
-      const err = new Error('This email is already registered. Try signing in instead.');
-      err.statusCode = 409;
-      throw err;
-    }
-
-    const userId = 'usr_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
-    const user = {
-      id: userId,
-      email: normalizedEmail,
-      fullName: fullName || null,
+    const { data, error } = await supabase.auth.admin.createUser({
+      email,
       password,
-      created_at: new Date().toISOString(),
-    };
-    mockUsers.set(normalizedEmail, user);
+      email_confirm: true,
+      user_metadata: fullName ? { full_name: fullName } : undefined,
+    });
+
+    if (error) throw supabaseError(error.message, error.status);
 
     return res.status(201).json({
       success: true,
       user: {
-        id: user.id,
-        email: user.email,
-        fullName: user.fullName,
+        id: data.user.id,
+        email: data.user.email,
+        fullName: data.user.user_metadata?.full_name || null,
       },
     });
   } catch (err) {
@@ -103,6 +76,8 @@ export async function register(req, res, next) {
 
 export async function login(req, res, next) {
   try {
+    requireSupabase();
+
     const { email, password } = req.body || {};
 
     if (!email || !password) {
@@ -111,57 +86,24 @@ export async function login(req, res, next) {
       throw err;
     }
 
-    if (supabase) {
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-        if (error) throw supabaseError(error.message, error.status);
-
-        return res.json({
-          success: true,
-          user: {
-            id: data.user.id,
-            email: data.user.email,
-            fullName: data.user.user_metadata?.full_name || null,
-          },
-          session: {
-            access_token: data.session.access_token,
-            refresh_token: data.session.refresh_token,
-            expires_at: data.session.expires_at,
-          },
-        });
-      } catch (err) {
-        if (err.statusCode && err.statusCode < 500) throw err;
-        console.warn('Supabase login failed, falling back to in-memory auth:', err.message);
-      }
-    }
-
-    // In-memory fallback
-    const normalizedEmail = email.toLowerCase().trim();
-    const user = mockUsers.get(normalizedEmail);
-    if (!user || user.password !== password) {
-      const err = new Error('Invalid email or password. Please try again.');
-      err.statusCode = 401;
-      throw err;
-    }
-
-    const token = 'tok_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-    mockTokens.set(token, user);
+    if (error) throw supabaseError(error.message, error.status);
 
     return res.json({
       success: true,
       user: {
-        id: user.id,
-        email: user.email,
-        fullName: user.fullName,
+        id: data.user.id,
+        email: data.user.email,
+        fullName: data.user.user_metadata?.full_name || null,
       },
       session: {
-        access_token: token,
-        refresh_token: token + '_refresh',
-        expires_at: Math.floor(Date.now() / 1000) + 86400,
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+        expires_at: data.session.expires_at,
       },
     });
   } catch (err) {
@@ -171,6 +113,8 @@ export async function login(req, res, next) {
 
 export async function me(req, res, next) {
   try {
+    requireSupabase();
+
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       const err = new Error('Authentication required');
@@ -179,30 +123,12 @@ export async function me(req, res, next) {
     }
 
     const token = authHeader.split(' ')[1];
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(token);
 
-    if (supabase) {
-      try {
-        const { data: { user }, error } = await supabase.auth.getUser(token);
-
-        if (!error && user) {
-          return res.json({
-            success: true,
-            user: {
-              id: user.id,
-              email: user.email,
-              fullName: user.user_metadata?.full_name || null,
-              createdAt: user.created_at,
-            },
-          });
-        }
-      } catch (err) {
-        console.warn('Supabase getUser failed, falling back:', err.message);
-      }
-    }
-
-    // In-memory fallback
-    const user = mockTokens.get(token);
-    if (!user) {
+    if (error || !user) {
       const err = new Error('Invalid or expired token');
       err.statusCode = 401;
       throw err;
@@ -213,7 +139,7 @@ export async function me(req, res, next) {
       user: {
         id: user.id,
         email: user.email,
-        fullName: user.fullName,
+        fullName: user.user_metadata?.full_name || null,
         createdAt: user.created_at,
       },
     });
@@ -221,4 +147,3 @@ export async function me(req, res, next) {
     next(err);
   }
 }
-

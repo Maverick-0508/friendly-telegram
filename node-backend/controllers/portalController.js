@@ -6,12 +6,28 @@ import { supabase } from '../config/supabase.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DATA_FILE = path.join(__dirname, '../../data/portal-store.json');
+const isStrictRuntime = process.env.NODE_ENV === 'production' && process.env.ALLOW_IN_MEMORY_FALLBACK !== 'true';
 
 // In-memory runtime cache for Lawn Craft Client Hub & Dispatch
 const clients = new Map();
 const workOrders = new Map();
 const invoices = new Map();
 const quotes = new Map();
+
+function ensureRuntimePersistence(res) {
+  if (isStrictRuntime && !supabase) {
+    res.status(503).json({
+      success: false,
+      error: {
+        message: 'Portal services require Supabase in production.',
+        code: 'PERSISTENCE_UNAVAILABLE',
+      },
+    });
+    return false;
+  }
+
+  return true;
+}
 
 // Helper to normalize phone / email
 export function normalizeIdentifier(raw) {
@@ -118,6 +134,8 @@ function indexClient(client) {
 // Create or Register a Client Profile
 export async function createClientProfile(req, res) {
   try {
+    if (!ensureRuntimePersistence(res)) return;
+
     const { name, phone, email, address, property_size, grass_type, service_plan } = req.body || {};
 
     if (!name || name.trim().length < 2) {
@@ -211,6 +229,8 @@ export async function createClientProfile(req, res) {
 // Lookup Client by Phone or Email (Strict Real Data, No Mock Synthetics)
 export async function lookupClient(req, res) {
   try {
+    if (!ensureRuntimePersistence(res)) return;
+
     const rawIdentifier = req.body?.identifier || req.query?.identifier || '';
     const normalized = normalizeIdentifier(rawIdentifier);
 
@@ -345,6 +365,8 @@ export async function lookupClient(req, res) {
 // 1-Click Work Order Booking (Creates Real Client + Order + Invoice)
 export async function createWorkOrder(req, res) {
   try {
+    if (!ensureRuntimePersistence(res)) return;
+
     const payload = req.body || {};
     const serviceType = payload.service_type || payload.title || 'Precision Lawn Care';
     const clientName = (payload.client_name || payload.name || '').trim();
@@ -526,6 +548,8 @@ export async function createWorkOrder(req, res) {
 // Get Single Work Order (Strict Real Data, No Mock Fallback)
 export async function getWorkOrder(req, res) {
   try {
+    if (!ensureRuntimePersistence(res)) return;
+
     const { orderId } = req.params;
     let order = workOrders.get(orderId);
 
@@ -566,6 +590,8 @@ export async function getWorkOrder(req, res) {
 // Lipa Na M-Pesa STK Push
 export async function stkPushMpesa(req, res) {
   try {
+    if (!ensureRuntimePersistence(res)) return;
+
     const { phone, amount, invoice_id, account_reference } = req.body || {};
 
     if (!phone) {
@@ -609,6 +635,8 @@ export async function stkPushMpesa(req, res) {
 // Get Single Invoice (Strict Real Data, No Mock Fallback)
 export async function getInvoice(req, res) {
   try {
+    if (!ensureRuntimePersistence(res)) return;
+
     const { invoiceId } = req.params;
     const inv = invoices.get(invoiceId);
 
@@ -634,6 +662,8 @@ export async function getInvoice(req, res) {
 // Settle Invoice
 export async function settleInvoice(req, res) {
   try {
+    if (!ensureRuntimePersistence(res)) return;
+
     const { invoiceId } = req.params;
     const { payment_method, card_last4 } = req.body || {};
 
@@ -668,6 +698,8 @@ export async function settleInvoice(req, res) {
 // Coupon Validator
 export async function validateCoupon(req, res) {
   try {
+    if (!ensureRuntimePersistence(res)) return;
+
     const code = String(req.body?.code || '').trim().toUpperCase();
     const orderAmount = Number(req.body?.amount || 4500);
 
