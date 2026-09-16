@@ -1,7 +1,13 @@
 import { supabase } from '../config/supabase.js';
 import { pool, usePg } from '../config/db.js';
+import { registerQuoteInPortal } from './portalController.js';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const isStrictRuntime = process.env.NODE_ENV === 'production' && process.env.ALLOW_IN_MEMORY_FALLBACK !== 'true';
+
+// In-memory fallback stores
+const mockLeads = [];
+const mockQuotes = [];
 
 function normalizeText(value) {
   return typeof value === 'string' ? value.trim() : '';
@@ -11,7 +17,7 @@ function validateContactPayload(payload) {
   const name = normalizeText(payload?.name || payload?.full_name);
   const email = normalizeText(payload?.email);
   const phone = normalizeText(payload?.phone);
-  const message = normalizeText(payload?.message);
+  let message = normalizeText(payload?.message);
 
   const errors = {};
 
@@ -40,9 +46,7 @@ function validateContactPayload(payload) {
   }
 
   if (!message) {
-    errors.message = 'Message is required.';
-  } else if (message.length < 10) {
-    errors.message = 'Message must be at least 10 characters long.';
+    message = 'Website consultation request for lawn care services.';
   } else if (message.length > 5000) {
     errors.message = 'Message must be 5000 characters or fewer.';
   }
@@ -69,66 +73,175 @@ export async function submitContactForm(req, res, next) {
       });
     }
 
-    if (usePg && pool) {
-      // Insert directly into Postgres via pg Pool
-      const insertQuery = `INSERT INTO leads (name, email, phone, message, source)
-        VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, phone, message, created_at`;
-      const values = [data.name, data.email, data.phone, data.message, 'website'];
-
+    if (usePg && pool && typeof pool.query === 'function') {
       try {
+        const insertQuery = `INSERT INTO leads (name, email, phone, message, source)
+          VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, phone, message, created_at`;
+        const values = [data.name, data.email, data.phone, data.message, 'website'];
         const result = await pool.query(insertQuery, values);
-        const insertedLead = result.rows[0] || null;
+        const insertedLead = result?.rows?.[0] || null;
 
-        return res.status(201).json({
-          success: true,
-          message: 'Your message has been sent successfully.',
-          data: insertedLead,
-        });
+        if (insertedLead) {
+          return res.status(201).json({
+            success: true,
+            message: 'Your message has been sent successfully.',
+            data: insertedLead,
+          });
+        }
       } catch (pgErr) {
-        console.error('Postgres insert error:', pgErr);
-        return res.status(502).json({
-          success: false,
-          error: {
-            message: 'Failed to save your request. Please try again later.',
-            code: 'PG_INSERT_FAILED',
-            details: pgErr.message,
-          },
-        });
+        console.warn('Postgres insert failed, falling back:', pgErr.message);
       }
     }
 
-    // Fallback to Supabase client if Postgres URL is not provided
-    const { data: insertedLead, error } = await supabase
-      .from('leads')
-      .insert([
-        {
-          name: data.name,
-          email: data.email,
-          phone: data.phone,
-          message: data.message,
-          source: 'website',
-        },
-      ])
-      .select('id, name, email, phone, message, created_at')
-      .single();
+    if (supabase) {
+      try {
+        const { data: insertedLead, error } = await supabase
+          .from('leads')
+          .insert([
+            {
+              name: data.name,
+              email: data.email,
+              phone: data.phone,
+              message: data.message,
+              source: 'website',
+            },
+          ])
+          .select('id, name, email, phone, message, created_at')
+          .single();
 
-    if (error) {
-      console.error('Supabase insert error:', error);
-
-      return res.status(502).json({
-        success: false,
-        error: {
-          message: 'Failed to save your request. Please try again later.',
-          code: 'SUPABASE_INSERT_FAILED',
-          details: error.message,
-        },
-      });
+        if (!error && insertedLead) {
+          return res.status(201).json({
+            success: true,
+            message: 'Your message has been sent successfully.',
+            data: insertedLead,
+          });
+        }
+      } catch (sbErr) {
+        console.warn('Supabase insert failed, falling back:', sbErr.message);
+      }
     }
+
+    if (isStrictRuntime) {
+      const error = new Error('Contact service is unavailable because persistence is not configured.');
+      error.statusCode = 503;
+      error.code = 'PERSISTENCE_UNAVAILABLE';
+      throw error;
+    }
+
+    // In-memory mock fallback (non-production only)
+    const mockLead = {
+      id: 'lead_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      message: data.message,
+      source: 'website',
+      created_at: new Date().toISOString(),
+    };
+    mockLeads.push(mockLead);
+
+    // Also register in portal store so client hub recognizes this client's consultation
+    registerQuoteInPortal({
+      id: mockLead.id,
+      full_name: data.name,
+      email: data.email,
+      phone: data.phone,
+      service_type: 'Consultation Request',
+      message: data.message,
+      created_at: mockLead.created_at
+    });
 
     return res.status(201).json({
       success: true,
       message: 'Your message has been sent successfully.',
-      data: insertedLead,
+      data: mockLead,
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+export async function submitQuoteForm(req, res, next) {
+  try {
+    const payload = req.body || {};
+    const fullName = normalizeText(payload.full_name || payload.name);
+    const email = normalizeText(payload.email);
+    const phone = normalizeText(payload.phone);
+
+    if (!fullName || !email || !phone) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Full name, email, and phone number are required.',
+          code: 'VALIDATION_ERROR',
+        },
+      });
+    }
+
+    if (supabase) {
+      try {
+        const { data: insertedQuote, error } = await supabase
+          .from('quotes')
+          .insert([
+            {
+              full_name: fullName,
+              email,
+              phone,
+              address: normalizeText(payload.address),
+              property_size: payload.property_size || null,
+              property_type: normalizeText(payload.property_type),
+              service_type: normalizeText(payload.service_type),
+              service_frequency: normalizeText(payload.service_frequency),
+              preferred_start_date: payload.preferred_start_date || null,
+              additional_details: normalizeText(payload.additional_details || payload.message),
+            },
+          ])
+          .select()
+          .single();
+
+        if (!error && insertedQuote) {
+          registerQuoteInPortal(insertedQuote);
+          return res.status(201).json({
+            success: true,
+            message: 'Quote request submitted successfully.',
+            data: insertedQuote,
+          });
+        }
+      } catch (sbErr) {
+        console.warn('Supabase quote insert failed, falling back:', sbErr.message);
+      }
+    }
+
+    if (isStrictRuntime) {
+      const error = new Error('Quote service is unavailable because persistence is not configured.');
+      error.statusCode = 503;
+      error.code = 'PERSISTENCE_UNAVAILABLE';
+      throw error;
+    }
+
+    const mockQuote = {
+      id: 'quote_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      full_name: fullName,
+      email,
+      phone,
+      address: normalizeText(payload.address),
+      property_size: payload.property_size || null,
+      property_type: normalizeText(payload.property_type),
+      service_type: normalizeText(payload.service_type),
+      service_frequency: normalizeText(payload.service_frequency),
+      preferred_start_date: payload.preferred_start_date || null,
+      additional_details: normalizeText(payload.additional_details || payload.message),
+      created_at: new Date().toISOString(),
+    };
+    mockQuotes.push(mockQuote);
+
+    // Also register in portal store so client hub immediately lists this quote
+    registerQuoteInPortal(mockQuote);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Quote request submitted successfully.',
+      data: mockQuote,
     });
   } catch (err) {
     return next(err);

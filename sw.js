@@ -1,13 +1,16 @@
-const CACHE = 'lawncraft-v4';
+const CACHE = 'lawncraft-v9';
 
 const PRECACHE_URLS = [
   '/',
   '/styles.css',
   '/script.js',
   '/auth.js',
+  '/portal.js',
   '/manifest.json',
-  '/assets/images/icon-192.png',
-  '/assets/images/icon-512.png',
+  '/assets/icons/icon-192.png',
+  '/assets/icons/icon-512.png',
+  '/assets/icons/maskable-icon-192.png',
+  '/assets/icons/maskable-icon-512.png',
   '/offline.html',
 ];
 
@@ -35,42 +38,60 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+
+  // Non-GET requests (POST, PUT, DELETE, etc.) cannot be cached in Cache API.
+  // Pass them directly to the network.
+  if (request.method !== 'GET') {
+    event.respondWith(handleNonGetRequest(request));
+    return;
+  }
+
   const url = new URL(request.url);
 
-  // API calls — network first, fall back to cache
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(networkFirst(request));
-    return;
-  }
-
-  // Static assets — cache first
+  // API calls & scripts/styles/navigation — network first, fall back to cache
   if (
-    request.destination === 'style' ||
+    url.pathname.startsWith('/api/') ||
     request.destination === 'script' ||
-    request.destination === 'image' ||
-    request.destination === 'font' ||
-    url.pathname.startsWith('/assets/')
+    request.destination === 'style' ||
+    request.mode === 'navigate'
   ) {
-    event.respondWith(cacheFirst(request));
-    return;
-  }
-
-  // Navigation — network first, fall back to cached version
-  if (request.mode === 'navigate') {
     event.respondWith(networkFirst(request));
     return;
   }
 
-  // Everything else
+  // Static assets (images, fonts, etc.) — cache first
   event.respondWith(cacheFirst(request));
 });
+
+async function handleNonGetRequest(request) {
+  try {
+    return await fetch(request);
+  } catch (error) {
+    // If the network request fails (e.g. device is offline), return a descriptive JSON error response
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: {
+          message: 'Unable to connect to the server. Please check your internet connection and try again.',
+          code: 'OFFLINE_NETWORK_ERROR',
+        },
+      }),
+      {
+        status: 503,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+  }
+}
 
 async function cacheFirst(request) {
   const cached = await caches.match(request);
   if (cached) return cached;
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    if (response.ok && request.method === 'GET') {
       const cache = await caches.open(CACHE);
       cache.put(request, response.clone());
     }
@@ -83,7 +104,7 @@ async function cacheFirst(request) {
 async function networkFirst(request) {
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    if (response.ok && request.method === 'GET') {
       const cache = await caches.open(CACHE);
       cache.put(request, response.clone());
     }
@@ -97,3 +118,4 @@ async function networkFirst(request) {
     return new Response('Offline', { status: 503 });
   }
 }
+

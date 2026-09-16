@@ -170,8 +170,6 @@
     </style>
 </head>
 <body>
-    <a href="#main-content" class="skip-link">Skip to main content</a>
-
     <header id="main-header">
         <div class="header-container">
             <a href="/" class="logo-link">
@@ -182,14 +180,32 @@
                 <ul class="nav-links">
                     <li><a href="/">Home</a></li>
                     <li><a href="/services">Services</a></li>
+                    <li><a href="/calculator">Instant Pricing</a></li>
                     <li><a href="/insights">Insights</a></li>
+                    <li><a href="/portfolio" class="active">Portfolio</a></li>
                     <li><a href="/contact">Contact Us</a></li>
                 </ul>
             </nav>
-            <button class="menu-toggle directory-toggle" type="button" aria-expanded="false" aria-controls="directory-panel" aria-label="Open menu">
-                <span>Menu</span>
-                <i class="fa-solid fa-bars"></i>
-            </button>
+            <div class="header-actions-group">
+                <div class="socials">
+                    <a href="https://www.instagram.com/_lawncraft?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noopener noreferrer" title="Visit our Instagram page"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="https://www.facebook.com/lawncraft_lawn_care" target="_blank" rel="noopener noreferrer" title="Visit our Facebook page"><i class="fa-brands fa-facebook"></i></a>
+                    <a href="https://www.linkedin.com/company/lawn-craft-lawn-care" target="_blank" rel="noopener noreferrer" title="Visit our LinkedIn page"><i class="fa-brands fa-linkedin"></i></a>
+                    <a href="https://www.tiktok.com/@lawncraft_lawn_care?is_from_webapp=1&sender_device=pc" target="_blank" rel="noopener noreferrer" title="Visit our TikTok page"><i class="fa-brands fa-tiktok"></i></a>
+                </div>
+                <div class="header-portal-action">
+                    <button class="btn-pwa-install" type="button" title="Install Lawn Craft App">
+                        <i class="fa-solid fa-cloud-arrow-down"></i> <span>Install App</span>
+                    </button>
+                    <button class="client-access-trigger" type="button" title="Access Your Lawn Hub">
+                        <i class="fa-solid fa-user-check"></i> <span>Client Hub</span>
+                    </button>
+                </div>
+                <button class="menu-toggle directory-toggle" type="button" aria-expanded="false" aria-controls="directory-panel" aria-label="Open menu">
+                    <span>Menu</span>
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
             <div class="directory-panel" id="directory-panel" aria-hidden="true">
                 <div class="directory-grid">
                     <div class="directory-column">
@@ -200,11 +216,12 @@
                     <div class="directory-column">
                         <h3>Operations</h3>
                         <a href="/service-area">Service Area</a>
-                        <a href="/portfolio">Project Gallery</a>
+                        <a href="/portfolio" class="active">Project Gallery</a>
                         <a href="/contact">Book Consultation</a>
                     </div>
                     <div class="directory-column">
                         <h3>Resources</h3>
+                        <a href="/calculator">Instant Pricing Tool</a>
                         <a href="/property-check-guide.docx" download="property-check-guide.docx">Property Check Guide</a>
                         <a href="/#faq">FAQ</a>
                     </div>
@@ -212,16 +229,15 @@
                         <h3>Navigate</h3>
                         <a href="/">Home</a>
                         <a href="/services">Services</a>
+                        <a href="/calculator">Instant Pricing</a>
                         <a href="/insights">Insights</a>
+                        <a href="/portfolio" class="active">Portfolio</a>
                         <a href="/contact">Contact Us</a>
+                        <button class="btn-pwa-install" type="button" style="margin-top: 10px; width: 100%; justify-content: center;">
+                            <i class="fa-solid fa-cloud-arrow-down"></i> Install App
+                        </button>
                     </div>
                 </div>
-            </div>
-            <div class="socials">
-                <a href="https://www.instagram.com/_lawncraft?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noopener noreferrer" title="Visit our Instagram page"><i class="fa-brands fa-instagram"></i></a>
-                <a href="https://www.facebook.com/lawncraft_lawn_care" target="_blank" rel="noopener noreferrer" title="Visit our Facebook page"><i class="fa-brands fa-facebook"></i></a>
-                <a href="https://www.linkedin.com/company/lawn-craft-lawn-care" target="_blank" rel="noopener noreferrer" title="Visit our LinkedIn page"><i class="fa-brands fa-linkedin"></i></a>
-                <a href="https://www.tiktok.com/@lawncraft_lawn_care?is_from_webapp=1&sender_device=pc" target="_blank" rel="noopener noreferrer" title="Visit our TikTok page"><i class="fa-brands fa-tiktok"></i></a>
             </div>
         </div>
     </header>
@@ -231,6 +247,18 @@
             <div class="container">
                 <h1>Our Portfolio</h1>
                 <p>Transforming outdoor spaces across Nairobi and beyond.</p>
+                <nav class="page-hero-nav" aria-label="Page Navigation">
+                    <div class="page-hero-breadcrumbs">
+                        <a href="/"><i class="fa-solid fa-house"></i> Home</a>
+                        <span class="sep"><i class="fa-solid fa-chevron-right"></i></span>
+                        <span class="current">Portfolio</span>
+                    </div>
+                    <div class="page-hero-quick-links">
+                        <a href="/calculator" class="page-hero-chip"><i class="fa-solid fa-calculator"></i> Pricing Tool</a>
+                        <a href="/services" class="page-hero-chip"><i class="fa-solid fa-leaf"></i> Services</a>
+                        <a href="/contact" class="page-hero-chip"><i class="fa-solid fa-envelope"></i> Book Visit</a>
+                    </div>
+                </nav>
             </div>
         </section>
 
