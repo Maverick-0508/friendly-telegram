@@ -44,7 +44,7 @@ const cspDirectives = {
     'https://*.tile.openstreetmap.org',
     'https://tile.openstreetmap.org',
   ],
-  connectSrc: ["'self'", 'https://divine-smoke-7e2b.verbosedoodle.workers.dev'],
+  connectSrc: ["'self'", 'https://api.open-meteo.com'],
   objectSrc: ["'none'"],
   baseUri: ["'self'"],
   frameAncestors: ["'none'"],

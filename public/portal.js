@@ -3,7 +3,64 @@
   'use strict';
 
   const STORAGE_KEY = 'lawncraft_client_identifier';
+  const STORAGE_KEY_PIN = 'lawncraft_client_pin';
   let currentClientData = null;
+
+  // WMO weather codes -> short human labels (Open-Meteo)
+  const WMO_TEXT = {
+    0: 'Clear Skies',
+    1: 'Mainly Clear',
+    2: 'Partly Cloudy',
+    3: 'Overcast',
+    45: 'Morning Fog',
+    48: 'Foggy',
+    51: 'Light Drizzle',
+    53: 'Drizzle',
+    55: 'Heavy Drizzle',
+    61: 'Light Rain',
+    63: 'Moderate Rain',
+    65: 'Heavy Rain',
+    80: 'Light Showers',
+    81: 'Moderate Showers',
+    82: 'Heavy Showers',
+    95: 'Thunderstorm',
+    96: 'Thunderstorm',
+    99: 'Severe Thunderstorm'
+  };
+
+  // Live Nairobi weather for the Yard Conditions widget (keyless Open-Meteo).
+  // Returns null when offline/unreachable so we can fall back to the season tip.
+  async function fetchNairobiYardConditions() {
+    try {
+      const res = await fetch(
+        'https://api.open-meteo.com/v1/forecast?latitude=-1.2864&longitude=36.8172&current=temperature_2m,relative_humidity_2m,precipitation,weather_code&timezone=Africa/Nairobi',
+        { headers: { Accept: 'application/json' } }
+      );
+      if (!res.ok) return null;
+      const json = await res.json();
+      const c = json.current;
+      if (!c) return null;
+      const temp = Math.round(c.temperature_2m ?? 0);
+      const humid = Math.round(c.relative_humidity_2m ?? 0);
+      const rain = Number(c.precipitation ?? 0);
+      const wmo = WMO_TEXT[c.weather_code] || 'Mixed Conditions';
+
+      let body;
+      if (rain > 0.5) {
+        body = `${rain.toFixed(1)} mm of rain expected — we adjust mowing height to avoid rutting and hold off watering.`;
+      } else if (rain > 0) {
+        body = 'Light drizzle expected — skip watering today and let the crew keep the mow height raised.';
+      } else if (humid < 35) {
+        body = 'Very dry air — water deeply early in the morning and let the grass grow slightly longer to protect the crown.';
+      } else {
+        body = 'Dry but comfortable — deep-water twice weekly, ideally in the early morning for maximum uptake.';
+      }
+
+      return { title: `${wmo} • ${temp}°C`, body };
+    } catch {
+      return null;
+    }
+  }
 
   // Check URL query params for frictionless access (?client= or ?phone=)
   function getQueryIdentifier() {
@@ -31,6 +88,23 @@
     } catch {}
   }
 
+  // The PIN is held in sessionStorage so a returning visitor is recognized for
+  // the rest of the browser tab's life without re-prompting, but it does not
+  // persist across sessions — the hub always asks on a new visit.
+  function getStoredPin() {
+    try {
+      return sessionStorage.getItem(STORAGE_KEY_PIN) || '';
+    } catch {
+      return '';
+    }
+  }
+
+  function setStoredPin(pin) {
+    try {
+      sessionStorage.setItem(STORAGE_KEY_PIN, pin);
+    } catch {}
+  }
+
   // Stored state
   let originalHeroHTML = null;
 
@@ -40,6 +114,7 @@
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem('lawncraft_access_token');
       localStorage.removeItem('lawncraft_user');
+      sessionStorage.removeItem(STORAGE_KEY_PIN);
       sessionStorage.clear();
     } catch {}
   }
@@ -66,26 +141,37 @@
     }, 4000);
   }
 
-  // API: Lookup Client Profile
-  async function fetchClientProfile(identifier) {
+  let lastLookupError = null;
+
+  // API: Lookup Client Profile (identifier + access PIN)
+  async function fetchClientProfile(identifier, pin) {
     try {
       const res = await fetch('/api/portal/lookup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier })
+        body: JSON.stringify({ identifier, pin: pin || getStoredPin() })
       });
 
       if (!res.ok) {
-        throw new Error('No client record found for this identifier');
+        const body = await res.json().catch(() => ({}));
+        lastLookupError = {
+          code: body.error?.code || 'NOT_FOUND',
+          message: body.error?.message || 'No client record found for this identifier',
+          notFound: body.not_found || res.status === 404,
+        };
+        return null;
       }
 
       const data = await res.json();
       if (data.success && data.client) {
+        lastLookupError = null;
         return data;
       }
-      throw new Error('Invalid client data received');
+      lastLookupError = { code: 'INVALID_DATA', message: 'Invalid client data received' };
+      return null;
     } catch (err) {
       console.warn('[Portal Lookup Failed]', err);
+      lastLookupError = { code: 'NETWORK', message: 'Network error. Please try again.' };
       return null;
     }
   }
@@ -122,6 +208,10 @@
     const invoices = data.invoices || [];
 
     updateTopNavUser(data);
+
+    // State-based rendering: authenticated clients see the dashboard instead
+    // of the marketing funnel (marketing sections are hidden via CSS).
+    document.body.classList.add('hub-authenticated');
 
     // Swap Hero to Personalized Welcome
     const heroContent = document.querySelector('.hero-content');
@@ -176,6 +266,20 @@
     const activeOrder = workOrders.find(w => w.status === 'in_progress') || workOrders.find(w => w.status === 'scheduled') || workOrders[0];
     const unpaidInvoice = invoices.find(i => i.status === 'unpaid' && i.balance_due > 0);
 
+    // Recent completed visits feed
+    const recentVisits = workOrders
+      .filter(w => w.status === 'completed' || w.status === 'done' || w.completed_at)
+      .sort((a, b) => String(b.completed_at || b.scheduled_date || '').localeCompare(String(a.completed_at || a.scheduled_date || '')))
+      .slice(0, 3);
+
+    // Lightweight seasonal yard-care tip (Kenyan climate)
+    const monthIx = new Date().getMonth();
+    const kshSeasonTip = (monthIx >= 2 && monthIx <= 4)
+      ? { title: 'Long Rains Season', body: 'The lawn is growing fast — we raise mow height slightly to avoid scalping. Extra mowing is one tap away below.' }
+      : (monthIx >= 9)
+        ? { title: 'Short Rains Expected', body: 'An ideal window for core aeration and feeding. Book a seasonal add-on at the bottom of this page.' }
+        : { title: 'Dry Season', body: 'Water deeply twice a week and let the lawn grow slightly longer to protect the crown from heat.' };
+
     // Calculate Loyalty Tier styling
     const tier = loyalty.tier || 'Bronze';
     const tierIcons = {
@@ -188,6 +292,80 @@
 
     dashboardContainer.innerHTML = `
       <div class="container">
+        <!-- Dashboard Status Bar (at-a-glance) -->
+        <div class="dashboard-status-bar">
+          <div class="dash-greeting">
+            <h2>Welcome back, ${client.name.split(' ')[0]}!</h2>
+            <p class="dash-property">
+              <i class="fa-solid fa-house"></i>
+              <strong>${client.address}</strong>
+              <span>•</span>
+              <span>${client.property_size.toLocaleString()} sq ft</span>
+              <span>•</span>
+              <span>${client.grass_type}</span>
+            </p>
+          </div>
+          <div class="dash-status-chips">
+            <div class="dash-chip">
+              <span class="chip-label">Next Service</span>
+              <span class="chip-value">${activeOrder ? activeOrder.scheduled_date : '—'}</span>
+            </div>
+            <div class="dash-chip">
+              <span class="chip-label">Account Balance</span>
+              <span class="chip-value ${unpaidInvoice ? '' : 'text-emerald'}">${unpaidInvoice ? 'KSh ' + Math.round(unpaidInvoice.balance_due).toLocaleString() : 'All Paid'}</span>
+            </div>
+            <div class="dash-chip">
+              <span class="chip-label">Reward Points</span>
+              <span class="chip-value text-emerald">${loyalty.points_balance} pts</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dashboard Widget Grid (Kaggle-style two columns) -->
+        <div class="dashboard-widgets-grid">
+          <div class="dash-widget">
+            <h3><i class="fa-solid fa-bolt"></i> Quick Actions <span class="dash-widget-sub">Book &amp; manage in one tap</span></h3>
+            <div class="dash-actions-grid">
+              <a href="#quick-addons-section" class="dash-action"><i class="fa-solid fa-plus"></i> Request Extra Mow</a>
+              ${activeOrder
+                ? `<a href="/tracker/${activeOrder.id}" class="dash-action"><i class="fa-solid fa-location-crosshairs"></i> Live Crew GPS</a>`
+                : `<span class="dash-action disabled"><i class="fa-solid fa-location-crosshairs"></i> Live Crew GPS</span>`}
+              ${unpaidInvoice
+                ? `<button type="button" class="dash-action" id="dash-pay-btn" data-invoice-id="${unpaidInvoice.id}" data-amount="${unpaidInvoice.balance_due}"><i class="fa-solid fa-mobile-screen-button"></i> Pay With M-Pesa</button>`
+                : `<span class="dash-action disabled"><i class="fa-solid fa-circle-check"></i> Balance Settled</span>`}
+              <a href="#contact" class="dash-action"><i class="fa-solid fa-headset"></i> Contact Support</a>
+            </div>
+
+            <h3 style="margin-top: 1.4rem;"><i class="fa-solid fa-clipboard-list"></i> Active Care Package</h3>
+            <div class="plan-card">
+              <div>
+                <div class="plan-name">${client.service_plan || 'Custom Care'} • ${tier} Member</div>
+                <div class="plan-detail">${activeOrder ? `Next visit: ${activeOrder.scheduled_date}` : 'No upcoming visit — book one below.'}</div>
+              </div>
+              <a href="#active-service-section" class="plan-btn">Manage</a>
+            </div>
+          </div>
+
+          <div class="dash-widget">
+            <h3><i class="fa-solid fa-cloud-sun"></i> Yard Conditions</h3>
+            <div class="yard-conditions">
+              <div class="yc-title" id="yard-conditions-title"><i class="fa-solid fa-droplet"></i> ${kshSeasonTip.title}</div>
+              <div class="yc-body" id="yard-conditions-body">${kshSeasonTip.body}</div>
+            </div>
+
+            <h3 style="margin-top: 1.4rem;"><i class="fa-solid fa-clock-rotate-left"></i> Recent Visits</h3>
+            ${recentVisits.length
+              ? `
+                <ul class="visits-list">
+                  ${recentVisits.map(v => `
+                    <li><span>${v.title || v.service_type || 'Lawn Care Visit'}</span><span class="visit-date">${v.completed_at ? v.completed_at.slice(0, 10) : (v.scheduled_date || '')}</span></li>
+                  `).join('')}
+                </ul>
+              `
+              : '<p class="no-records-note">No completed visits yet — your first one will show up here.</p>'}
+          </div>
+        </div>
+
         <!-- Loyalty & Perks Bar -->
         <div class="loyalty-perks-banner">
           <div class="loyalty-col loyalty-tier-col">
@@ -208,7 +386,7 @@
             <div class="referral-code-box">
               <span class="ref-code" id="ref-code-text">${loyalty.referral_code}</span>
               <button class="btn-copy-ref" id="copy-ref-btn" title="Copy Referral Code"><i class="fa-regular fa-copy"></i></button>
-              <a href="https://api.whatsapp.com/send?text=${encodeURIComponent(`Hi! Get 15% off professional lawn mowing and care with Lawn Craft using my referral code ${loyalty.referral_code}: https://lawncraft.com/?client=${encodeURIComponent(client.phone)}`)}" 
+              <a href="https://api.whatsapp.com/send?text=${encodeURIComponent(`Hi! Get 15% off professional lawn mowing and care with Lawn Craft using my referral code ${loyalty.referral_code}: https://lawncraft.vercel.app/?client=${encodeURIComponent(client.phone)}`)}" 
                  target="_blank" rel="noopener" class="btn-whatsapp-share" title="Share via WhatsApp">
                 <i class="fa-brands fa-whatsapp"></i> Share
               </a>
@@ -437,6 +615,18 @@
       });
     }
 
+    // Wire dashboard quick-action Pay button
+    const dashPayBtn = document.getElementById('dash-pay-btn');
+    if (dashPayBtn) {
+      dashPayBtn.addEventListener('click', () => {
+        openMpesaModal(
+          dashPayBtn.getAttribute('data-invoice-id'),
+          dashPayBtn.getAttribute('data-amount'),
+          client.phone
+        );
+      });
+    }
+
     // Wire 1-Click Add-on buttons
     const addonButtons = dashboardContainer.querySelectorAll('.btn-addon-book');
     addonButtons.forEach(btn => {
@@ -483,6 +673,17 @@
         }
       });
     });
+
+    // Swap the season tip for live Nairobi weather when available
+    fetchNairobiYardConditions().then(tip => {
+      if (!tip) return;
+      const ycTitle = document.getElementById('yard-conditions-title');
+      const ycBody = document.getElementById('yard-conditions-body');
+      if (ycTitle && ycBody) {
+        ycTitle.innerHTML = `<i class="fa-solid fa-cloud-sun"></i> ${tip.title}`;
+        ycBody.textContent = tip.body;
+      }
+    });
   }
 
   // Refresh client data in-place
@@ -498,6 +699,9 @@
   function handleLogout() {
     clearStoredIdentifier();
     currentClientData = null;
+
+    // Restore the marketing funnel view
+    document.body.classList.remove('hub-authenticated');
 
     // 1. Immediately remove personalized dashboard container from DOM
     const dash = document.getElementById('personalized-dashboard');
@@ -684,7 +888,7 @@
         <div class="client-modal-header">
           <div class="client-modal-icon"><i class="fa-solid fa-leaf"></i></div>
           <h3>Lawn Craft Client Hub</h3>
-          <p>Passwordless portal access for property owners. Enter your registered phone number or email to view your property details, live crew tracker, and loyalty points.</p>
+          <p>Enter your registered phone number or email and your access PIN to open your hub.</p>
         </div>
 
         <!-- Lookup Form -->
@@ -696,9 +900,22 @@
               <input type="text" id="client-identifier-input" class="form-control" placeholder="e.g. 0712 345 678 or your@email.com" required>
             </div>
           </div>
+          <div class="form-group">
+            <label for="client-pin-input">Access PIN</label>
+            <div class="input-with-icon">
+              <i class="fa-solid fa-shield-halved"></i>
+              <input type="password" id="client-pin-input" class="form-control" inputmode="numeric" pattern="\d{4,6}" maxlength="6" placeholder="4-6 digit PIN" required>
+            </div>
+            <p style="font-size:0.75rem; color:#6b7280; margin:4px 0 0;">
+              Your PIN protects your property, invoices and loyalty details.
+            </p>
+          </div>
           <button type="submit" class="btn btn-primary btn-block" id="client-login-submit-btn">
             <i class="fa-solid fa-arrow-right-to-bracket"></i> Access My Lawn
           </button>
+          <div id="client-login-error-box" style="display:none; margin-top:12px; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:12px; font-size:0.85rem; color:#991b1b;">
+            <i class="fa-solid fa-circle-exclamation"></i> <span id="client-login-error-text"></span>
+          </div>
         </form>
 
         <!-- Unregistered Alert Box (Hidden initially) -->
@@ -757,6 +974,11 @@
                 </select>
               </div>
             </div>
+            <div class="form-group" style="margin-bottom:14px;">
+              <label for="reg-pin" style="font-size:0.8rem; font-weight:600;">Create Access PIN (4-6 digits)</label>
+              <input type="password" id="reg-pin" class="form-control" inputmode="numeric" pattern="\d{4,6}" minlength="4" maxlength="6" placeholder="e.g. 1234" required style="padding:8px 12px; font-size:0.9rem;">
+              <p style="font-size:0.72rem; color:#6b7280; margin:4px 0 0;">You will use this PIN to open your hub on future visits.</p>
+            </div>
             <button type="submit" class="btn btn-primary btn-block" id="reg-submit-btn">
               <i class="fa-solid fa-sparkles"></i> Create Profile & Open Hub (+100 Pts)
             </button>
@@ -772,6 +994,12 @@
     `;
 
     modal.classList.add('active');
+
+    const storedIdentifier = getStoredIdentifier();
+    if (storedIdentifier) {
+      const identInput = document.getElementById('client-identifier-input');
+      if (identInput && !identInput.value) identInput.value = storedIdentifier;
+    }
 
     // Close Modal
     document.getElementById('close-login-modal').addEventListener('click', () => modal.classList.remove('active'));
@@ -800,7 +1028,6 @@
         } else if (enteredId) {
           document.getElementById('reg-phone').value = enteredId;
         }
-        document.getElementById('reg-name').focus();
       });
     }
 
@@ -814,22 +1041,30 @@
     document.getElementById('client-login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const input = document.getElementById('client-identifier-input').value.trim();
-      if (!input) return;
+      const pin = document.getElementById('client-pin-input').value.trim();
+      if (!input || !pin) return;
 
       const submitBtn = document.getElementById('client-login-submit-btn');
+      const pinErrorBox = document.getElementById('client-login-error-box');
+      const pinErrorText = document.getElementById('client-login-error-text');
       submitBtn.disabled = true;
       submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Checking records...`;
       notFoundBox.style.display = 'none';
+      if (pinErrorBox) pinErrorBox.style.display = 'none';
 
-      const data = await fetchClientProfile(input);
+      const data = await fetchClientProfile(input, pin);
       submitBtn.disabled = false;
       submitBtn.innerHTML = `<i class="fa-solid fa-arrow-right-to-bracket"></i> Access My Lawn`;
 
       if (data) {
         setStoredIdentifier(input);
+        setStoredPin(pin);
         modal.classList.remove('active');
         showToast(`Welcome back, ${data.client.name}!`, 'success');
         renderPersonalizedState(data);
+      } else if (lastLookupError && (lastLookupError.code === 'INVALID_PIN' || lastLookupError.code === 'ACCESS_PIN_REQUIRED')) {
+        if (pinErrorText) pinErrorText.textContent = lastLookupError.message;
+        if (pinErrorBox) pinErrorBox.style.display = 'block';
       } else {
         notFoundBox.style.display = 'block';
       }
@@ -846,6 +1081,7 @@
         const address = document.getElementById('reg-address').value.trim();
         const size = Number(document.getElementById('reg-size').value) || 5000;
         const grass = document.getElementById('reg-grass').value;
+        const pin = document.getElementById('reg-pin').value.trim();
 
         const regBtn = document.getElementById('reg-submit-btn');
         regBtn.disabled = true;
@@ -862,15 +1098,17 @@
               address,
               property_size: size,
               grass_type: grass,
-              service_plan: 'Standard Precision Care'
+              service_plan: 'Standard Precision Care',
+              pin
             })
           });
           const json = await res.json();
           if (json.success && json.client) {
             setStoredIdentifier(phone || email);
+            setStoredPin(pin);
             modal.classList.remove('active');
             showToast(`Profile created! Welcome to Lawn Craft, ${json.client.name}!`, 'success');
-            const fullProfile = await fetchClientProfile(phone || email);
+            const fullProfile = await fetchClientProfile(phone || email, pin);
             if (fullProfile) {
               renderPersonalizedState(fullProfile);
             }
@@ -1147,6 +1385,11 @@
             <label for="anon-address">Property Address / Estate</label>
             <input type="text" id="anon-address" class="form-control" placeholder="e.g. Karen, Runda, Muthaiga, or Lavington" required>
           </div>
+          <div class="form-group">
+            <label for="anon-pin">Create Access PIN (4-6 digits)</label>
+            <input type="password" id="anon-pin" class="form-control" inputmode="numeric" pattern="\d{4,6}" minlength="4" maxlength="6" placeholder="e.g. 1234" required>
+            <p style="font-size:0.75rem; color:#6b7280; margin:4px 0 0;">You will use this PIN to open your hub and track your order.</p>
+          </div>
           <button type="submit" class="btn btn-primary btn-block" id="anon-submit-btn">
             <i class="fa-solid fa-paper-plane"></i> Submit to Supervisor Dispatch Queue
           </button>
@@ -1163,6 +1406,7 @@
       const name = document.getElementById('anon-name').value.trim();
       const phone = document.getElementById('anon-phone').value.trim();
       const address = document.getElementById('anon-address').value.trim();
+      const pin = document.getElementById('anon-pin').value.trim();
 
       const btn = document.getElementById('anon-submit-btn');
       btn.disabled = true;
@@ -1180,20 +1424,22 @@
             service_type: `${grass} Cut (${frequency})`,
             price: price,
             status: 'incoming', // feeds directly to supervisor dispatch queue
+            pin,
             notes: `Website Instant Calculator Order. Promo: ${couponCode || 'None'}`
           })
         });
 
         const json = await res.json();
         if (json.success) {
-          // Cache verified phone so user is recognized!
+          // Cache verified phone so user is recognized this session!
           setStoredIdentifier(phone);
+          setStoredPin(pin);
           modal.classList.remove('active');
           showToast(`Thank you ${name}! Your order is queued for supervisor dispatch. Welcome to Lawn Craft!`, 'success');
           
           // Switch to personalized client hub automatically!
           setTimeout(async () => {
-            const profile = await fetchClientProfile(phone);
+            const profile = await fetchClientProfile(phone, pin);
             if (profile) renderPersonalizedState(profile);
           }, 1000);
         } else {
@@ -1234,17 +1480,22 @@
     const queryId = getQueryIdentifier();
     if (queryId) {
       setStoredIdentifier(queryId);
-      const data = await fetchClientProfile(queryId);
-      if (data) {
-        renderPersonalizedState(data);
-        showToast(`Recognized from link: Welcome ${data.client.name}!`, 'success');
+      if (getStoredPin()) {
+        const data = await fetchClientProfile(queryId);
+        if (data) {
+          renderPersonalizedState(data);
+          showToast(`Recognized from link: Welcome ${data.client.name}!`, 'success');
+          return;
+        }
+      } else {
+        updateTopNavUser(null);
         return;
       }
     }
 
-    // 2. Check localStorage for returning client
+    // 2. Check localStorage for returning client (requires an active session PIN)
     const storedId = getStoredIdentifier();
-    if (storedId) {
+    if (storedId && getStoredPin()) {
       const data = await fetchClientProfile(storedId);
       if (data) {
         renderPersonalizedState(data);

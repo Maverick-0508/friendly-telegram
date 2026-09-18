@@ -518,7 +518,7 @@ if (contactForm && nameInput && emailInput && phoneInput && messageInput) {
                     response,
                     'We could not submit your request right now. Please check your connection and try again.'
                 );
-                throw new Error(detail);
+                throw new Error(`${detail} (Status ${response.status})`);
             }
 
             await response.json().catch(() => ({}));

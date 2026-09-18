@@ -4975,3 +4975,541 @@ body.pwa-standalone .trust-grid {
     color: #0f172a;
 }
 
+
+/* ============================================================
+   Kaggle-inspired modern layout (emerald system)
+   ============================================================ */
+
+:root {
+    --emerald-strong: #15803d;
+    --emerald-bright: #16a34a;
+    --emerald-soft: #dcfce7;
+    --emerald-light: #f0fdf4;
+    --slate-border: #e2e8f0;
+    --slate-muted: #64748b;
+    --slate-text: #0f172a;
+}
+
+/* --- Sticky nav high-contrast quote CTA --- */
+.btn-quote-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--emerald-bright);
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.82rem;
+    letter-spacing: 0.4px;
+    padding: 0.55rem 1rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-quote-cta:hover {
+    background: var(--emerald-strong);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(21, 128, 61, 0.35);
+    color: #ffffff;
+}
+
+.btn-quote-cta i {
+    font-size: 0.9rem;
+}
+
+@media (max-width: 680px) {
+    .btn-quote-cta .quote-cta-text {
+        display: none;
+    }
+    .btn-quote-cta {
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        justify-content: center;
+        border-radius: 50%;
+    }
+}
+
+/* --- Hero eyebrow, accent + emerald CTA --- */
+.hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(22, 163, 74, 0.16);
+    border: 1px solid rgba(220, 252, 231, 0.35);
+    color: #dcfce7;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 0.45rem 1rem;
+    border-radius: 999px;
+    margin-bottom: 1.25rem;
+    backdrop-filter: blur(4px);
+}
+
+.hero-accent {
+    color: #4ade80;
+}
+
+.hero .btn-emerald {
+    background: var(--emerald-bright);
+    color: #ffffff;
+    border-color: var(--emerald-bright);
+}
+
+.hero .btn-emerald:hover {
+    background: var(--emerald-strong);
+    border-color: var(--emerald-strong);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(21, 128, 61, 0.45);
+}
+
+.hero-trust-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+}
+
+.hero-trust-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    color: #ffffff;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.5rem 0.9rem;
+    border-radius: 999px;
+    backdrop-filter: blur(4px);
+}
+
+.hero-trust-badge i {
+    color: #4ade80;
+    font-size: 0.9rem;
+}
+
+/* --- Hero quick-nav chips (emerald refresh) --- */
+.hero-quick-nav {
+    margin-top: 2.2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.hero-quick-chip {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #f0fdf4;
+    border-radius: 999px;
+    padding: 0.55rem 1.1rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.hero-quick-chip:hover,
+.hero-quick-chip.active {
+    background: var(--emerald-bright);
+    border-color: var(--emerald-bright);
+    color: #ffffff;
+}
+
+/* --- Who We Serve audience cards --- */
+.eyebrow-category {
+    display: inline-block;
+    color: var(--emerald-strong);
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 0.75rem;
+}
+
+.who-we-serve {
+    background: var(--bg-lighter);
+}
+
+.who-we-serve .section-title {
+    font-size: clamp(1.7rem, 4vw, 2.6rem);
+}
+
+.audience-card {
+    background: #ffffff;
+    border: 1px solid var(--slate-border);
+    border-radius: 16px;
+    padding: 2.2rem 2rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+    transition: all 0.25s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+}
+
+.audience-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.1);
+    border-color: #bbf7d0;
+}
+
+.audience-icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 14px;
+    background: var(--emerald-soft);
+    color: var(--emerald-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.audience-card h3 {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--slate-text);
+    letter-spacing: -0.3px;
+}
+
+.audience-card p {
+    color: var(--slate-muted);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    margin: 0;
+}
+
+.audience-points {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 0.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.audience-points li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    font-size: 0.9rem;
+    color: var(--slate-text);
+}
+
+.audience-points li::before {
+    content: '\f00c';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    color: var(--emerald-bright);
+    font-size: 0.8rem;
+    margin-top: 0.15rem;
+}
+
+.audience-card .link-arrow {
+    margin-top: auto;
+    color: var(--emerald-strong);
+}
+
+.audience-card .link-arrow:hover {
+    color: var(--emerald-bright);
+}
+
+/* --- Stats strip refinement --- */
+.stats {
+    background: linear-gradient(120deg, #14532d 0%, #166534 55%, #15803d 100%);
+    color: #ffffff;
+}
+
+.stats-grid {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.stat-number {
+    font-weight: 900;
+}
+
+.stat-label {
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    opacity: 0.92;
+}
+
+/* ============================================================
+   Authenticated client hub mode (state-based rendering)
+   Hides the marketing funnel and shows the dashboard experience
+   directly for logged-in clients.
+   ============================================================ */
+
+body.hub-authenticated .featured,
+body.hub-authenticated #services,
+body.hub-authenticated #pricing-calculator,
+body.hub-authenticated .project-gallery,
+body.hub-authenticated #insights,
+body.hub-authenticated .stats,
+body.hub-authenticated #about,
+body.hub-authenticated .testimonials,
+body.hub-authenticated #service-area,
+body.hub-authenticated .trust-indicators {
+    display: none;
+}
+
+body.hub-authenticated .hero {
+    min-height: 0;
+    padding: 48px 0 72px;
+}
+
+body.hub-authenticated .hero-scroll-indicator {
+    display: none;
+}
+
+/* --- Dashboard status bar (welcome + at-a-glance chips) --- */
+.dashboard-status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    background: #ffffff;
+    border: 1px solid var(--slate-border);
+    border-radius: 18px;
+    padding: 1.4rem 1.8rem;
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+    margin-bottom: 1.5rem;
+}
+
+.dash-greeting h2 {
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: var(--slate-text);
+    letter-spacing: -0.4px;
+}
+
+.dash-greeting .dash-property {
+    color: var(--slate-muted);
+    font-size: 0.9rem;
+    margin-top: 0.15rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.dash-status-chips {
+    display: flex;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+}
+
+.dash-chip {
+    background: var(--bg-light);
+    border: 1px solid var(--slate-border);
+    border-radius: 14px;
+    padding: 0.6rem 1rem;
+    text-align: center;
+    min-width: 120px;
+}
+
+.dash-chip .chip-label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--slate-muted);
+    margin-bottom: 0.2rem;
+}
+
+.dash-chip .chip-value {
+    display: block;
+    font-weight: 800;
+    font-size: 0.92rem;
+    color: var(--slate-text);
+}
+
+.dash-chip .chip-value.text-emerald {
+    color: var(--emerald-strong);
+}
+
+/* --- Dashboard widget grid (Kaggle-style two columns) --- */
+.dashboard-widgets-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.dash-widget {
+    background: #ffffff;
+    border: 1px solid var(--slate-border);
+    border-radius: 18px;
+    padding: 1.4rem 1.6rem;
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
+}
+
+.dash-widget h3 {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--slate-text);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.dash-widget h3 i {
+    color: var(--emerald-strong);
+}
+
+.dash-widget .dash-widget-sub {
+    font-size: 0.82rem;
+    color: var(--slate-muted);
+    font-weight: 500;
+    margin-left: auto;
+}
+
+.dash-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.9rem;
+}
+
+.dash-action {
+    border: 1px solid var(--slate-border);
+    border-radius: 14px;
+    padding: 0.9rem 1rem;
+    background: var(--bg-lighter);
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: var(--slate-text);
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.dash-action:hover {
+    background: var(--emerald-light);
+    border-color: #bbf7d0;
+}
+
+.dash-action i {
+    color: var(--emerald-strong);
+    font-size: 1rem;
+}
+
+.dash-action.disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.plan-card {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border: 1px solid #bbf7d0;
+    border-radius: 14px;
+    padding: 1rem 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.plan-card .plan-name {
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--emerald-strong);
+}
+
+.plan-card .plan-detail {
+    font-size: 0.88rem;
+    color: #166534;
+    margin-top: 0.2rem;
+}
+
+.plan-card .plan-btn {
+    background: #ffffff;
+    color: var(--emerald-strong);
+    border: 1px solid #86efac;
+    border-radius: 10px;
+    padding: 0.45rem 0.9rem;
+    font-weight: 700;
+    font-size: 0.82rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.plan-card .plan-btn:hover {
+    background: var(--emerald-strong);
+    color: #ffffff;
+}
+
+.yard-conditions {
+    background: linear-gradient(135deg, #fef9c3 0%, #fef3c7 100%);
+    border: 1px solid #fde68a;
+    border-radius: 14px;
+    padding: 1rem 1.2rem;
+}
+
+.yard-conditions .yc-title {
+    font-weight: 800;
+    font-size: 1rem;
+    color: #713f12;
+}
+
+.yard-conditions .yc-body {
+    font-size: 0.85rem;
+    color: #854d0e;
+    margin-top: 0.35rem;
+}
+
+.visits-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.visits-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.88rem;
+}
+
+.visits-list li:last-child {
+    border-bottom: none;
+}
+
+.visits-list .visit-date {
+    color: var(--slate-muted);
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+@media (max-width: 880px) {
+    .dashboard-widgets-grid {
+        grid-template-columns: 1fr;
+    }
+    .dash-status-chips {
+        width: 100%;
+    }
+    .dash-actions-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+

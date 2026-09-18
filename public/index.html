@@ -3,22 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Dynamic lawn care client hub with passwordless access, live GPS crew tracker, instant pricing calculator, loyalty perks, and M-Pesa invoice settlement">
-    <title>Lawn Craft - Professional Lawn Care & Client Hub</title>
-    
+    <meta name="description" content="Nairobi's professional lawn and garden care: precision mowing, seasonal care, hedge trimming, and estate landscaping with transparent M-Pesa billing. Serving homes and estates within 25 km of Nairobi. Call +254 758 827 319.">
+    <title>Lawn Craft - Professional Lawn Care, Nairobi | Mowing, Landscaping & Seasonal Care</title>
+
+    <!-- Canonical -->
+    <link rel="canonical" href="https://lawncraft.vercel.app/">
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://lawncraft.com/">
-    <meta property="og:title" content="Lawn Craft - Professional Lawn Care & Client Hub">
-    <meta property="og:description" content="Dynamic lawn care client hub with passwordless access, live GPS crew tracker, instant pricing calculator, loyalty perks, and M-Pesa invoice settlement">
+    <meta property="og:url" content="https://lawncraft.vercel.app/">
+    <meta property="og:title" content="Lawn Craft - Professional Lawn Care, Nairobi | Mowing, Landscaping & Seasonal Care">
+    <meta property="og:description" content="Nairobi's professional lawn and garden care. Precision mowing, seasonal care, and estate landscaping with transparent M-Pesa billing. Serving homes and estates within 25 km of Nairobi.">
     <meta property="og:image" content="https://images.unsplash.com/photo-1558904541-efa843a96f01?w=1200&h=630&fit=crop">
     
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://lawncraft.com/">
-    <meta property="twitter:title" content="Lawn Craft - Professional Lawn Care & Client Hub">
-    <meta property="twitter:description" content="Transforming outdoor spaces with precision, expertise, and sustainable practices.">
+    <meta property="twitter:url" content="https://lawncraft.vercel.app/">
+    <meta property="twitter:title" content="Lawn Craft - Professional Lawn Care, Nairobi | Mowing, Landscaping & Seasonal Care">
+    <meta property="twitter:description" content="Nairobi's professional lawn and garden care. Precision mowing, seasonal care, and estate landscaping with transparent M-Pesa billing.">
     <meta property="twitter:image" content="https://images.unsplash.com/photo-1558904541-efa843a96f01?w=1200&h=630&fit=crop">
+
+    <!-- Local SEO geotags -->
+    <meta name="geo.region" content="KE-30">
+    <meta name="geo.placename" content="Nairobi">
+    <meta name="geo.position" content="-1.2803;36.8129">
+    <meta name="ICBM" content="-1.2803, 36.8129">
+
+    <!-- LocalBusiness structured data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "HomeAndConstructionBusiness",
+      "@id": "https://lawncraft.vercel.app/#business",
+      "name": "Lawn Craft",
+      "url": "https://lawncraft.vercel.app/",
+      "image": "https://lawncraft.vercel.app/assets/images/logo-64.png",
+      "logo": "https://lawncraft.vercel.app/assets/images/logo-64.png",
+      "telephone": "+254758827319",
+      "email": "contact@lawncraft.com",
+      "priceRange": "KSh",
+      "currenciesAccepted": "KES",
+      "paymentAccepted": "M-Pesa, Bank Transfer, Cash",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Ikigai, Merchant Square, Riverside Dr",
+        "addressLocality": "Nairobi",
+        "addressCountry": "KE"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": -1.2803,
+        "longitude": 36.8129
+      },
+      "areaServed": [
+        { "@type": "City", "name": "Nairobi" },
+        {
+          "@type": "Place",
+          "name": "Within 25 km of our Nairobi base",
+          "geo": {
+            "@type": "GeoCircle",
+            "geoMidpoint": { "@type": "GeoCoordinates", "latitude": -1.2803, "longitude": 36.8129 },
+            "geoRadius": "25000"
+          }
+        }
+      ],
+      "openingHoursSpecification": {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+        "opens": "07:00",
+        "closes": "19:00"
+      },
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Lawn Care Services",
+        "itemListElement": [
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Professional Lawn Mowing", "serviceType": "LawnCareService" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Seasonal Lawn Treatment", "serviceType": "Landscaping" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Hedge & Shrub Trimming", "serviceType": "Landscaping" } },
+          { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Commercial & Estate Grounds Maintenance", "serviceType": "Landscaping" } }
+        ]
+      }
+    }
+    </script>
     
     <!-- Preload critical assets -->
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" as="style">
@@ -67,6 +133,9 @@
                     <a href="https://www.tiktok.com/@lawncraft_lawn_care?is_from_webapp=1&sender_device=pc" target="_blank" rel="noopener noreferrer" title="Visit our TikTok page"><i class="fa-brands fa-tiktok"></i></a>
                 </div>
                 <div class="header-portal-action">
+                    <a href="#contact" class="btn-quote-cta" title="Get a free lawn care quote">
+                        <i class="fa-solid fa-message"></i> <span class="quote-cta-text">Get a Free Quote</span>
+                    </a>
                     <button class="btn-pwa-install" type="button" title="Install Lawn Craft App" id="header-pwa-install">
                         <i class="fa-solid fa-cloud-arrow-down"></i> <span>Install App</span>
                     </button>
@@ -125,12 +194,19 @@
             </div>
             <div class="container">
                 <div class="hero-content">
-                    <h1 class="hero-title">Excellence in Lawn Care</h1>
-                    <p class="hero-subtitle">Transforming outdoor spaces with precision, expertise, and sustainable practices</p>
+                    <div class="hero-eyebrow"><i class="fa-solid fa-seedling"></i> Nairobi's Professional Lawn &amp; Garden Care</div>
+                    <h1 class="hero-title">Beautiful Lawns, <span class="hero-accent">On Your Schedule</span></h1>
+                    <p class="hero-subtitle">Precision mowing, seasonal care, and instant M-Pesa billing for Nairobi homes and estates — with transparent pricing and a client hub you actually log into.</p>
                     <div class="hero-buttons">
-                        <a href="#pricing-calculator" class="btn btn-primary"><i class="fa-solid fa-calculator"></i> Instant Lawn Calculator</a>
-                        <button type="button" class="btn btn-secondary client-access-trigger"><i class="fa-solid fa-user-tag"></i> Client Hub Access</button>
-                        <a href="#services" class="btn btn-download-guide"><i class="fa-solid fa-seedling"></i> Explore Services</a>
+                        <a href="#contact" class="btn btn-emerald"><i class="fa-solid fa-message"></i> Get a Free Quote</a>
+                        <a href="#pricing-calculator" class="btn btn-primary"><i class="fa-solid fa-calculator"></i> View Instant Pricing</a>
+                        <button type="button" class="btn btn-secondary client-access-trigger"><i class="fa-solid fa-user-tag"></i> Client Hub</button>
+                    </div>
+                    <div class="hero-trust-badges">
+                        <span class="hero-trust-badge"><i class="fa-solid fa-shield-halved"></i> Licensed &amp; Insured</span>
+                        <span class="hero-trust-badge"><i class="fa-solid fa-handshake-angle"></i> Satisfaction Guaranteed</span>
+                        <span class="hero-trust-badge"><i class="fa-solid fa-bolt"></i> Same-Week Dispatch</span>
+                        <span class="hero-trust-badge"><i class="fa-solid fa-location-crosshairs"></i> Live GPS Tracking</span>
                     </div>
                     <!-- Hero Quick Navigation Bar -->
                     <nav class="hero-quick-nav" aria-label="Hero Quick Section Navigation">
@@ -153,42 +229,44 @@
             </a>
         </section>
 
-    <!-- Featured Section -->
-    <section class="featured">
+    <!-- Who We Serve Section -->
+    <section class="featured who-we-serve">
         <div class="container">
+            <div class="section-header">
+                <span class="section-category eyebrow-category">Who We Serve</span>
+                <h2 class="section-title">Care for Every Property, Built Around You</h2>
+                <p class="section-subtitle">From family homes to gated estates — lawn care tailored to your property, not one-size-fits-all.</p>
+            </div>
             <div class="featured-grid">
-                <div class="featured-card">
-                    <div class="featured-image">
-                        <!-- TODO: Replace with your lawn care project photo -->
-                        <img loading="lazy" src="https://images.unsplash.com/photo-1592417817038-d13fd7342605?w=800&h=600&fit=crop" alt="Residential lawn care showing beautiful home garden">
-                    </div>
-                    <div class="featured-content">
-                        <h3>Residential Excellence</h3>
-                        <p>Tailored lawn care solutions for your home's unique needs</p>
-                        <a href="/services" class="link-arrow">Learn more →</a>
-                    </div>
+                <div class="audience-card">
+                    <div class="audience-icon"><i class="fa-solid fa-house-chimney"></i></div>
+                    <h3>Homeowners</h3>
+                    <p>Routine mowing, edging, fertilization, and seasonal cleanup perfectly matched to your yard.</p>
+                    <ul class="audience-points">
+                        <li>Weekly or bi-weekly visits</li>
+                        <li>Client hub with live crew GPS</li>
+                    </ul>
+                    <a href="#contact" class="link-arrow">Get started →</a>
                 </div>
-                <div class="featured-card">
-                    <div class="featured-image">
-                        <!-- TODO: Replace with your lawn care project photo -->
-                        <img loading="lazy" src="https://images.unsplash.com/photo-1558904541-efa843a96f01?w=800&h=600&fit=crop" alt="Commercial lawn maintenance for business properties">
-                    </div>
-                    <div class="featured-content">
-                        <h3>Commercial Solutions</h3>
-                        <p>Professional property maintenance for businesses</p>
-                        <a href="/services" class="link-arrow">Learn more →</a>
-                    </div>
+                <div class="audience-card">
+                    <div class="audience-icon"><i class="fa-solid fa-building"></i></div>
+                    <h3>Commercial &amp; Estates</h3>
+                    <p>Large-scale groundskeeping and full estate maintenance plans with dedicated, scheduled crews.</p>
+                    <ul class="audience-points">
+                        <li>Contract &amp; multi-site billing</li>
+                        <li>Priority same-week dispatch</li>
+                    </ul>
+                    <a href="#contact" class="link-arrow">Get a quote →</a>
                 </div>
-                <div class="featured-card">
-                    <div class="featured-image">
-                        <!-- TODO: Replace with your lawn care project photo -->
-                        <img loading="lazy" src="https://images.unsplash.com/photo-1492496913980-501348b61469?w=800&h=600&fit=crop" alt="Sustainable landscaping practices with eco-friendly approach">
-                    </div>
-                    <div class="featured-content">
-                        <h3>Sustainable Practices</h3>
-                        <p>Eco-friendly approaches to landscape management</p>
-                        <a href="/services" class="link-arrow">Learn more →</a>
-                    </div>
+                <div class="audience-card">
+                    <div class="audience-icon"><i class="fa-solid fa-tree-city"></i></div>
+                    <h3>Property &amp; Facility Managers</h3>
+                    <p>Reliable seasonal packages for Airbnbs, apartments, and office compounds that must stay guest-ready.</p>
+                    <ul class="audience-points">
+                        <li>Guaranteed visitor-ready lawns</li>
+                        <li>Monthly consolidated invoicing</li>
+                    </ul>
+                    <a href="#contact" class="link-arrow">Talk to us →</a>
                 </div>
             </div>
         </div>
