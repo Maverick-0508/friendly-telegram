@@ -24,6 +24,38 @@ const allowedOrigins = (process.env.CORS_ORIGIN || '')
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+const cspDirectives = {
+  defaultSrc: ["'self'"],
+  scriptSrc: ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
+  styleSrc: [
+    "'self'",
+    "'unsafe-inline'",
+    'https://fonts.googleapis.com',
+    'https://cdnjs.cloudflare.com',
+    'https://unpkg.com',
+  ],
+  fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com', 'data:'],
+  imgSrc: [
+    "'self'",
+    'data:',
+    'blob:',
+    'https://images.unsplash.com',
+    'https://*.tile.openstreetmap.org',
+    'https://tile.openstreetmap.org',
+  ],
+  connectSrc: ["'self'", 'https://divine-smoke-7e2b.verbosedoodle.workers.dev'],
+  objectSrc: ["'none'"],
+  baseUri: ["'self'"],
+  frameAncestors: ["'none'"],
+  formAction: ["'self'"],
+};
+
+if (isProduction) {
+  cspDirectives.upgradeInsecureRequests = [];
+}
+
+const contentSecurityPolicy = { directives: cspDirectives };
+
 function createCorsOriginValidator() {
   return function origin(origin, callback) {
     if (!origin) {
@@ -34,8 +66,66 @@ function createCorsOriginValidator() {
       return callback(null, true);
     }
 
-    return callback(new Error('Not allowed by CORS'));
+    const err = new Error('Not allowed by CORS');
+    err.statusCode = 403;
+    err.code = 'CORS_BLOCKED';
+    return callback(err);
   };
+}
+
+function createAuthRateLimiter() {
+  return rateLimit({
+    windowMs: Number(process.env.AUTH_RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000),
+    max: Number(process.env.AUTH_RATE_LIMIT_MAX || 20),
+    standardHeaders: true,
+    legacyHeaders: false,
+    skipSuccessfulRequests: true,
+    message: {
+      success: false,
+      error: { message: 'Too many authentication attempts. Please try again later.', code: 'RATE_LIMITED' },
+    },
+  });
+}
+
+function createWriteRateLimiter() {
+  return rateLimit({
+    windowMs: Number(process.env.WRITE_RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000),
+    max: Number(process.env.WRITE_RATE_LIMIT_MAX || 50),
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+      success: false,
+      error: { message: 'Too many requests. Please try again later.', code: 'RATE_LIMITED' },
+    },
+  });
+}
+
+function isSafePagePath(rawPath) {
+  if (rawPath.includes('..') || rawPath.includes('\\') || rawPath.includes('\0')) {
+    return false;
+  }
+  let decoded;
+  try {
+    decoded = decodeURIComponent(rawPath);
+  } catch {
+    return false;
+  }
+  return !decoded.includes('..') && !decoded.includes('\\') && !decoded.includes('\0') && !decoded.includes('/');
+}
+
+function hasUnsafePathSegments(rawPath) {
+  if (!rawPath) return false;
+  if (/%(?:2e|2f|5c)/i.test(rawPath)) return true;
+  let decoded = rawPath;
+  try {
+    decoded = decodeURIComponent(rawPath);
+  } catch {
+    return true;
+  }
+  if (decoded.includes('\0')) return true;
+  return decoded
+    .split('/')
+    .some((segment) => segment === '..' || segment.includes('\\'));
 }
 
 export function createApp() {
@@ -56,7 +146,7 @@ export function createApp() {
 
   app.use(
     helmet({
-      contentSecurityPolicy: false,
+      contentSecurityPolicy,
       crossOriginEmbedderPolicy: false,
     })
   );
@@ -69,6 +159,9 @@ export function createApp() {
       legacyHeaders: false,
     })
   );
+
+  const authLimiter = createAuthRateLimiter();
+  const writeLimiter = createWriteRateLimiter();
 
   app.use(
     cors({
@@ -95,6 +188,13 @@ export function createApp() {
     res.redirect(301, '/');
   });
 
+  app.use('/api/auth', authLimiter);
+
+  app.use(
+    ['/api/contact', '/api/quotes', '/api/portal/lookup', '/api/portal/clients', '/api/coupons/validate'],
+    writeLimiter
+  );
+
   app.use('/api', apiRoutes);
 
   app.get('/tracker/:orderId', (_req, res) => {
@@ -113,10 +213,39 @@ export function createApp() {
     res.sendFile(path.join(__dirname, 'calculator.html'));
   });
 
+  const PRIVATE_PATH_PATTERN = /^\/(?:node-backend|node_modules|tests|data|\.github|\.vercel)(?:\/|$)/i;
+const PRIVATE_FILE_PATTERN = /^\/\.env/i;
+const BLOCKED_ROOT_FILES = /^\/(?:app|server|package|package-lock|README|AGENTS|LICENSE)(?:\.|$)/i;
+const PUBLIC_ASSET_EXTENSION = /\.(?:html?|css|js|mjs|webmanifest|json|png|jpe?g|gif|svg|ico|webp|avif|woff2?|ttf|xml|txt|map)$/i;
+
+function renderNotFound(res) {
+  const notFoundHtml = path.join(__dirname, '404.html');
+  if (fs.existsSync(notFoundHtml)) {
+    return res.status(404).sendFile(notFoundHtml);
+  }
+  return res.status(404).send('Page not found');
+}
+
+app.use((req, res, next) => {
+  if (hasUnsafePathSegments(req.path)) return renderNotFound(res);
+
+  if (PRIVATE_PATH_PATTERN.test(req.path) || PRIVATE_FILE_PATTERN.test(req.path) || BLOCKED_ROOT_FILES.test(req.path)) {
+    return renderNotFound(res);
+  }
+
+  if (req.path.includes('.')) {
+    const extensionMatch = PUBLIC_ASSET_EXTENSION.test(req.path);
+    if (!extensionMatch) return renderNotFound(res);
+  }
+
+  return next();
+});
+
   app.use(
     express.static(__dirname, {
       extensions: ['html', 'htm'],
       index: 'index.html',
+      dotfiles: 'ignore',
     })
   );
 
@@ -132,6 +261,15 @@ export function createApp() {
     }
 
     const sanitizedPath = req.path.replace(/^\//, '').replace(/\/$/, '');
+
+    if (!isSafePagePath(sanitizedPath)) {
+      const notFoundHtml = path.join(__dirname, '404.html');
+      if (fs.existsSync(notFoundHtml)) {
+        return res.status(404).sendFile(notFoundHtml);
+      }
+      return res.status(404).send('Page not found');
+    }
+
     const candidateHtml = path.join(__dirname, `${sanitizedPath}.html`);
 
     if (sanitizedPath && fs.existsSync(candidateHtml) && fs.statSync(candidateHtml).isFile()) {
@@ -165,6 +303,12 @@ export function createApp() {
 }
 
 export function startServer() {
+  if (isProduction && allowedOrigins.length === 0) {
+    console.warn(
+      '[startup] CORS_ORIGIN is not set in production. Browser cross-origin requests will be denied; ' +
+      'set CORS_ORIGIN to a comma-separated allowlist of your site origins.'
+    );
+  }
   const app = createApp();
   return app.listen(PORT, HOST, () => {
     console.log(`Lawn Craft server running on http://${HOST}:${PORT}`);

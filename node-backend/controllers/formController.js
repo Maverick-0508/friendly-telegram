@@ -1,13 +1,6 @@
-import { supabase } from '../config/supabase.js';
-import { pool, usePg } from '../config/db.js';
-import { registerQuoteInPortal } from './portalController.js';
+import { store } from '../services/store.js';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const isStrictRuntime = process.env.NODE_ENV === 'production' && process.env.ALLOW_IN_MEMORY_FALLBACK !== 'true';
-
-// In-memory fallback stores
-const mockLeads = [];
-const mockQuotes = [];
 
 function normalizeText(value) {
   return typeof value === 'string' ? value.trim() : '';
@@ -73,88 +66,29 @@ export async function submitContactForm(req, res, next) {
       });
     }
 
-    if (usePg && pool && typeof pool.query === 'function') {
-      try {
-        const insertQuery = `INSERT INTO leads (name, email, phone, message, source)
-          VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, phone, message, created_at`;
-        const values = [data.name, data.email, data.phone, data.message, 'website'];
-        const result = await pool.query(insertQuery, values);
-        const insertedLead = result?.rows?.[0] || null;
-
-        if (insertedLead) {
-          return res.status(201).json({
-            success: true,
-            message: 'Your message has been sent successfully.',
-            data: insertedLead,
-          });
-        }
-      } catch (pgErr) {
-        console.warn('Postgres insert failed, falling back:', pgErr.message);
-      }
-    }
-
-    if (supabase) {
-      try {
-        const { data: insertedLead, error } = await supabase
-          .from('leads')
-          .insert([
-            {
-              name: data.name,
-              email: data.email,
-              phone: data.phone,
-              message: data.message,
-              source: 'website',
-            },
-          ])
-          .select('id, name, email, phone, message, created_at')
-          .single();
-
-        if (!error && insertedLead) {
-          return res.status(201).json({
-            success: true,
-            message: 'Your message has been sent successfully.',
-            data: insertedLead,
-          });
-        }
-      } catch (sbErr) {
-        console.warn('Supabase insert failed, falling back:', sbErr.message);
-      }
-    }
-
-    if (isStrictRuntime) {
-      const error = new Error('Contact service is unavailable because persistence is not configured.');
-      error.statusCode = 503;
-      error.code = 'PERSISTENCE_UNAVAILABLE';
-      throw error;
-    }
-
-    // In-memory mock fallback (non-production only)
-    const mockLead = {
-      id: 'lead_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+    const savedLead = await store.submitLead({
       name: data.name,
       email: data.email,
       phone: data.phone,
       message: data.message,
       source: 'website',
-      created_at: new Date().toISOString(),
-    };
-    mockLeads.push(mockLead);
+    });
 
-    // Also register in portal store so client hub recognizes this client's consultation
-    registerQuoteInPortal({
-      id: mockLead.id,
+    // Register in portal store so client hub recognizes this client's consultation
+    await store.registerQuote({
+      id: savedLead.id,
       full_name: data.name,
       email: data.email,
       phone: data.phone,
       service_type: 'Consultation Request',
       message: data.message,
-      created_at: mockLead.created_at
+      created_at: savedLead.created_at,
     });
 
     return res.status(201).json({
       success: true,
       message: 'Your message has been sent successfully.',
-      data: mockLead,
+      data: savedLead,
     });
   } catch (err) {
     return next(err);
@@ -178,49 +112,7 @@ export async function submitQuoteForm(req, res, next) {
       });
     }
 
-    if (supabase) {
-      try {
-        const { data: insertedQuote, error } = await supabase
-          .from('quotes')
-          .insert([
-            {
-              full_name: fullName,
-              email,
-              phone,
-              address: normalizeText(payload.address),
-              property_size: payload.property_size || null,
-              property_type: normalizeText(payload.property_type),
-              service_type: normalizeText(payload.service_type),
-              service_frequency: normalizeText(payload.service_frequency),
-              preferred_start_date: payload.preferred_start_date || null,
-              additional_details: normalizeText(payload.additional_details || payload.message),
-            },
-          ])
-          .select()
-          .single();
-
-        if (!error && insertedQuote) {
-          registerQuoteInPortal(insertedQuote);
-          return res.status(201).json({
-            success: true,
-            message: 'Quote request submitted successfully.',
-            data: insertedQuote,
-          });
-        }
-      } catch (sbErr) {
-        console.warn('Supabase quote insert failed, falling back:', sbErr.message);
-      }
-    }
-
-    if (isStrictRuntime) {
-      const error = new Error('Quote service is unavailable because persistence is not configured.');
-      error.statusCode = 503;
-      error.code = 'PERSISTENCE_UNAVAILABLE';
-      throw error;
-    }
-
-    const mockQuote = {
-      id: 'quote_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+    const quote = await store.registerQuote({
       full_name: fullName,
       email,
       phone,
@@ -231,17 +123,12 @@ export async function submitQuoteForm(req, res, next) {
       service_frequency: normalizeText(payload.service_frequency),
       preferred_start_date: payload.preferred_start_date || null,
       additional_details: normalizeText(payload.additional_details || payload.message),
-      created_at: new Date().toISOString(),
-    };
-    mockQuotes.push(mockQuote);
-
-    // Also register in portal store so client hub immediately lists this quote
-    registerQuoteInPortal(mockQuote);
+    });
 
     return res.status(201).json({
       success: true,
       message: 'Quote request submitted successfully.',
-      data: mockQuote,
+      data: quote,
     });
   } catch (err) {
     return next(err);

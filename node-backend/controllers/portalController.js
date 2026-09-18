@@ -1,21 +1,14 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { supabase } from '../config/supabase.js';
+import { checkSupabaseReachability } from '../config/supabase.js';
+import { store, normalizeIdentifier } from '../services/store.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const DATA_FILE = path.join(__dirname, '../../data/portal-store.json');
 const isStrictRuntime = process.env.NODE_ENV === 'production' && process.env.ALLOW_IN_MEMORY_FALLBACK !== 'true';
+const REACHABILITY_TTL_MS = 15_000;
 
-// In-memory runtime cache for Lawn Craft Client Hub & Dispatch
-const clients = new Map();
-const workOrders = new Map();
-const invoices = new Map();
-const quotes = new Map();
+let lastReachabilityCheck = 0;
+let reachabilityCached = null;
 
 function ensureRuntimePersistence(res) {
-  if (isStrictRuntime && !supabase) {
+  if (isStrictRuntime && !store.backendName().startsWith('supabase')) {
     res.status(503).json({
       success: false,
       error: {
@@ -29,112 +22,50 @@ function ensureRuntimePersistence(res) {
   return true;
 }
 
+async function productionProvidersAvailable() {
+  if (!isStrictRuntime) return true;
+
+  const now = Date.now();
+  if (reachabilityCached !== null && now - lastReachabilityCheck < REACHABILITY_TTL_MS) {
+    return reachabilityCached;
+  }
+
+  const status = await checkSupabaseReachability();
+  reachabilityCached = status.connected;
+  lastReachabilityCheck = now;
+  if (!status.connected) {
+    console.error('[portalController] Supabase is unreachable in production; failing fast.', status.error || '');
+  }
+  return status.connected;
+}
+
+async function ensureProviders(res) {
+  if (!ensureRuntimePersistence(res)) return false;
+
+  if (isStrictRuntime) {
+    const available = await productionProvidersAvailable();
+    if (!available) {
+      res.status(503).json({
+        success: false,
+        error: {
+          message: 'Persistence provider is unavailable.',
+          code: 'PERSISTENCE_UNAVAILABLE',
+        },
+      });
+      return false;
+    }
+  }
+
+  return true;
+}
+
 // Helper to normalize phone / email
-export function normalizeIdentifier(raw) {
-  if (!raw) return '';
-  const str = String(raw).trim().toLowerCase();
-  if (str.includes('@')) return str;
-  const digits = str.replace(/\D/g, '');
-  if (digits.startsWith('254') && digits.length === 12) {
-    return '0' + digits.slice(3);
-  }
-  return digits;
-}
-
-// Persist data store to disk
-function persistToDisk() {
-  try {
-    const dir = path.dirname(DATA_FILE);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-
-    // Deduplicate objects by their primary ID to prevent phone/email key aliasing duplicates
-    const uniqueClients = Array.from(new Map(
-      Array.from(clients.values()).filter(c => c && c.id).map(c => [c.id, c])
-    ).values());
-    const uniqueWorkOrders = Array.from(new Map(
-      Array.from(workOrders.values()).filter(w => w && w.id).map(w => [w.id, w])
-    ).values());
-    const uniqueInvoices = Array.from(new Map(
-      Array.from(invoices.values()).filter(i => i && i.id).map(i => [i.id, i])
-    ).values());
-    const uniqueQuotes = Array.from(new Map(
-      Array.from(quotes.values()).filter(q => q && q.id).map(q => [q.id, q])
-    ).values());
-
-    const payload = {
-      clients: uniqueClients,
-      workOrders: uniqueWorkOrders,
-      invoices: uniqueInvoices,
-      quotes: uniqueQuotes,
-      updated_at: new Date().toISOString()
-    };
-
-    fs.writeFileSync(DATA_FILE, JSON.stringify(payload, null, 2), 'utf8');
-  } catch (err) {
-    console.error('[portalController] Error persisting data store:', err.message);
-  }
-}
-
-// Load data store from disk
-function loadFromDisk() {
-  try {
-    if (!fs.existsSync(DATA_FILE)) return;
-    const raw = fs.readFileSync(DATA_FILE, 'utf8');
-    if (!raw.trim()) return;
-    const parsed = JSON.parse(raw);
-
-    if (Array.isArray(parsed.clients)) {
-      for (const c of parsed.clients) {
-        if (!c || !c.id) continue;
-        clients.set(c.id, c);
-        if (c.phone) clients.set(normalizeIdentifier(c.phone), c);
-        if (c.email) clients.set(c.email.toLowerCase().trim(), c);
-      }
-    }
-
-    if (Array.isArray(parsed.workOrders)) {
-      for (const w of parsed.workOrders) {
-        if (w && w.id) workOrders.set(w.id, w);
-      }
-    }
-
-    if (Array.isArray(parsed.invoices)) {
-      for (const i of parsed.invoices) {
-        if (i && i.id) invoices.set(i.id, i);
-      }
-    }
-
-    if (Array.isArray(parsed.quotes)) {
-      for (const q of parsed.quotes) {
-        if (q && q.id) quotes.set(q.id, q);
-      }
-    }
-  } catch (err) {
-    console.error('[portalController] Error loading data from disk:', err.message);
-  }
-}
-
-// Initialize data from disk on module load
-loadFromDisk();
-
-// Helper to index a client in memory
-function indexClient(client) {
-  if (!client || !client.id) return;
-  clients.set(client.id, client);
-  if (client.phone) {
-    clients.set(normalizeIdentifier(client.phone), client);
-  }
-  if (client.email) {
-    clients.set(client.email.toLowerCase().trim(), client);
-  }
-}
+export { normalizeIdentifier };
 
 // Create or Register a Client Profile
 export async function createClientProfile(req, res) {
   try {
-    if (!ensureRuntimePersistence(res)) return;
+    if (!(await ensureProviders(res))) return;
 
     const { name, phone, email, address, property_size, grass_type, service_plan } = req.body || {};
 
@@ -156,7 +87,7 @@ export async function createClientProfile(req, res) {
     const cleanEmail = email ? email.toLowerCase().trim() : '';
 
     // Check if already exists
-    let existing = clients.get(normPhone) || (cleanEmail ? clients.get(cleanEmail) : null);
+    let existing = await store.findClientByPhoneOrEmail(phone, cleanEmail);
     if (existing) {
       // Update fields if provided
       if (address) existing.address = address;
@@ -164,7 +95,7 @@ export async function createClientProfile(req, res) {
       if (grass_type) existing.grass_type = grass_type;
       if (service_plan) existing.service_plan = service_plan;
       if (cleanEmail && !existing.email) existing.email = cleanEmail;
-      persistToDisk();
+      await store.upsertClient(existing);
 
       return res.status(200).json({
         success: true,
@@ -196,21 +127,7 @@ export async function createClientProfile(req, res) {
       }
     };
 
-    indexClient(newClient);
-    persistToDisk();
-
-    // Async sync to Supabase if available
-    if (supabase) {
-      try {
-        await supabase.from('clients').insert([{
-          name: newClient.name,
-          phone: newClient.phone,
-          email: newClient.email || null
-        }]);
-      } catch (sbErr) {
-        console.warn('[portalController] Supabase client sync note:', sbErr.message);
-      }
-    }
+    await store.upsertClient(newClient);
 
     return res.status(201).json({
       success: true,
@@ -219,9 +136,12 @@ export async function createClientProfile(req, res) {
     });
   } catch (err) {
     console.error('[createClientProfile Error]', err);
-    return res.status(500).json({
+    return res.status(err.statusCode || 500).json({
       success: false,
-      error: { message: 'Failed to create client profile.', code: 'CLIENT_CREATE_FAILED' }
+      error: {
+        message: 'Failed to create client profile.',
+        code: err.statusCode === 503 ? err.code : 'CLIENT_CREATE_FAILED'
+      }
     });
   }
 }
@@ -229,7 +149,7 @@ export async function createClientProfile(req, res) {
 // Lookup Client by Phone or Email (Strict Real Data, No Mock Synthetics)
 export async function lookupClient(req, res) {
   try {
-    if (!ensureRuntimePersistence(res)) return;
+    if (!(await ensureProviders(res))) return;
 
     const rawIdentifier = req.body?.identifier || req.query?.identifier || '';
     const normalized = normalizeIdentifier(rawIdentifier);
@@ -241,65 +161,9 @@ export async function lookupClient(req, res) {
       });
     }
 
-    let client = clients.get(normalized) || clients.get(rawIdentifier.trim().toLowerCase());
+    const client = await store.findClient(rawIdentifier);
 
-    // If client not directly found by key, search in values
-    if (!client) {
-      for (const c of clients.values()) {
-        if (
-          normalizeIdentifier(c.phone) === normalized ||
-          (c.email && c.email.toLowerCase() === rawIdentifier.trim().toLowerCase())
-        ) {
-          client = c;
-          break;
-        }
-      }
-    }
-
-    // Try Supabase lookup if not in local store
-    if (!client && supabase) {
-      try {
-        const isEmail = rawIdentifier.includes('@');
-        let query = supabase.from('clients').select('*');
-        if (isEmail) {
-          query = query.eq('email', rawIdentifier.trim().toLowerCase());
-        } else {
-          query = query.or(`phone.eq.${rawIdentifier},phone.eq.${normalized}`);
-        }
-        const { data: dbMatches } = await query.limit(1);
-
-        if (dbMatches && dbMatches.length > 0) {
-          const dbC = dbMatches[0];
-          client = {
-            id: 'cl_db_' + dbC.id,
-            name: dbC.name,
-            phone: dbC.phone,
-            email: dbC.email || '',
-            address: 'Property Address on File',
-            property_size: 5000,
-            grass_type: 'Turf Lawn',
-            service_plan: 'Standard Precision Care',
-            customer_since: dbC.created_at ? new Date(dbC.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Registered Client',
-            loyalty: {
-              points_balance: 100,
-              tier: 'Bronze',
-              rate_per_point: 50.00,
-              dollar_value: 5000.00,
-              cash_value: 5000.00,
-              referral_code: 'LAWN-' + (normalizeIdentifier(dbC.phone).slice(-4) || 'VIP'),
-              next_tier: 'Silver',
-              points_to_next_tier: 150
-            }
-          };
-          indexClient(client);
-          persistToDisk();
-        }
-      } catch (sbErr) {
-        console.warn('[portalController] Supabase lookup fallback note:', sbErr.message);
-      }
-    }
-
-    // If not found in either store, return a clean 404 (No fake profiles)
+    // If not found, return a clean 404 (No fake profiles)
     if (!client) {
       return res.status(404).json({
         success: false,
@@ -309,31 +173,16 @@ export async function lookupClient(req, res) {
       });
     }
 
+    const match = { id: client.id, phone: client.phone, email: client.email };
+
     // Gather client work orders
-    const clientWorkOrders = Array.from(workOrders.values())
-      .filter(w => (
-        (client.id && w.client_id === client.id) ||
-        (w.client_phone && normalizeIdentifier(w.client_phone) === normalized) ||
-        (w.client_email && client.email && w.client_email.toLowerCase() === client.email.toLowerCase())
-      ))
-      .sort((a, b) => (a.status === 'in_progress' ? -1 : 1));
+    const clientWorkOrders = await store.workOrdersByClient(match);
 
     // Gather client invoices
-    const clientInvoices = Array.from(invoices.values())
-      .filter(i => (
-        (client.id && i.client_id === client.id) ||
-        (i.client_phone && normalizeIdentifier(i.client_phone) === normalized) ||
-        (i.client_email && client.email && i.client_email.toLowerCase() === client.email.toLowerCase())
-      ))
-      .sort((a, b) => (a.status === 'unpaid' ? -1 : 1));
+    const clientInvoices = await store.invoicesByClient(match);
 
     // Gather client quotes
-    const clientQuotes = Array.from(quotes.values())
-      .filter(q => (
-        (client.id && q.client_id === client.id) ||
-        (q.phone && normalizeIdentifier(q.phone) === normalized) ||
-        (q.email && client.email && q.email.toLowerCase() === client.email.toLowerCase())
-      ));
+    const clientQuotes = await store.quotesByClient(match);
 
     return res.status(200).json({
       success: true,
@@ -355,9 +204,12 @@ export async function lookupClient(req, res) {
     });
   } catch (err) {
     console.error('[lookupClient Error]', err);
-    return res.status(500).json({
+    return res.status(err.statusCode || 500).json({
       success: false,
-      error: { message: 'Failed to retrieve client profile.', code: 'LOOKUP_FAILED' }
+      error: {
+        message: 'Failed to retrieve client profile.',
+        code: err.statusCode === 503 ? err.code : 'LOOKUP_FAILED'
+      }
     });
   }
 }
@@ -365,7 +217,7 @@ export async function lookupClient(req, res) {
 // 1-Click Work Order Booking (Creates Real Client + Order + Invoice)
 export async function createWorkOrder(req, res) {
   try {
-    if (!ensureRuntimePersistence(res)) return;
+    if (!(await ensureProviders(res))) return;
 
     const payload = req.body || {};
     const serviceType = payload.service_type || payload.title || 'Precision Lawn Care';
@@ -394,10 +246,7 @@ export async function createWorkOrder(req, res) {
     const normPhone = normalizeIdentifier(clientPhone);
 
     // Look up or create client record
-    let matchedClient = normPhone ? clients.get(normPhone) : null;
-    if (!matchedClient && clientEmail) {
-      matchedClient = clients.get(clientEmail);
-    }
+    let matchedClient = await store.findClientByPhoneOrEmail(clientPhone, clientEmail);
 
     if (matchedClient) {
       clientId = matchedClient.id;
@@ -408,6 +257,7 @@ export async function createWorkOrder(req, res) {
         matchedClient.loyalty.dollar_value = matchedClient.loyalty.points_balance * matchedClient.loyalty.rate_per_point;
         matchedClient.loyalty.cash_value = matchedClient.loyalty.dollar_value;
       }
+      await store.upsertClient(matchedClient);
     } else {
       const newClientId = 'cl_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
       const newClient = {
@@ -431,19 +281,8 @@ export async function createWorkOrder(req, res) {
           points_to_next_tier: 150
         }
       };
-      indexClient(newClient);
+      await store.upsertClient(newClient);
       clientId = newClient.id;
-
-      // Sync to Supabase
-      if (supabase) {
-        try {
-          supabase.from('clients').insert([{
-            name: newClient.name,
-            phone: newClient.phone,
-            email: newClient.email || null
-          }]).then(() => {}).catch(() => {});
-        } catch {}
-      }
     }
 
     const newOrderId = 'wo_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
@@ -474,7 +313,7 @@ export async function createWorkOrder(req, res) {
       ]
     };
 
-    workOrders.set(workOrder.id, workOrder);
+    await store.upsertWorkOrder(workOrder);
 
     // Auto-generate invoice
     const subtotal = Math.round((price / 1.16) * 100) / 100;
@@ -506,29 +345,7 @@ export async function createWorkOrder(req, res) {
       ]
     };
 
-    invoices.set(invoiceId, invoiceRecord);
-    persistToDisk();
-
-    // Sync to Supabase work_orders
-    if (supabase) {
-      try {
-        supabase.from('work_orders').insert([{
-          id: workOrder.id,
-          client_id: clientId,
-          client_name: clientName,
-          client_phone: clientPhone,
-          client_email: clientEmail || null,
-          title: workOrder.title,
-          service_type: workOrder.service_type,
-          status: workOrder.status,
-          scheduled_date: workOrder.scheduled_date,
-          total_price: workOrder.total_price,
-          property_size: propertySize || null,
-          address: address,
-          invoice_id: invoiceId
-        }]).then(() => {}).catch(() => {});
-      } catch {}
-    }
+    await store.upsertInvoice(invoiceRecord);
 
     return res.status(201).json({
       success: true,
@@ -538,9 +355,12 @@ export async function createWorkOrder(req, res) {
     });
   } catch (err) {
     console.error('[createWorkOrder Error]', err);
-    return res.status(500).json({
+    return res.status(err.statusCode || 500).json({
       success: false,
-      error: { message: 'Failed to create work order.', code: 'CREATE_WORK_ORDER_FAILED' }
+      error: {
+        message: 'Failed to create work order.',
+        code: err.statusCode === 503 ? err.code : 'CREATE_WORK_ORDER_FAILED'
+      }
     });
   }
 }
@@ -548,25 +368,10 @@ export async function createWorkOrder(req, res) {
 // Get Single Work Order (Strict Real Data, No Mock Fallback)
 export async function getWorkOrder(req, res) {
   try {
-    if (!ensureRuntimePersistence(res)) return;
+    if (!(await ensureProviders(res))) return;
 
     const { orderId } = req.params;
-    let order = workOrders.get(orderId);
-
-    if (!order && supabase) {
-      try {
-        const { data: dbOrders } = await supabase
-          .from('work_orders')
-          .select('*')
-          .eq('id', orderId)
-          .limit(1);
-
-        if (dbOrders && dbOrders.length > 0) {
-          order = dbOrders[0];
-          workOrders.set(orderId, order);
-        }
-      } catch {}
-    }
+    const order = await store.workOrderById(orderId);
 
     if (!order) {
       return res.status(404).json({
@@ -580,9 +385,12 @@ export async function getWorkOrder(req, res) {
       data: order
     });
   } catch (err) {
-    return res.status(500).json({
+    return res.status(err.statusCode || 500).json({
       success: false,
-      error: { message: 'Failed to fetch work order.', code: 'WORK_ORDER_FETCH_FAILED' }
+      error: {
+        message: 'Failed to fetch work order.',
+        code: err.statusCode === 503 ? err.code : 'WORK_ORDER_FETCH_FAILED'
+      }
     });
   }
 }
@@ -590,7 +398,7 @@ export async function getWorkOrder(req, res) {
 // Lipa Na M-Pesa STK Push
 export async function stkPushMpesa(req, res) {
   try {
-    if (!ensureRuntimePersistence(res)) return;
+    if (!(await ensureProviders(res))) return;
 
     const { phone, amount, invoice_id, account_reference } = req.body || {};
 
@@ -606,14 +414,16 @@ export async function stkPushMpesa(req, res) {
     const mpesaReceipt = 'NLM' + Math.floor(10000000 + Math.random() * 90000000).toString() + 'X';
 
     // If an invoice is associated, mark it paid
-    if (invoice_id && invoices.has(invoice_id)) {
-      const inv = invoices.get(invoice_id);
-      inv.status = 'paid';
-      inv.balance_due = 0.00;
-      inv.paid_at = new Date().toISOString();
-      inv.payment_method = `Lipa Na M-Pesa (${cleanPhone})`;
-      inv.mpesa_receipt = mpesaReceipt;
-      persistToDisk();
+    if (invoice_id) {
+      const inv = await store.invoiceById(invoice_id);
+      if (inv) {
+        inv.status = 'paid';
+        inv.balance_due = 0.00;
+        inv.paid_at = new Date().toISOString();
+        inv.payment_method = `Lipa Na M-Pesa (${cleanPhone})`;
+        inv.mpesa_receipt = mpesaReceipt;
+        await store.upsertInvoice(inv);
+      }
     }
 
     return res.status(200).json({
@@ -625,9 +435,12 @@ export async function stkPushMpesa(req, res) {
       account_reference: account_reference || 'LAWNCRAFT'
     });
   } catch (err) {
-    return res.status(500).json({
+    return res.status(err.statusCode || 500).json({
       success: false,
-      error: { message: 'STK push initiation failed.', code: 'STK_PUSH_FAILED' }
+      error: {
+        message: 'STK push initiation failed.',
+        code: err.statusCode === 503 ? err.code : 'STK_PUSH_FAILED'
+      }
     });
   }
 }
@@ -635,10 +448,10 @@ export async function stkPushMpesa(req, res) {
 // Get Single Invoice (Strict Real Data, No Mock Fallback)
 export async function getInvoice(req, res) {
   try {
-    if (!ensureRuntimePersistence(res)) return;
+    if (!(await ensureProviders(res))) return;
 
     const { invoiceId } = req.params;
-    const inv = invoices.get(invoiceId);
+    const inv = await store.invoiceById(invoiceId);
 
     if (!inv) {
       return res.status(404).json({
@@ -652,9 +465,12 @@ export async function getInvoice(req, res) {
       data: inv
     });
   } catch (err) {
-    return res.status(500).json({
+    return res.status(err.statusCode || 500).json({
       success: false,
-      error: { message: 'Failed to retrieve invoice.', code: 'INVOICE_FETCH_FAILED' }
+      error: {
+        message: 'Failed to retrieve invoice.',
+        code: err.statusCode === 503 ? err.code : 'INVOICE_FETCH_FAILED'
+      }
     });
   }
 }
@@ -662,12 +478,12 @@ export async function getInvoice(req, res) {
 // Settle Invoice
 export async function settleInvoice(req, res) {
   try {
-    if (!ensureRuntimePersistence(res)) return;
+    if (!(await ensureProviders(res))) return;
 
     const { invoiceId } = req.params;
     const { payment_method, card_last4 } = req.body || {};
 
-    const inv = invoices.get(invoiceId);
+    const inv = await store.invoiceById(invoiceId);
     if (!inv) {
       return res.status(404).json({
         success: false,
@@ -680,7 +496,7 @@ export async function settleInvoice(req, res) {
     inv.paid_at = new Date().toISOString();
     inv.payment_method = payment_method || (card_last4 ? `Card (•••• ${card_last4})` : 'Instant Online Payment');
     inv.mpesa_receipt = 'TX_' + Math.floor(10000000 + Math.random() * 90000000).toString();
-    persistToDisk();
+    await store.upsertInvoice(inv);
 
     return res.status(200).json({
       success: true,
@@ -688,9 +504,12 @@ export async function settleInvoice(req, res) {
       data: inv
     });
   } catch (err) {
-    return res.status(500).json({
+    return res.status(err.statusCode || 500).json({
       success: false,
-      error: { message: 'Payment settlement failed.', code: 'SETTLEMENT_FAILED' }
+      error: {
+        message: 'Payment settlement failed.',
+        code: err.statusCode === 503 ? err.code : 'SETTLEMENT_FAILED'
+      }
     });
   }
 }
@@ -698,7 +517,7 @@ export async function settleInvoice(req, res) {
 // Coupon Validator
 export async function validateCoupon(req, res) {
   try {
-    if (!ensureRuntimePersistence(res)) return;
+    if (!(await ensureProviders(res))) return;
 
     const code = String(req.body?.code || '').trim().toUpperCase();
     const orderAmount = Number(req.body?.amount || 4500);
@@ -757,88 +576,12 @@ export async function validateCoupon(req, res) {
   }
 }
 
-// Register Quote from Forms into Portal Store
+// Register Quote from Forms into Portal Store (delegates to the active backend)
 export function registerQuoteInPortal(quoteData) {
-  try {
-    const rawPhone = quoteData.phone || '';
-    const normPhone = normalizeIdentifier(rawPhone);
-    const clientName = (quoteData.full_name || quoteData.name || '').trim() || 'Client';
-    const clientEmail = (quoteData.email || '').trim().toLowerCase();
-    const serviceType = quoteData.service_type || quoteData.service || 'Precision Lawn Care';
-
-    let client = normPhone ? clients.get(normPhone) : null;
-    if (!client && clientEmail) {
-      client = clients.get(clientEmail);
-    }
-
-    if (!client && normPhone) {
-      client = {
-        id: 'cl_' + Date.now().toString(36),
-        name: clientName,
-        phone: rawPhone,
-        email: clientEmail,
-        address: quoteData.address || '',
-        property_size: Number(quoteData.property_size) || 0,
-        grass_type: 'Turf Grass',
-        service_plan: 'Custom Care',
-        customer_since: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-        loyalty: {
-          points_balance: 50,
-          tier: 'Bronze',
-          rate_per_point: 50.00,
-          dollar_value: 2500.00,
-          cash_value: 2500.00,
-          referral_code: 'LAWN-' + (normPhone.slice(-4) || 'CARE'),
-          next_tier: 'Silver',
-          points_to_next_tier: 200
-        }
-      };
-      indexClient(client);
-    }
-
-    const quoteId = quoteData.id || ('qt_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5));
-    const estimatedPrice = Number(quoteData.total_amount) || (Number(quoteData.property_size) ? Math.max(3500, Math.round(Number(quoteData.property_size) * 0.8)) : 4500.00);
-
-    const newQuote = {
-      id: quoteId,
-      quote_number: 'QT-2026-' + Math.floor(1000 + Math.random() * 9000),
-      client_id: client ? client.id : null,
-      client_name: clientName,
-      phone: rawPhone,
-      email: clientEmail,
-      title: `${serviceType} Consultation & Estimate`,
-      status: 'pending_review',
-      total_amount: estimatedPrice,
-      address: quoteData.address || '',
-      property_size: quoteData.property_size || null,
-      property_type: quoteData.property_type || '',
-      service_type: serviceType,
-      service_frequency: quoteData.service_frequency || 'Bi-Weekly',
-      preferred_start_date: quoteData.preferred_start_date || null,
-      additional_details: quoteData.additional_details || quoteData.message || '',
-      created_at: quoteData.created_at || new Date().toISOString(),
-      items: [
-        { description: `${serviceType} - Site Survey & Initial Cut`, amount: estimatedPrice }
-      ]
-    };
-
-    quotes.set(quoteId, newQuote);
-    persistToDisk();
-    return newQuote;
-  } catch (err) {
-    console.error('[registerQuoteInPortal Error]', err);
-    return null;
-  }
+  return store.registerQuote(quoteData);
 }
 
 // ERP / Portal statistics for system diagnostics
-export function getPortalStats() {
-  return {
-    total_clients: clients.size,
-    total_work_orders: workOrders.size,
-    total_invoices: invoices.size,
-    total_quotes: quotes.size,
-    active_in_progress_crews: Array.from(workOrders.values()).filter(w => w.status === 'in_progress').length,
-    unpaid_invoices: Array.from(invoices.values()).filter(i => i.status === 'unpaid').length
-  };
+export async function getPortalStats() {
+  return store.portalStats();
 }

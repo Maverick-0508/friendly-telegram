@@ -45,12 +45,6 @@
     } catch {}
   }
 
-  function generateToken() {
-    const arr = new Uint8Array(32);
-    crypto.getRandomValues(arr);
-    return Array.from(arr, b => b.toString(16).padStart(2, '0')).join('');
-  }
-
   // ── Client-side auth functions ──
 
   async function signup(email, password, fullName) {
@@ -66,10 +60,8 @@
       throw new Error(data?.error?.message || 'Registration failed');
     }
 
-    const token = data.session?.access_token || generateToken();
-    const safeUser = { id: data.user.id, email: data.user.email, fullName: data.user.fullName || fullName };
-    setSession(token, safeUser);
-    return { user: safeUser };
+    clearSession();
+    return { user: { id: data.user.id, email: data.user.email, fullName: data.user.fullName || fullName } };
   }
 
   async function login(email, password) {
@@ -85,9 +77,12 @@
       throw new Error(data?.error?.message || 'Invalid email or password');
     }
 
-    const token = data.session?.access_token || generateToken();
+    if (!data.session?.access_token) {
+      throw new Error('Authentication service did not return a session token');
+    }
+
     const safeUser = { id: data.user.id, email: data.user.email, fullName: data.user.fullName };
-    setSession(token, safeUser);
+    setSession(data.session.access_token, safeUser);
     return { user: safeUser };
   }
 

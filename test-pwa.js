@@ -1,8 +1,9 @@
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const BASE = __dirname;
+const BASE = path.dirname(fileURLToPath(import.meta.url));
 const mime = { json: 'application/json', js: 'application/javascript', svg: 'image/svg+xml', html: 'text/html', css: 'text/css', png: 'image/png' };
 
 function serve(res, file) {
@@ -66,6 +67,7 @@ server.listen(8888, () => {
         done++;
         if (done === TESTS.length) {
           console.log(`\n${passed}/${TESTS.length} passed`);
+          process.exitCode = passed === TESTS.length ? 0 : 1;
           server.close();
         }
       });

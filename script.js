@@ -1114,13 +1114,13 @@ document.addEventListener('DOMContentLoaded', () => {
             banner.id = 'cookie-consent';
             banner.className = 'cookie-consent';
             banner.setAttribute('role', 'complementary');
-            banner.setAttribute('aria-label', 'Cookie consent');
+            banner.setAttribute('aria-label', 'Privacy preference');
             banner.innerHTML = `
                 <div class="cookie-consent-text">
-                    <p>We use cookies to enhance your browsing experience and analyze site traffic. By clicking "Accept All", you consent to our use of cookies. Read our <a href="/privacy-policy">Privacy Policy</a> for more information.</p>
+                    <p>We use basic, anonymous analytics to improve our website and store your choice locally in your browser. We do not use tracking cookies. Read our <a href="/privacy-policy">Privacy Policy</a> for more information.</p>
                 </div>
                 <div class="cookie-consent-actions">
-                    <button class="btn-cookie-accept" type="button">Accept All</button>
+                    <button class="btn-cookie-accept" type="button">Accept</button>
                     <button class="btn-cookie-decline" type="button">Decline</button>
                 </div>
             `;

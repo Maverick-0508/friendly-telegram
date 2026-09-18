@@ -6,10 +6,14 @@ on:
   pull_request:
     branches: [ main ]
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
+jobs:
+  lint:
+    name: Lint & syntax check
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,8 +30,43 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Test
+  test:
+    name: Real tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run full test suite (flows, auth, security, deployment)
         run: npm test
+
+  smoke:
+    name: Endpoint smoke tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Endpoint smoke tests
         run: npm run test:smoke
+
+      - name: PWA & clean-URL route tests
+        run: npm run test:pwa

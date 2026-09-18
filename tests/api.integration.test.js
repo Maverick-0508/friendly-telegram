@@ -1,13 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
-import { createApp } from '../app.js';
+import fs from 'node:fs';
+import path from 'node:path';
 
 let server;
 let baseUrl;
 
 test.before(async () => {
-  const app = createApp();
+  fs.rmSync(path.resolve('data'), { recursive: true, force: true });
+  process.env.NODE_ENV = 'development';
+  delete process.env.SUPABASE_URL;
+  delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+  delete process.env.SUPABASE_ANON_KEY;
+  delete process.env.DATABASE_URL;
+  delete process.env.SUPABASE_JWT_SECRET;
+  delete process.env.CORS_ORIGIN;
+
+  const appModule = await import('../app.js');
+  const app = appModule.createApp();
   server = app.listen(0);
   await new Promise((resolve) => server.once('listening', resolve));
   const { port } = server.address();

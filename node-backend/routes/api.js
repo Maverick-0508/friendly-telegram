@@ -13,8 +13,9 @@ import {
   validateCoupon,
   getPortalStats,
 } from '../controllers/portalController.js';
-import { getDatabaseStatus } from '../config/db.js';
-import { getSupabaseStatus } from '../config/supabase.js';
+import { checkPostgresReachability } from '../config/db.js';
+import { checkSupabaseReachability } from '../config/supabase.js';
+import { store } from '../services/store.js';
 
 const router = Router();
 
@@ -22,14 +23,31 @@ router.get('/health', (_req, res) => {
   res.status(200).json({ success: true, message: 'Server is healthy' });
 });
 
-router.get('/ready', (_req, res) => {
-  const pgStatus = getDatabaseStatus();
-  const sbStatus = getSupabaseStatus();
+router.get('/ready', async (_req, res) => {
   const isProduction = process.env.NODE_ENV === 'production';
 
+  const [pgStatus, sbStatus] = await Promise.all([
+    checkPostgresReachability(),
+    checkSupabaseReachability(),
+  ]);
+
   const authConfigured = sbStatus.configured;
-  const persistenceConfigured = pgStatus.configured || sbStatus.configured;
-  const ready = authConfigured && persistenceConfigured;
+  const authAvailable = sbStatus.connected;
+  const persistenceAvailable = pgStatus.connected || sbStatus.connected;
+  const dataBackend = store.backendName();
+  const ready = isProduction
+    ? authConfigured && authAvailable && persistenceAvailable && dataBackend === 'supabase'
+    : persistenceAvailable;
+
+  const checks = {
+    auth_configured: authConfigured,
+    auth_available: authAvailable,
+    persistence_configured: pgStatus.configured || sbStatus.configured,
+    persistence_available: persistenceAvailable,
+    data_backend: dataBackend,
+    postgresql: pgStatus,
+    supabase: sbStatus,
+  };
 
   if (!ready && isProduction) {
     return res.status(503).json({
@@ -39,35 +57,28 @@ router.get('/ready', (_req, res) => {
         message: 'Application is not ready for production traffic.',
         code: 'READINESS_FAILED',
       },
-      checks: {
-        auth_configured: authConfigured,
-        persistence_configured: persistenceConfigured,
-      },
+      checks,
     });
   }
 
   return res.status(200).json({
     success: true,
-    ready: ready || !isProduction,
+    ready,
     degraded: !ready,
-    checks: {
-      auth_configured: authConfigured,
-      persistence_configured: persistenceConfigured,
-    },
+    checks,
   });
 });
 
 // System & Database Diagnostic Status
-router.get('/system/status', (_req, res) => {
-  const pgStatus = getDatabaseStatus();
-  const sbStatus = getSupabaseStatus();
+router.get('/system/status', async (_req, res) => {
+  const [pgStatus, sbStatus] = await Promise.all([
+    checkPostgresReachability(),
+    checkSupabaseReachability(),
+  ]);
 
-  let activePrimary = 'In-Memory Resilient Engine (Local Storage Mode)';
-  if (pgStatus.connected) {
-    activePrimary = 'PostgreSQL Database';
-  } else if (sbStatus.connected) {
-    activePrimary = 'Supabase Cloud Database';
-  }
+  const activePrimary = !pgStatus.connected && !sbStatus.connected
+    ? 'Unavailable'
+    : 'PostgreSQL Database';
 
   res.status(200).json({
     success: true,
@@ -77,9 +88,10 @@ router.get('/system/status', (_req, res) => {
       active_primary: activePrimary,
       postgresql: pgStatus,
       supabase: sbStatus,
-      persistence_architecture: 'Tiered Fallback (PostgreSQL -> Supabase -> Local In-Memory)'
+      data_backend: store.backendName(),
+      persistence_architecture: 'Supabase (no in-memory fallback in production)'
     },
-    erp_metrics: getPortalStats(),
+    erp_metrics: await getPortalStats(),
     features: {
       client_hub_recognition: 'Active',
       gps_crew_tracking: 'Active',
