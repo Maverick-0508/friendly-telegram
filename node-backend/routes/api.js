@@ -12,6 +12,7 @@ import {
   mpesaCallback,
   getInvoice,
   validateCoupon,
+  reconcileHandler,
   getPortalStats,
 } from '../controllers/portalController.js';
 import { checkPostgresReachability } from '../config/db.js';
@@ -27,11 +28,27 @@ function sanitizeProviderStatus(status) {
   return safe;
 }
 
-// Diagnostics are operational data. In production they require ADMIN_API_TOKEN;
-// without that token configured the route is hidden entirely.
+function tokenMatches(token, secret) {
+  return Boolean(token && secret && token.length === secret.length && secureCompare(token, secret));
+}
+
+function secureCompare(a, b) {
+  const left = Buffer.from(String(a));
+  const right = Buffer.from(String(b));
+  if (left.length !== right.length) return false;
+  let mismatch = 0;
+  for (let i = 0; i < left.length; i += 1) mismatch |= left[i] ^ right[i];
+  return mismatch === 0;
+}
+
+// Diagnostics and payment reconciliation are operational endpoints. They
+// require either the admin token (x-admin-token) or the Vercel cron secret
+// (Authorization: Bearer $CRON_SECRET); without any configured secret the
+// route is hidden entirely in production.
 function requireAdmin(req, res, next) {
-  const configured = process.env.ADMIN_API_TOKEN;
-  if (!configured) {
+  const adminToken = process.env.ADMIN_API_TOKEN;
+  const cronSecret = process.env.CRON_SECRET;
+  if (!adminToken && !cronSecret) {
     if (process.env.NODE_ENV === 'production') {
       return res.status(404).json({
         success: false,
@@ -41,14 +58,16 @@ function requireAdmin(req, res, next) {
     return next();
   }
 
-  const provided = req.headers['x-admin-token'] || req.query.token;
-  if (provided !== configured) {
-    return res.status(401).json({
-      success: false,
-      error: { message: 'Unauthorized', code: 'UNAUTHORIZED' },
-    });
+  const provided = req.headers['x-admin-token'] || '';
+  const bearer = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (tokenMatches(provided, adminToken) || tokenMatches(bearer, cronSecret)) {
+    return next();
   }
-  return next();
+
+  return res.status(401).json({
+    success: false,
+    error: { message: 'Unauthorized', code: 'UNAUTHORIZED' },
+  });
 }
 
 router.get('/health', (_req, res) => {
@@ -137,8 +156,19 @@ router.get('/system/status', requireAdmin, async (_req, res) => {
   });
 });
 
-// Internal non-blocking analytics receiver
-router.post('/analytics', (_req, res) => {
+// Internal non-blocking analytics receiver. Persists when Supabase is
+// configured; otherwise it safely no-ops so the page never blocks on telemetry.
+router.post('/analytics', async (req, res) => {
+  try {
+    const event = req.body && typeof req.body === 'object' && !Array.isArray(req.body)
+      ? req.body
+      : { page: null };
+    void store.trackAnalytics(event).catch((err) => {
+      console.warn('[analytics] Failed to persist event.', err.message);
+    });
+  } catch (err) {
+    console.warn('[analytics] Invalid payload.', err.message);
+  }
   res.status(200).json({ success: true });
 });
 
@@ -156,6 +186,7 @@ router.post('/mpesa/stkpush', stkPushMpesa);
 router.post('/mpesa/callback', mpesaCallback);
 router.post('/mpesa/callback/:token', mpesaCallback);
 router.get('/mpesa/status/:checkoutRequestId', mpesaStatus);
+router.post('/mpesa/reconcile', requireAdmin, reconcileHandler);
 router.get('/invoices/:invoiceId', getInvoice);
 
 // Promo Coupons

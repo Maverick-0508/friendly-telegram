@@ -145,6 +145,17 @@ create index if not exists payments_checkout_request_idx on public.payments (che
 create index if not exists payments_invoice_idx on public.payments (invoice_id);
 create index if not exists payments_status_idx on public.payments (status);
 
+-- Analytics (page performance & traffic telemetry)
+create table if not exists public.analytics (
+  id bigserial primary key,
+  page text,
+  referrer text,
+  payload jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists analytics_created_at_idx on public.analytics (created_at);
+
 -- Clean up: pre-existing tables (from earlier iterations of this project) used
 -- bigint/serial identity ids and may be referenced by legacy foreign keys
 -- (e.g. contacts.client_id). Drop any FK pointing at our tables so we can

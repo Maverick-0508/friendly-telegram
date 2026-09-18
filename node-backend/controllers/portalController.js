@@ -5,9 +5,12 @@ import {
   isMpesaConfigured,
   initiateStkPush,
   normalizeMpesaPhone,
+  queryStkStatus,
   verifyCallbackToken,
 } from '../services/mpesa.js';
+import { isValidPin, hashPin, verifyPin } from '../config/pins.js';
 import { getCoupons } from '../config/coupons.js';
+import * as notify from '../services/notify.js';
 
 const isStrictRuntime = process.env.NODE_ENV === 'production' && process.env.ALLOW_IN_MEMORY_FALLBACK !== 'true';
 const REACHABILITY_TTL_MS = 15_000;
@@ -70,12 +73,42 @@ async function ensureProviders(res) {
 // Helper to normalize phone / email
 export { normalizeIdentifier };
 
+// Apply an access PIN to a client record. Returns an error payload to send
+// back, or null on success (in which case `client` may have been mutated).
+function applyAccessPin(res, client, pin) {
+  if (!pin) return null;
+
+  if (client.access_pin_hash) {
+    if (!verifyPin(pin, client.access_pin_hash, client.access_pin_salt)) {
+      res.status(403).json({
+        success: false,
+        error: { message: 'Incorrect account PIN. If you forgot it, contact Lawn Craft support.', code: 'INVALID_PIN' },
+      });
+      return { rejected: true };
+    }
+    return null;
+  }
+
+  const { hash, salt } = hashPin(pin);
+  client.access_pin_hash = hash;
+  client.access_pin_salt = salt;
+  return null;
+}
+
 // Create or Register a Client Profile
 export async function createClientProfile(req, res) {
   try {
     if (!(await ensureProviders(res))) return;
 
     const { name, phone, email, address, property_size, grass_type, service_plan } = req.body || {};
+    const pin = String(req.body?.pin ?? '').trim();
+
+    if (pin && !isValidPin(pin)) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Access PIN must be 4 to 6 digits.', code: 'INVALID_PIN_FORMAT' },
+      });
+    }
 
     if (!name || name.trim().length < 2) {
       return res.status(400).json({
@@ -97,6 +130,9 @@ export async function createClientProfile(req, res) {
     // Check if already exists
     let existing = await store.findClientByPhoneOrEmail(phone, cleanEmail);
     if (existing) {
+      const pinResult = applyAccessPin(res, existing, pin);
+      if (pinResult && pinResult.rejected) return;
+
       // Update fields if provided
       if (address) existing.address = address;
       if (property_size) existing.property_size = Number(property_size);
@@ -113,6 +149,7 @@ export async function createClientProfile(req, res) {
     }
 
     const clientId = 'cl_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const { hash, salt } = pin ? hashPin(pin) : { hash: null, salt: null };
     const newClient = {
       id: clientId,
       name: name.trim(),
@@ -123,6 +160,8 @@ export async function createClientProfile(req, res) {
       grass_type: grass_type || 'Kikuyu Turf',
       service_plan: service_plan || 'Custom Care',
       customer_since: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+      access_pin_hash: hash,
+      access_pin_salt: salt,
       loyalty: {
         points_balance: 100, // Welcome enrollment reward (KSh 5,000 value)
         tier: 'Bronze',
@@ -160,6 +199,7 @@ export async function lookupClient(req, res) {
     if (!(await ensureProviders(res))) return;
 
     const rawIdentifier = req.body?.identifier || req.query?.identifier || '';
+    const pin = String(req.body?.pin ?? req.query?.pin ?? '').trim();
     const normalized = normalizeIdentifier(rawIdentifier);
 
     if (!normalized) {
@@ -178,6 +218,30 @@ export async function lookupClient(req, res) {
         not_found: true,
         message: 'No registered client profile found for this phone number or email.',
         identifier: rawIdentifier
+      });
+    }
+
+    if (!pin) {
+      return res.status(403).json({
+        success: false,
+        error: { message: 'An access PIN is required to view your hub.', code: 'ACCESS_PIN_REQUIRED' }
+      });
+    }
+
+    if (!client.access_pin_hash) {
+      // Legacy/quote-only profile without a PIN: require one to be set first,
+      // so a phone number alone never grants access to personal data.
+      return res.status(403).json({
+        success: false,
+        pin_required: true,
+        error: { message: 'This profile needs an access PIN before the hub can be opened. Register with the same phone number or email to set one.', code: 'ACCESS_PIN_REQUIRED' }
+      });
+    }
+
+    if (!verifyPin(pin, client.access_pin_hash, client.access_pin_salt)) {
+      return res.status(403).json({
+        success: false,
+        error: { message: 'Incorrect account PIN. Please try again.', code: 'INVALID_PIN' }
       });
     }
 
@@ -228,6 +292,14 @@ export async function createWorkOrder(req, res) {
     if (!(await ensureProviders(res))) return;
 
     const payload = req.body || {};
+    const pin = String(payload.pin ?? '').trim();
+    if (pin && !isValidPin(pin)) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Access PIN must be 4 to 6 digits.', code: 'INVALID_PIN_FORMAT' }
+      });
+    }
+
     const serviceType = payload.service_type || payload.title || 'Precision Lawn Care';
     const clientName = (payload.client_name || payload.name || '').trim();
     const clientPhone = (payload.phone || payload.client_phone || '').trim();
@@ -257,6 +329,9 @@ export async function createWorkOrder(req, res) {
     let matchedClient = await store.findClientByPhoneOrEmail(clientPhone, clientEmail);
 
     if (matchedClient) {
+      const pinResult = applyAccessPin(res, matchedClient, pin);
+      if (pinResult && pinResult.rejected) return;
+
       clientId = matchedClient.id;
       if (address && !matchedClient.address) matchedClient.address = address;
       if (propertySize && !matchedClient.property_size) matchedClient.property_size = propertySize;
@@ -268,6 +343,7 @@ export async function createWorkOrder(req, res) {
       await store.upsertClient(matchedClient);
     } else {
       const newClientId = 'cl_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+      const { hash, salt } = pin ? hashPin(pin) : { hash: null, salt: null };
       const newClient = {
         id: newClientId,
         name: clientName,
@@ -278,6 +354,8 @@ export async function createWorkOrder(req, res) {
         grass_type: payload.grass_type || 'Turf Grass',
         service_plan: payload.service_plan || 'On-Demand Precision Care',
         customer_since: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        access_pin_hash: hash,
+        access_pin_salt: salt,
         loyalty: {
           points_balance: 100, // 100 points enrollment + order reward (KSh 5,000 value)
           tier: 'Bronze',
@@ -355,6 +433,10 @@ export async function createWorkOrder(req, res) {
 
     await store.upsertInvoice(invoiceRecord);
 
+    // Non-blocking notifications to the client and the business owner.
+void notify.notifyClientOrderBooked(workOrder).catch(() => {});
+
+    void notify.notifyOwnerNewOrder(workOrder, invoiceRecord).catch(() => {});
     return res.status(201).json({
       success: true,
       message: 'Work order scheduled successfully and added to dispatch queue.',
@@ -574,6 +656,59 @@ export async function mpesaStatus(req, res) {
   }
 }
 
+// Settle a confirmed-success payment and its invoice (idempotent).
+async function applySuccessfulPayment(payment, { receipt, amount, phone, resultCode = '0', resultDesc, payload } = {}) {
+  const alreadyPaid = payment.status === 'success';
+  payment.status = 'success';
+  payment.result_code = resultCode;
+  payment.result_desc = resultDesc || 'The service request is processed successfully.';
+  payment.mpesa_receipt = receipt || payment.mpesa_receipt;
+  if (amount != null) payment.amount = Number(amount) || payment.amount;
+  payment.paid_phone = phone || payment.paid_phone || payment.phone;
+  payment.completed_at = new Date().toISOString();
+  if (payload) payment.callback_payload = payload;
+  await store.upsertPayment(payment);
+
+  if (payment.invoice_id) {
+    const invoice = await store.invoiceById(payment.invoice_id);
+    if (invoice && invoice.status !== 'paid') {
+      invoice.status = 'paid';
+      invoice.balance_due = 0.0;
+      invoice.paid_at = new Date().toISOString();
+      invoice.payment_method = `Lipa Na M-Pesa (${payment.paid_phone || payment.phone})`;
+      invoice.mpesa_receipt = payment.mpesa_receipt;
+      invoice.payment_status = 'paid';
+      await store.upsertInvoice(invoice);
+    }
+  }
+
+  if (!alreadyPaid) {
+    void notify.notifyClientPaymentReceipt(payment, null).catch(() => {});
+  }
+}
+
+// Mark a payment failed/cancelled; the invoice stays payable (idempotent).
+async function applyFailedPayment(payment, { resultCode, resultDesc, payload } = {}) {
+  const terminal = payment.status === 'failed' || payment.status === 'cancelled';
+  payment.status = resultCode === '1032' ? 'cancelled' : 'failed';
+  payment.result_code = resultCode;
+  payment.result_desc = resultDesc || 'Payment was not completed.';
+  if (payload) payment.callback_payload = payload;
+  await store.upsertPayment(payment);
+
+  if (payment.invoice_id) {
+    const invoice = await store.invoiceById(payment.invoice_id);
+    if (invoice && invoice.status !== 'paid') {
+      invoice.payment_status = 'failed';
+      await store.upsertInvoice(invoice);
+    }
+  }
+
+  if (!terminal) {
+    void notify.notifyClientPaymentFailed(payment, null).catch(() => {});
+  }
+}
+
 // Safaricom Daraja payment result callback. Always ACK with ResultCode 0 so
 // Safaricom does not retry, even when reconciliation of the transaction fails.
 export async function mpesaCallback(req, res) {
@@ -610,48 +745,22 @@ export async function mpesaCallback(req, res) {
       ? callback.CallbackMetadata.Item
       : [];
     const findItem = (name) => metadata.find((item) => item && item.Name === name);
-    const receiptItem = findItem('MpesaReceiptNumber');
-    const amountItem = findItem('Amount');
-    const phoneItem = findItem('PhoneNumber');
 
     if (resultCode === '0') {
-      const receipt = receiptItem ? String(receiptItem.Value) : null;
-      payment.status = 'success';
-      payment.result_code = resultCode;
-      payment.result_desc = callback.ResultDesc || 'The service request is processed successfully.';
-      payment.mpesa_receipt = receipt;
-      payment.amount = amountItem ? Number(amountItem.Value) : payment.amount;
-      payment.paid_phone = phoneItem ? String(phoneItem.Value) : payment.phone;
-      payment.completed_at = new Date().toISOString();
-      payment.callback_payload = callback;
-      await store.upsertPayment(payment);
-
-      if (payment.invoice_id) {
-        const invoice = await store.invoiceById(payment.invoice_id);
-        if (invoice && invoice.status !== 'paid') {
-          invoice.status = 'paid';
-          invoice.balance_due = 0.0;
-          invoice.paid_at = new Date().toISOString();
-          invoice.payment_method = `Lipa Na M-Pesa (${payment.paid_phone || payment.phone})`;
-          invoice.mpesa_receipt = receipt;
-          invoice.payment_status = 'paid';
-          await store.upsertInvoice(invoice);
-        }
-      }
+      await applySuccessfulPayment(payment, {
+        receipt: findItem('MpesaReceiptNumber') ? String(findItem('MpesaReceiptNumber').Value) : null,
+        amount: findItem('Amount') ? Number(findItem('Amount').Value) : null,
+        phone: findItem('PhoneNumber') ? String(findItem('PhoneNumber').Value) : null,
+        resultCode,
+        resultDesc: callback.ResultDesc,
+        payload: callback,
+      });
     } else {
-      payment.status = resultCode === '1032' ? 'cancelled' : 'failed';
-      payment.result_code = resultCode;
-      payment.result_desc = callback.ResultDesc || 'Payment was not completed.';
-      payment.callback_payload = callback;
-      await store.upsertPayment(payment);
-
-      if (payment.invoice_id) {
-        const invoice = await store.invoiceById(payment.invoice_id);
-        if (invoice && invoice.status !== 'paid') {
-          invoice.payment_status = 'failed';
-          await store.upsertInvoice(invoice);
-        }
-      }
+      await applyFailedPayment(payment, {
+        resultCode,
+        resultDesc: callback.ResultDesc,
+        payload: callback,
+      });
     }
 
     return ack();
@@ -659,6 +768,91 @@ export async function mpesaCallback(req, res) {
     console.error('[mpesaCallback Error]', err);
     // Still ACK to prevent Safaricom retry storms; the payment remains pending for reconciliation.
     return ack();
+  }
+}
+
+// Lost-callback reconciliation: Daraja never delivered a result for a pending
+// STK push, or our callback handler failed before confirming it. Query the
+// official stkpushquery endpoint for stale pending payments and settle them.
+export async function reconcilePendingPayments({
+  graceMs = Number(process.env.RECONCILE_GRACE_MS || 15 * 60 * 1000),
+  limit = 50,
+} = {}) {
+  const thresholdIso = new Date(Date.now() - graceMs).toISOString();
+
+  const pending = await store.pendingPaymentsOlderThan(thresholdIso, limit);
+
+  const summary = {
+    checked: 0,
+    settled: 0,
+    failed: 0,
+    cancellations: 0,
+    still_pending: 0,
+    errors: 0,
+  };
+
+  for (const payment of pending) {
+    summary.checked += 1;
+    if (!payment.checkout_request_id) {
+      summary.errors += 1;
+      continue;
+    }
+
+    try {
+      const result = await queryStkStatus({ checkoutRequestId: payment.checkout_request_id });
+
+      // stkpushquery returns ResultCode at the top level (and sometimes nested
+      // under Body). Normalize both shapes.
+      const topLevel = result?.Body ?? result ?? {};
+      const queryCode = String(topLevel?.ResultCode ?? '');
+      const queryDesc = String(topLevel?.ResultDesc ?? 'Unknown status');
+
+      if (queryCode === '0') {
+        const metadata = Array.isArray(topLevel?.CallbackMetadata?.Item)
+          ? topLevel.CallbackMetadata.Item
+          : [];
+        const findItem = (name) => metadata.find((item) => item && item.Name === name);
+        await applySuccessfulPayment(payment, {
+          receipt: findItem('MpesaReceiptNumber') ? String(findItem('MpesaReceiptNumber').Value) : null,
+          amount: findItem('Amount') ? Number(findItem('Amount').Value) : null,
+          phone: findItem('PhoneNumber') ? String(findItem('PhoneNumber').Value) : null,
+          resultCode: queryCode,
+          resultDesc: queryDesc,
+          payload: result,
+        });
+        summary.settled += 1;
+      } else if (queryCode === '1032') {
+        await applyFailedPayment(payment, { resultCode: queryCode, resultDesc: queryDesc, payload: result });
+        summary.cancellations += 1;
+      } else if (queryCode && queryCode !== '0') {
+        await applyFailedPayment(payment, { resultCode: queryCode, resultDesc: queryDesc, payload: result });
+        summary.failed += 1;
+      } else {
+        // Daraja reported no terminal result (e.g. service not found); keep
+        // pending so a later reconciliation window can pick it up.
+        summary.still_pending += 1;
+      }
+    } catch (err) {
+      console.error('[reconcile] Status query failed for', payment.checkout_request_id, err.message);
+      summary.errors += 1;
+    }
+  }
+
+  return summary;
+}
+
+// Reconciliation endpoint (local background job / Vercel cron / admin trigger).
+export async function reconcileHandler(req, res) {
+  try {
+    if (!(await ensureProviders(res))) return;
+    const summary = await reconcilePendingPayments();
+    return res.status(200).json({ success: true, ...summary });
+  } catch (err) {
+    console.error('[reconcileHandler Error]', err.message);
+    return res.status(err.statusCode || 500).json({
+      success: false,
+      error: { message: 'Payment reconciliation failed.', code: err.code || 'RECONCILE_FAILED' },
+    });
   }
 }
 

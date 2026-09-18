@@ -30,15 +30,18 @@ dynamic SEO-friendly routes (`/tracker/:id`, `/pay/:id`, `/receipt/:id`,
 ### API endpoints
 
 - `GET /health`, `GET /ready`, `GET /api/health`, `GET /api/ready`
-- `GET /api/system/status` — diagnostics; requires `ADMIN_API_TOKEN` in production
-- `POST /api/analytics`
-- `POST /api/contact`
-- `POST /api/quotes`
-- `POST /api/portal/lookup`, `POST /api/portal/clients`
+- `GET /api/system/status` — diagnostics; requires `ADMIN_API_TOKEN` or
+  `Authorization: Bearer $CRON_SECRET` in production
+- `POST /api/analytics` — persists anonymized page-view tracking
+- `POST /api/contact` — stores a lead and notifies the owner
+- `POST /api/quotes` — stores a quote and notifies the owner
+- `POST /api/portal/lookup` (identifier + `pin`), `POST /api/portal/clients`
 - `POST /api/work-orders`, `GET /api/work-orders/:orderId`
 - `POST /api/mpesa/stkpush` — real Safaricom Daraja STK push
 - `POST /api/mpesa/callback[/:token]` — Safaricom result callback (WebHook)
 - `GET /api/mpesa/status/:checkoutRequestId` — client-side status polling
+- `POST /api/mpesa/reconcile` — lost-callback reconciliation; `ADMIN_API_TOKEN`
+  or `CRON_SECRET` bearer required in production
 - `GET /api/invoices/:invoiceId`
 - `POST /api/coupons/validate`
 - `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`
@@ -55,6 +58,27 @@ Payments use Lipa Na M-Pesa Online (STK push). The flow is:
    invoice is settled *only* when `ResultCode === 0` with the real M-Pesa receipt.
 4. The client polls `GET /api/mpesa/status/:checkoutRequestId` until the status
    leaves `pending` and shows the official receipt.
+
+#### Lost-callback reconciliation
+
+Safaricom's result callback can be lost (timeouts, network drops). A background
+job reconciles stale `pending` payments:
+
+- Locally/Docker the server runs a timer (see `RECONCILE_INTERVAL_MS`) that
+  queries Daraja STK query for pending payments older than `RECONCILE_GRACE_MS`
+  (default 15 minutes) and settles or cancels them as Daraja reports.
+- On Vercel the scheduled cron in `vercel.json` calls
+  `POST /api/mpesa/reconcile` every 30 minutes (guarded by `CRON_SECRET`).
+- Reconciliation is idempotent; double-settling is prevented by the same
+  `settled` guard used for callbacks.
+
+### Portal access PIN
+
+Client profiles opened through the portal (`POST /api/portal/lookup`) require an
+access PIN (4–6 digits) chosen at registration. PINs are stored only as a
+scrypt hash + salt and never returned to the client or included in the
+supervisor export. Quote-only profiles have no PIN until the client registers
+one via `POST /api/portal/clients`.
 
 ## Local Setup
 
@@ -73,7 +97,17 @@ See `.env.example` for the full list. Key variables:
 - `MPESA_ENVIRONMENT`, `MPESA_CONSUMER_KEY`, `MPESA_CONSUMER_SECRET`,
   `MPESA_SHORTCODE`, `MPESA_PASSKEY`, `MPESA_CALLBACK_URL`,
   `MPESA_CALLBACK_TOKEN` — Daraja STK push
-- `ADMIN_API_TOKEN` — gates `/api/system/status` in production
+- `ADMIN_API_TOKEN` — gates admin endpoints in production
+- `CRON_SECRET` — bearer token that authorizes the Vercel cron
+  (`/api/mpesa/reconcile`)
+- `RECONCILE_GRACE_MS` (default 900000), `RECONCILE_INTERVAL_MS` (default
+  900000), `RECONCILE_INITIAL_DELAY_MS` (default 60000) — lost-callback
+  reconciliation timing
+- `RESEND_API_KEY`, `NOTIFY_FROM_EMAIL`, `OWNER_EMAIL` — transactional email
+  notifications (owner alerts; skipped when unconfigured)
+- `AFRICAS_TALKING_USERNAME`, `AFRICAS_TALKING_API_KEY`,
+  `AFRICAS_TALKING_SENDER` — SMS notifications to clients (skipped when
+  unconfigured)
 - `COMPANY_KRA_PIN` — company KRA PIN shown on official tax receipts
 - `COUPONS_JSON` — optional JSON map overriding the built-in coupons
 - `CORS_ORIGIN` — comma-separated allowlist (required in production)
@@ -90,7 +124,8 @@ Production recommendations:
 ## Database
 
 Run `supabase-schema.sql` once in the Supabase SQL Editor (idempotent). It creates
-`clients`, `work_orders`, `invoices`, `quotes`, `leads` and `payments`.
+`clients`, `work_orders`, `invoices`, `quotes`, `leads`, `payments` and
+`analytics`.
 
 ## CI / Verification
 

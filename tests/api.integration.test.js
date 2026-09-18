@@ -97,7 +97,20 @@ test('quote and portal flow works end-to-end', async () => {
   assert.equal(quote.response.status, 201);
   assert.equal(quote.body.success, true);
 
-  const lookup = await request('/api/portal/lookup?identifier=client2@example.com');
+  // Set an access PIN on the quote-only profile so the hub can be opened.
+  const registerPin = await request('/api/portal/clients', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: 'Client Two',
+      email: 'client2@example.com',
+      phone: '+1 555 010 0101',
+      pin: '2468',
+    }),
+  });
+  assert.equal(registerPin.response.status, 200);
+
+  const lookup = await request('/api/portal/lookup?identifier=client2@example.com&pin=2468');
   assert.equal(lookup.response.status, 200);
   assert.equal(lookup.body.success, true);
 });

@@ -92,6 +92,7 @@ test('client profile create, update, and lookup flow works', async () => {
     email: 'flow.client@example.com',
     address: '10 Runda Drive',
     service_plan: 'Weekly Care',
+    pin: '2468',
   });
   assert.equal(create.response.status, 201);
   assert.equal(create.body.success, true);
@@ -106,11 +107,21 @@ test('client profile create, update, and lookup flow works', async () => {
   assert.equal(update.response.status, 200);
   assert.equal(update.body.message.includes('updated'), true);
 
-  const byPhone = await post('/api/portal/lookup', { identifier: '0700111222' });
+  // Lookup is gated behind the access PIN.
+  const noPin = await post('/api/portal/lookup', { identifier: '0700111222' });
+  assert.equal(noPin.response.status, 403);
+  assert.equal(noPin.body.error.code, 'ACCESS_PIN_REQUIRED');
+
+  const wrongPin = await post('/api/portal/lookup', { identifier: '0700111222', pin: '0000' });
+  assert.equal(wrongPin.response.status, 403);
+  assert.equal(wrongPin.body.error.code, 'INVALID_PIN');
+
+  const byPhone = await post('/api/portal/lookup', { identifier: '0700111222', pin: '2468' });
   assert.equal(byPhone.response.status, 200);
   assert.equal(byPhone.body.client.id, clientId);
+  assert.equal('access_pin_hash' in byPhone.body.client, false);
 
-  const byEmail = await request('/api/portal/lookup?identifier=flow.client@example.com');
+  const byEmail = await request('/api/portal/lookup?identifier=flow.client@example.com&pin=2468');
   assert.equal(byEmail.response.status, 200);
   assert.equal(byEmail.body.client.email, 'flow.client@example.com');
 });
@@ -252,7 +263,16 @@ test('quote submission registers a portal quote that lookup returns', async () =
   });
   assert.equal(quote.response.status, 201);
 
-  const lookup = await post('/api/portal/lookup', { identifier: 'quote.lookup@example.com' });
+  // Quote-only profiles have no PIN yet; registering one grants hub access.
+  const adoptPin = await post('/api/portal/clients', {
+    name: 'Quote Lookup Client',
+    phone: '+254700555666',
+    email: 'quote.lookup@example.com',
+    pin: '1357',
+  });
+  assert.equal(adoptPin.response.status, 200);
+
+  const lookup = await post('/api/portal/lookup', { identifier: 'quote.lookup@example.com', pin: '1357' });
   assert.equal(lookup.response.status, 200);
   assert.equal(lookup.body.quotes.length >= 1, true);
 });

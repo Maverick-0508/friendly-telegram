@@ -36,6 +36,7 @@ const quotes = new Map();
 const payments = new Map();
 const paymentsByCheckout = new Map();
 const mockLeads = [];
+const analyticsEvents = [];
 
 function normalizeIdentifier(raw) {
   if (!raw) return '';
@@ -311,6 +312,27 @@ async function paymentByCheckoutIdSupabase(checkoutRequestId) {
   return data && data[0] ? hydrate(data[0]) : null;
 }
 
+async function pendingPaymentsOlderThanSupabase(thresholdIso, limit) {
+  const { data, error } = await supabase
+    .from('payments')
+    .select('*')
+    .eq('status', 'pending')
+    .lt('created_at', thresholdIso)
+    .order('created_at', { ascending: true })
+    .limit(limit);
+  if (error) throw persistenceError(error.message);
+  return (data || []).map(hydrate);
+}
+
+async function trackAnalyticsSupabase(event) {
+  const { error } = await supabase.from('analytics').insert({
+    page: event.page || null,
+    referrer: event.referrer || null,
+    payload: event,
+  });
+  if (error) throw persistenceError(error.message);
+}
+
 // ---------------- Unified store API ----------------
 
 export const store = {
@@ -552,6 +574,23 @@ export const store = {
     if (willUseSupabase()) return paymentByCheckoutIdSupabase(checkoutRequestId);
     const id = paymentsByCheckout.get(checkoutRequestId);
     return id ? payments.get(id) || null : null;
+  },
+
+  async pendingPaymentsOlderThan(thresholdIso, limit = 50) {
+    assertStoreAvailable();
+    if (willUseSupabase()) return pendingPaymentsOlderThanSupabase(thresholdIso, limit);
+    const cut = Date.parse(thresholdIso);
+    return Array.from(payments.values())
+      .filter((p) => p && p.status === 'pending' && Date.parse(p.created_at || 0) < cut)
+      .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at))
+      .slice(0, limit);
+  },
+
+  async trackAnalytics(event) {
+    assertStoreAvailable();
+    if (willUseSupabase()) return trackAnalyticsSupabase(event);
+    analyticsEvents.push({ ...event, ts: new Date().toISOString() });
+    return null;
   },
 
   async upsertPayment(payment) {

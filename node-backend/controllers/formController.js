@@ -1,4 +1,5 @@
 import { store } from '../services/store.js';
+import * as notify from '../services/notify.js';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -85,6 +86,9 @@ export async function submitContactForm(req, res, next) {
       created_at: savedLead.created_at,
     });
 
+    // Non-blocking notification to the business owner.
+    void notify.notifyNewLead(data).catch(() => {});
+
     return res.status(201).json({
       success: true,
       message: 'Your message has been sent successfully.',
@@ -124,6 +128,9 @@ export async function submitQuoteForm(req, res, next) {
       preferred_start_date: payload.preferred_start_date || null,
       additional_details: normalizeText(payload.additional_details || payload.message),
     });
+
+    // Non-blocking notification to the business owner.
+    void notify.notifyQuoteRequest(quote).catch(() => {});
 
     return res.status(201).json({
       success: true,
