@@ -563,10 +563,10 @@
         <div class="mpesa-status-view" id="mpesa-status-step" style="display: none;">
           <div class="stk-spinner"><i class="fa-solid fa-spinner fa-spin"></i></div>
           <h4>Check Your Phone!</h4>
-          <p>STK Push sent to <strong id="stk-sent-phone"></strong>. Please enter your 4-digit M-Pesa PIN on your screen.</p>
-          <div class="stk-simulation-notice">
-            <i class="fa-solid fa-circle-check text-green"></i> <span>Simulation mode: auto-confirming payment in 3s...</span>
-          </div>
+          <p>A payment request was sent to <strong id="stk-sent-phone"></strong>. Enter your M-Pesa PIN on your handset to authorize the payment.</p>
+          <p class="text-muted" style="font-size:0.85rem; margin-top:8px;">
+            <i class="fa-solid fa-shield-halved"></i> Waiting for confirmation from Safaricom…
+          </p>
         </div>
 
         <div class="mpesa-success-view" id="mpesa-success-step" style="display: none;">
@@ -599,6 +599,11 @@
       statusStep.style.display = 'block';
       document.getElementById('stk-sent-phone').textContent = phoneInput;
 
+      const resetForm = () => {
+        statusStep.style.display = 'none';
+        document.getElementById('mpesa-body-step').style.display = 'block';
+      };
+
       try {
         const res = await fetch('/api/mpesa/stkpush', {
           method: 'POST',
@@ -606,31 +611,56 @@
           body: JSON.stringify({
             phone: phoneInput,
             amount: Number(amount),
-            invoice_id: invoiceId,
-            account_reference: `INV-${invoiceId}`
+            invoice_id: invoiceId
           })
         });
 
         const data = await res.json();
-        if (data.success) {
-          // After 2.5s simulation delay, show confirmed
-          setTimeout(() => {
-            statusStep.style.display = 'none';
-            const successStep = document.getElementById('mpesa-success-step');
-            successStep.style.display = 'block';
-            document.getElementById('mpesa-receipt-code').textContent = data.mpesa_receipt || 'NLM89218XK';
-            showToast('Payment successful! Your invoice is marked paid.', 'success');
-            refreshCurrentClient();
-          }, 2500);
-        } else {
+        if (!data.success) {
           throw new Error(data.error?.message || 'STK Push failed');
         }
+
+        const checkoutId = data.checkout_request_id;
+        if (!checkoutId) {
+          throw new Error('The payment provider did not return a checkout reference.');
+        }
+
+        const result = await pollMpesaStatus(checkoutId);
+        if (result.status === 'success') {
+          statusStep.style.display = 'none';
+          const successStep = document.getElementById('mpesa-success-step');
+          successStep.style.display = 'block';
+          document.getElementById('mpesa-receipt-code').textContent = result.mpesa_receipt || '—';
+          showToast('Payment confirmed by M-Pesa! Your invoice is marked paid.', 'success');
+          refreshCurrentClient();
+        } else if (result.status === 'failed' || result.status === 'cancelled') {
+          resetForm();
+          showToast(result.result_desc || 'M-Pesa payment was not completed. Please try again.', 'error');
+        } else {
+          resetForm();
+          showToast('Payment is still pending. If you completed the prompt it will reflect shortly.', 'error');
+        }
       } catch (err) {
-        statusStep.style.display = 'none';
-        document.getElementById('mpesa-body-step').style.display = 'block';
+        resetForm();
         showToast(err.message || 'M-Pesa transaction failed', 'error');
       }
     });
+
+    async function pollMpesaStatus(checkoutId, { attempts = 40, intervalMs = 3000 } = {}) {
+      for (let i = 0; i < attempts; i++) {
+        await new Promise((resolve) => setTimeout(resolve, intervalMs));
+        try {
+          const res = await fetch(`/api/mpesa/status/${encodeURIComponent(checkoutId)}`);
+          const json = await res.json();
+          if (json.success && json.data && json.data.status !== 'pending') {
+            return json.data;
+          }
+        } catch {
+          // Transient network error; keep polling until attempts are exhausted.
+        }
+      }
+      return { status: 'pending' };
+    }
 
     const finishBtn = document.getElementById('finish-mpesa-modal');
     if (finishBtn) {

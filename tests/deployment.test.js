@@ -67,9 +67,8 @@ const API_ENDPOINTS = [
     body: { client_name: 'Coverage', phone: '+254700000003' },              expect: 201 },
   { method: 'GET',  path: '/api/work-orders/nonexistent',                   expect: 404 },
   { method: 'POST', path: '/api/mpesa/stkpush',
-    body: { phone: '+254700000004' },                                       expect: 200 },
+    body: { phone: '+254700000004' },                                       expect: 503 },
   { method: 'GET',  path: '/api/invoices/nonexistent',                      expect: 404 },
-  { method: 'POST', path: '/api/invoices/nonexistent/pay',                  expect: 404 },
   { method: 'POST', path: '/api/coupons/validate', body: { code: 'X' },   expect: 400 },
   { method: 'POST', path: '/api/auth/register',
     body: { email: 'cov@test.com', password: 'secret123' },                expect: 503 },
@@ -96,9 +95,16 @@ test('every frontend-called API endpoint exists and returns a structured respons
 });
 
 test('frontend source files do not reference unregistered API paths', async () => {
-  const sourceFiles = ['script.js', 'auth.js', 'portal.js', 'tracker.html', 'pay.html', 'receipt.html'];
+  const sourceFiles = [
+    'public/script.js',
+    'public/auth.js',
+    'public/portal.js',
+    'public/tracker.html',
+    'public/pay.html',
+    'public/receipt.html',
+  ];
   const rootDir = path.resolve(__dirname, '..');
-  const apiEndpointPattern = /(['"`])\/api\/([\w/$:{}.-]+)/g;
+  const apiEndpointPattern = /(['"`])\/api\/([\w/$:{}()\-.]+)/g;
   const paramPlaceholderPattern = /\$\{[^}]+\}/g;
   const routeParamPattern = /:[A-Za-z]+/g;
 
@@ -123,7 +129,7 @@ test('frontend source files do not reference unregistered API paths', async () =
   for (const ref of referencedEndpoints) {
     const canonicalRef = ref.replace(/\/+/g, '/').replace(/:id/g, ':pid');
     const found = registered.some(r => {
-      const canonicalReg = r.replace(/:orderId|:invoiceId/g, ':pid');
+      const canonicalReg = r.replace(/:orderId|:invoiceId|:checkoutRequestId|:token/g, ':pid');
       return canonicalReg === canonicalRef;
     });
     assert.ok(found,

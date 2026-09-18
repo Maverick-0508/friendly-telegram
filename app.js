@@ -13,6 +13,7 @@ dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const PUBLIC_DIR = path.join(__dirname, 'public');
 
 const HOST = '0.0.0.0';
 const PORT = Number(process.env.PORT || 3000);
@@ -198,19 +199,19 @@ export function createApp() {
   app.use('/api', apiRoutes);
 
   app.get('/tracker/:orderId', (_req, res) => {
-    res.sendFile(path.join(__dirname, 'tracker.html'));
+    res.sendFile(path.join(PUBLIC_DIR, 'tracker.html'));
   });
 
   app.get('/pay/:invoiceId', (_req, res) => {
-    res.sendFile(path.join(__dirname, 'pay.html'));
+    res.sendFile(path.join(PUBLIC_DIR, 'pay.html'));
   });
 
   app.get('/receipt/:invoiceId', (_req, res) => {
-    res.sendFile(path.join(__dirname, 'receipt.html'));
+    res.sendFile(path.join(PUBLIC_DIR, 'receipt.html'));
   });
 
   app.get('/calculator', (_req, res) => {
-    res.sendFile(path.join(__dirname, 'calculator.html'));
+    res.sendFile(path.join(PUBLIC_DIR, 'calculator.html'));
   });
 
   const PRIVATE_PATH_PATTERN = /^\/(?:node-backend|node_modules|tests|data|\.github|\.vercel)(?:\/|$)/i;
@@ -219,7 +220,7 @@ const BLOCKED_ROOT_FILES = /^\/(?:app|server|package|package-lock|README|AGENTS|
 const PUBLIC_ASSET_EXTENSION = /\.(?:html?|css|js|mjs|webmanifest|json|png|jpe?g|gif|svg|ico|webp|avif|woff2?|ttf|xml|txt|map)$/i;
 
 function renderNotFound(res) {
-  const notFoundHtml = path.join(__dirname, '404.html');
+  const notFoundHtml = path.join(PUBLIC_DIR, '404.html');
   if (fs.existsSync(notFoundHtml)) {
     return res.status(404).sendFile(notFoundHtml);
   }
@@ -242,7 +243,7 @@ app.use((req, res, next) => {
 });
 
   app.use(
-    express.static(__dirname, {
+    express.static(PUBLIC_DIR, {
       extensions: ['html', 'htm'],
       index: 'index.html',
       dotfiles: 'ignore',
@@ -263,20 +264,20 @@ app.use((req, res, next) => {
     const sanitizedPath = req.path.replace(/^\//, '').replace(/\/$/, '');
 
     if (!isSafePagePath(sanitizedPath)) {
-      const notFoundHtml = path.join(__dirname, '404.html');
+      const notFoundHtml = path.join(PUBLIC_DIR, '404.html');
       if (fs.existsSync(notFoundHtml)) {
         return res.status(404).sendFile(notFoundHtml);
       }
       return res.status(404).send('Page not found');
     }
 
-    const candidateHtml = path.join(__dirname, `${sanitizedPath}.html`);
+    const candidateHtml = path.join(PUBLIC_DIR, `${sanitizedPath}.html`);
 
     if (sanitizedPath && fs.existsSync(candidateHtml) && fs.statSync(candidateHtml).isFile()) {
       return res.sendFile(candidateHtml);
     }
 
-    const notFoundHtml = path.join(__dirname, '404.html');
+    const notFoundHtml = path.join(PUBLIC_DIR, '404.html');
     if (fs.existsSync(notFoundHtml)) {
       return res.status(404).sendFile(notFoundHtml);
     }

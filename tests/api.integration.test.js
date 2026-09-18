@@ -132,12 +132,14 @@ test('work-order and payment flow works end-to-end', async () => {
   const mpesa = await request('/api/mpesa/stkpush', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone: '+1 555 010 0102', amount: 7000, invoice_id: invoiceId }),
+    body: JSON.stringify({ phone: '+254700010102', amount: 7000, invoice_id: invoiceId }),
   });
-  assert.equal(mpesa.response.status, 200);
-  assert.equal(mpesa.body.success, true);
+  // Without Daraja credentials configured the server refuses to take payment
+  // rather than silently pretending the invoice was settled.
+  assert.equal(mpesa.response.status, 503);
+  assert.equal(mpesa.body.error.code, 'MPESA_NOT_CONFIGURED');
 
   const getInvoiceAfterPayment = await request(`/api/invoices/${invoiceId}`);
   assert.equal(getInvoiceAfterPayment.response.status, 200);
-  assert.equal(getInvoiceAfterPayment.body.data.status, 'paid');
+  assert.equal(getInvoiceAfterPayment.body.data.status, 'unpaid');
 });

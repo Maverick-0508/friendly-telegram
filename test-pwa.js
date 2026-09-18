@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const BASE = path.dirname(fileURLToPath(import.meta.url));
+const BASE = path.join(path.dirname(fileURLToPath(import.meta.url)), 'public');
 const mime = { json: 'application/json', js: 'application/javascript', svg: 'image/svg+xml', html: 'text/html', css: 'text/css', png: 'image/png' };
 
 function serve(res, file) {

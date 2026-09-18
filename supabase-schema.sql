@@ -107,6 +107,44 @@ create table if not exists public.leads (
 
 create index if not exists leads_email_idx on public.leads (lower(email));
 
+-- M-Pesa payments (Daraja STK Push lifecycle)
+create table if not exists public.payments (
+  id text primary key,
+  invoice_id text,
+  client_id text,
+  phone text,
+  amount numeric,
+  status text,
+  result_code text,
+  result_desc text,
+  mpesa_receipt text,
+  checkout_request_id text,
+  merchant_request_id text,
+  account_reference text,
+  data jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  completed_at timestamptz
+);
+
+alter table public.payments add column if not exists invoice_id text;
+alter table public.payments add column if not exists client_id text;
+alter table public.payments add column if not exists phone text;
+alter table public.payments add column if not exists amount numeric;
+alter table public.payments add column if not exists status text;
+alter table public.payments add column if not exists result_code text;
+alter table public.payments add column if not exists result_desc text;
+alter table public.payments add column if not exists mpesa_receipt text;
+alter table public.payments add column if not exists checkout_request_id text;
+alter table public.payments add column if not exists merchant_request_id text;
+alter table public.payments add column if not exists account_reference text;
+alter table public.payments add column if not exists data jsonb not null default '{}'::jsonb;
+alter table public.payments add column if not exists created_at timestamptz not null default now();
+alter table public.payments add column if not exists completed_at timestamptz;
+
+create index if not exists payments_checkout_request_idx on public.payments (checkout_request_id);
+create index if not exists payments_invoice_idx on public.payments (invoice_id);
+create index if not exists payments_status_idx on public.payments (status);
+
 -- Clean up: pre-existing tables (from earlier iterations of this project) used
 -- bigint/serial identity ids and may be referenced by legacy foreign keys
 -- (e.g. contacts.client_id). Drop any FK pointing at our tables so we can

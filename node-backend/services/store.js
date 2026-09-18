@@ -33,6 +33,8 @@ const clients = new Map();
 const workOrders = new Map();
 const invoices = new Map();
 const quotes = new Map();
+const payments = new Map();
+const paymentsByCheckout = new Map();
 const mockLeads = [];
 
 function normalizeIdentifier(raw) {
@@ -115,6 +117,7 @@ function persistToDisk() {
       workOrders: uniqueWorkOrders,
       invoices: uniqueInvoices,
       quotes: uniqueQuotes,
+      payments: Array.from(payments.values()).filter(p => p && p.id),
     }, null, 2));
   } catch (err) {
     console.error('[portalStore] Error persisting data store:', err.message);
@@ -150,6 +153,13 @@ function loadFromDisk() {
     if (Array.isArray(parsed.quotes)) {
       for (const q of parsed.quotes) {
         if (q && q.id) quotes.set(q.id, q);
+      }
+    }
+    if (Array.isArray(parsed.payments)) {
+      for (const p of parsed.payments) {
+        if (!p || !p.id) continue;
+        payments.set(p.id, p);
+        if (p.checkout_request_id) paymentsByCheckout.set(p.checkout_request_id, p.id);
       }
     }
   } catch (err) {
@@ -266,6 +276,39 @@ async function upsertQuoteSupabase(quote) {
   }, { onConflict: 'id' });
 
   if (error) throw persistenceError(error.message);
+}
+
+async function upsertPaymentSupabase(payment) {
+  const { error } = await supabase.from('payments').upsert({
+    id: payment.id,
+    invoice_id: payment.invoice_id || null,
+    client_id: payment.client_id || null,
+    checkout_request_id: payment.checkout_request_id || null,
+    merchant_request_id: payment.merchant_request_id || null,
+    phone: payment.phone || null,
+    amount: payment.amount ?? null,
+    status: payment.status || null,
+    updated_at: new Date().toISOString(),
+    data: payment,
+  }, { onConflict: 'id' });
+
+  if (error) throw persistenceError(error.message);
+}
+
+async function paymentByIdSupabase(id) {
+  const { data, error } = await supabase.from('payments').select('*').eq('id', id).limit(1);
+  if (error) throw persistenceError(error.message);
+  return data && data[0] ? hydrate(data[0]) : null;
+}
+
+async function paymentByCheckoutIdSupabase(checkoutRequestId) {
+  const { data, error } = await supabase
+    .from('payments')
+    .select('*')
+    .eq('checkout_request_id', checkoutRequestId)
+    .limit(1);
+  if (error) throw persistenceError(error.message);
+  return data && data[0] ? hydrate(data[0]) : null;
 }
 
 // ---------------- Unified store API ----------------
@@ -495,6 +538,31 @@ export const store = {
     if (willUseSupabase()) return upsertQuoteSupabase(quote);
     quotes.set(quote.id, quote);
     persistToDisk();
+  },
+
+  async paymentById(id) {
+    assertStoreAvailable();
+    if (willUseSupabase()) return paymentByIdSupabase(id);
+    return payments.get(id) || null;
+  },
+
+  async paymentByCheckoutId(checkoutRequestId) {
+    assertStoreAvailable();
+    if (!checkoutRequestId) return null;
+    if (willUseSupabase()) return paymentByCheckoutIdSupabase(checkoutRequestId);
+    const id = paymentsByCheckout.get(checkoutRequestId);
+    return id ? payments.get(id) || null : null;
+  },
+
+  async upsertPayment(payment) {
+    assertStoreAvailable();
+    if (willUseSupabase()) return upsertPaymentSupabase(payment);
+    payments.set(payment.id, payment);
+    if (payment.checkout_request_id) {
+      paymentsByCheckout.set(payment.checkout_request_id, payment.id);
+    }
+    persistToDisk();
+    return payment;
   },
 
   async portalStats() {

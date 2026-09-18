@@ -1,7 +1,13 @@
 {
-  "outputDirectory": ".",
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
   "trailingSlash": false,
+  "rewrites": [
+    { "source": "/tracker/:orderId", "destination": "/tracker.html" },
+    { "source": "/pay/:invoiceId", "destination": "/pay.html" },
+    { "source": "/receipt/:invoiceId", "destination": "/receipt.html" },
+    { "source": "/calculator", "destination": "/calculator.html" }
+  ],
   "headers": [
     {
       "source": "/sw.js",

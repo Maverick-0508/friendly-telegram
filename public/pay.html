@@ -297,15 +297,12 @@
                 <button class="pay-tab active" data-tab="mpesa">
                     <i class="fa-solid fa-mobile-screen-button"></i> Lipa Na M-Pesa
                 </button>
-                <button class="pay-tab" data-tab="card">
-                    <i class="fa-regular fa-credit-card"></i> Credit / Debit Card
-                </button>
             </div>
 
             <!-- M-Pesa Tab -->
             <div class="tab-pane active" id="pane-mpesa">
                 <p style="font-size:0.9rem; color:#475569; margin-bottom:18px;">
-                    We will initiate an instant Safaricom M-Pesa STK Push directly to your phone. Enter your MPesa PIN when prompted.
+                    We will initiate an instant Safaricom M-Pesa STK Push directly to your phone. Enter your M-Pesa PIN when prompted.
                 </p>
                 <div class="form-group">
                     <label for="mpesa-phone">M-Pesa Phone Number</label>
@@ -313,34 +310,6 @@
                 </div>
                 <button class="btn-mpesa-submit" id="submit-mpesa-btn">
                     <i class="fa-solid fa-bolt"></i> Send STK PIN Prompt to Phone
-                </button>
-            </div>
-
-            <!-- Card Tab -->
-            <div class="tab-pane" id="pane-card">
-                <p style="font-size:0.9rem; color:#475569; margin-bottom:18px;">
-                    All major Visa, Mastercard, and American Express cards are accepted with 256-bit encryption.
-                </p>
-                <div class="form-group">
-                    <label for="card-name">Cardholder Name</label>
-                    <input type="text" id="card-name" class="form-control" value="" placeholder="Name on Card">
-                </div>
-                <div class="form-group">
-                    <label for="card-num">Card Number</label>
-                    <input type="text" id="card-num" class="form-control" value="" placeholder="4532 0000 0000 0000">
-                </div>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
-                    <div class="form-group">
-                        <label for="card-exp">Expiry Date</label>
-                        <input type="text" id="card-exp" class="form-control" value="" placeholder="MM/YY">
-                    </div>
-                    <div class="form-group">
-                        <label for="card-cvc">CVC / Security Code</label>
-                        <input type="text" id="card-cvc" class="form-control" value="" placeholder="CVC">
-                    </div>
-                </div>
-                <button class="btn-card-submit" id="submit-card-btn">
-                    <i class="fa-solid fa-lock"></i> Pay Balance via Card
                 </button>
             </div>
 
@@ -377,7 +346,7 @@
             </div>
 
             <div class="secure-badge">
-                <i class="fa-solid fa-shield"></i> 256-Bit SSL Encrypted • Powered by Safaricom Daraja & Stripe
+                <i class="fa-solid fa-shield"></i> 256-Bit SSL Encrypted • Powered by Safaricom Daraja
             </div>
         </div>
 
@@ -421,7 +390,6 @@
                 document.getElementById('pay-error-msg').textContent = 'No invoice ID specified. Please access this page using the link from your client hub or SMS billing notice.';
                 errBanner.style.display = 'block';
                 document.getElementById('submit-mpesa-btn').disabled = true;
-                document.getElementById('submit-card-btn').disabled = true;
                 return;
             }
 
@@ -440,7 +408,6 @@
                         document.getElementById('mpesa-phone').value = invoiceData.client_phone;
                     }
                     if (invoiceData.client_name) {
-                        document.getElementById('card-name').value = invoiceData.client_name;
                         document.getElementById('succ-client-name').textContent = invoiceData.client_name;
                     }
 
@@ -478,7 +445,6 @@
                     document.getElementById('pay-error-msg').textContent = 'Invoice not found. Please verify the link or check your registered client hub.';
                     errBanner.style.display = 'block';
                     document.getElementById('submit-mpesa-btn').disabled = true;
-                    document.getElementById('submit-card-btn').disabled = true;
                 }
             } catch (err) {
                 console.warn('Failed to load invoice', err);
@@ -500,12 +466,21 @@
             document.getElementById('submit-mpesa-btn').addEventListener('click', async () => {
                 const phone = document.getElementById('mpesa-phone').value.trim();
                 const btn = document.getElementById('submit-mpesa-btn');
+                const errBanner = document.getElementById('pay-error-banner');
                 btn.disabled = true;
 
                 // Hide tabs, show processing
                 document.querySelector('.payment-tabs').style.display = 'none';
                 document.getElementById('pane-mpesa').style.display = 'none';
+                errBanner.style.display = 'none';
                 document.getElementById('pay-processing-box').style.display = 'block';
+
+                const resetForm = () => {
+                    document.getElementById('pay-processing-box').style.display = 'none';
+                    document.querySelector('.payment-tabs').style.display = 'flex';
+                    document.getElementById('pane-mpesa').style.display = 'block';
+                    btn.disabled = false;
+                };
 
                 try {
                     const res = await fetch('/api/mpesa/stkpush', {
@@ -519,58 +494,53 @@
                     });
                     const json = await res.json();
 
-                    setTimeout(() => {
+                    if (!json.success) {
+                        throw new Error(json.error?.message || 'Unable to initiate M-Pesa request.');
+                    }
+
+                    const checkoutId = json.checkout_request_id;
+                    if (!checkoutId) {
+                        throw new Error('The payment provider did not return a checkout reference.');
+                    }
+
+                    const result = await pollMpesaStatus(checkoutId);
+                    if (result.status === 'success') {
                         document.getElementById('pay-processing-box').style.display = 'none';
                         document.getElementById('pay-success-box').style.display = 'block';
-                        document.getElementById('succ-receipt-code').textContent = json.mpesa_receipt || 'NLM' + Math.floor(10000000 + Math.random() * 90000000) + 'X';
+                        document.getElementById('succ-receipt-code').textContent = result.mpesa_receipt || '—';
                         document.getElementById('succ-client-name').textContent = invoiceData?.client_name || 'Valued Client';
                         document.getElementById('view-receipt-link').href = `/receipt/${invoiceId}`;
-                    }, 2500);
+                    } else if (result.status === 'failed' || result.status === 'cancelled') {
+                        resetForm();
+                        document.getElementById('pay-error-msg').textContent = result.result_desc || 'M-Pesa payment was not completed. Please try again.';
+                        errBanner.style.display = 'block';
+                    } else {
+                        resetForm();
+                        document.getElementById('pay-error-msg').textContent = 'Payment is still pending. If you completed the M-Pesa prompt it will reflect on your invoice shortly.';
+                        errBanner.style.display = 'block';
+                    }
                 } catch (e) {
-                    document.getElementById('pay-processing-box').style.display = 'none';
-                    document.querySelector('.payment-tabs').style.display = 'flex';
-                    document.getElementById('pane-mpesa').style.display = 'block';
-                    btn.disabled = false;
-                    const errBanner = document.getElementById('pay-error-banner');
-                    document.getElementById('pay-error-msg').textContent = 'Unable to complete M-Pesa request. Please verify network and phone number.';
+                    resetForm();
+                    document.getElementById('pay-error-msg').textContent = e.message || 'Unable to complete M-Pesa request. Please verify network and phone number.';
                     errBanner.style.display = 'block';
                 }
             });
 
-            // Card Settle
-            document.getElementById('submit-card-btn').addEventListener('click', async () => {
-                document.querySelector('.payment-tabs').style.display = 'none';
-                document.getElementById('pane-card').style.display = 'none';
-                document.getElementById('pay-processing-box').style.display = 'block';
-                document.getElementById('proc-title').textContent = 'Authorizing Card Payment...';
-                document.getElementById('proc-desc').textContent = 'Connecting with payment gateway...';
-
-                try {
-                    const res = await fetch(`/api/invoices/${invoiceId}/pay`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            payment_method: 'Card (•••• 4242)',
-                            card_last4: '4242'
-                        })
-                    });
-                    const json = await res.json();
-
-                    setTimeout(() => {
-                        document.getElementById('pay-processing-box').style.display = 'none';
-                        document.getElementById('pay-success-box').style.display = 'block';
-                        document.getElementById('succ-receipt-code').textContent = json.data?.mpesa_receipt || 'TX_CARD_99218';
-                        document.getElementById('view-receipt-link').href = `/receipt/${invoiceId}`;
-                    }, 2000);
-                } catch (e) {
-                    document.getElementById('pay-processing-box').style.display = 'none';
-                    document.querySelector('.payment-tabs').style.display = 'flex';
-                    document.getElementById('pane-card').style.display = 'block';
-                    const errBanner = document.getElementById('pay-error-banner');
-                    document.getElementById('pay-error-msg').textContent = 'Card settlement failed. Please check card credentials.';
-                    errBanner.style.display = 'block';
+            async function pollMpesaStatus(checkoutId, attempts = 40, intervalMs = 3000) {
+                for (let i = 0; i < attempts; i++) {
+                    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+                    try {
+                        const res = await fetch(`/api/mpesa/status/${encodeURIComponent(checkoutId)}`);
+                        const json = await res.json();
+                        if (json.success && json.data && json.data.status !== 'pending') {
+                            return json.data;
+                        }
+                    } catch (err) {
+                        // Transient network error; keep polling until attempts are exhausted.
+                    }
                 }
-            });
+                return { status: 'pending' };
+            }
         });
     </script>
 </body>

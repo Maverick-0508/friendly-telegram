@@ -1,5 +1,13 @@
 import { checkSupabaseReachability } from '../config/supabase.js';
 import { store, normalizeIdentifier } from '../services/store.js';
+import {
+  getMpesaConfig,
+  isMpesaConfigured,
+  initiateStkPush,
+  normalizeMpesaPhone,
+  verifyCallbackToken,
+} from '../services/mpesa.js';
+import { getCoupons } from '../config/coupons.js';
 
 const isStrictRuntime = process.env.NODE_ENV === 'production' && process.env.ALLOW_IN_MEMORY_FALLBACK !== 'true';
 const REACHABILITY_TTL_MS = 15_000;
@@ -334,7 +342,7 @@ export async function createWorkOrder(req, res) {
       due_date: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
       subtotal,
       tax_vat: taxVat,
-      pin_number: 'P051239841K',
+      pin_number: process.env.COMPANY_KRA_PIN || undefined,
       items: [
         {
           description: propertySize ? `${serviceType} (${propertySize.toLocaleString()} sq ft)` : serviceType,
@@ -395,53 +403,262 @@ export async function getWorkOrder(req, res) {
   }
 }
 
-// Lipa Na M-Pesa STK Push
+// Lipa Na M-Pesa STK Push (real Safaricom Daraja integration)
 export async function stkPushMpesa(req, res) {
   try {
     if (!(await ensureProviders(res))) return;
 
-    const { phone, amount, invoice_id, account_reference } = req.body || {};
-
-    if (!phone) {
-      return res.status(400).json({
+    if (!isMpesaConfigured()) {
+      return res.status(503).json({
         success: false,
-        error: { message: 'M-Pesa phone number is required.', code: 'PHONE_REQUIRED' }
+        error: {
+          message: 'M-Pesa payments are not configured on this server.',
+          code: 'MPESA_NOT_CONFIGURED',
+        },
       });
     }
 
-    const cleanPhone = phone.replace(/\D/g, '');
-    const checkoutRequestId = 'ws_CO_' + Date.now().toString() + '_' + Math.random().toString(36).slice(2, 6);
-    const mpesaReceipt = 'NLM' + Math.floor(10000000 + Math.random() * 90000000).toString() + 'X';
+    const { phone, amount, invoice_id, account_reference } = req.body || {};
 
-    // If an invoice is associated, mark it paid
+    const msisdn = normalizeMpesaPhone(phone);
+    if (!msisdn) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'A valid Kenyan M-Pesa phone number is required.', code: 'INVALID_PHONE' },
+      });
+    }
+
+    let invoice = null;
+    let chargeAmount = Number(amount);
+
     if (invoice_id) {
-      const inv = await store.invoiceById(invoice_id);
-      if (inv) {
-        inv.status = 'paid';
-        inv.balance_due = 0.00;
-        inv.paid_at = new Date().toISOString();
-        inv.payment_method = `Lipa Na M-Pesa (${cleanPhone})`;
-        inv.mpesa_receipt = mpesaReceipt;
-        await store.upsertInvoice(inv);
+      invoice = await store.invoiceById(invoice_id);
+      if (!invoice) {
+        return res.status(404).json({
+          success: false,
+          error: { message: 'Invoice not found.', code: 'INVOICE_NOT_FOUND' },
+        });
       }
+      if (invoice.status === 'paid') {
+        return res.status(409).json({
+          success: false,
+          error: { message: 'This invoice has already been paid.', code: 'INVOICE_ALREADY_PAID' },
+        });
+      }
+      const balance = Number(invoice.balance_due ?? invoice.total_amount ?? 0);
+      // The server is the source of truth for the amount; never trust a client-supplied total.
+      if (Number.isFinite(chargeAmount) && chargeAmount > 0) {
+        if (Math.round(chargeAmount) !== Math.round(balance)) {
+          return res.status(400).json({
+            success: false,
+            error: { message: 'Payment amount does not match the outstanding balance.', code: 'AMOUNT_MISMATCH' },
+          });
+        }
+      } else {
+        chargeAmount = balance;
+      }
+    }
+
+    if (!Number.isFinite(chargeAmount) || chargeAmount < 1) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'A positive payment amount is required.', code: 'INVALID_AMOUNT' },
+      });
+    }
+
+    const accountRef = account_reference || (invoice ? invoice.invoice_number : getMpesaConfig().accountReference);
+    const push = await initiateStkPush({
+      phone: msisdn,
+      amount: chargeAmount,
+      accountReference: accountRef,
+      description: invoice ? `Invoice ${invoice.invoice_number}` : 'Lawn Craft payment',
+    });
+
+    if (push.ResponseCode && String(push.ResponseCode) !== '0') {
+      return res.status(502).json({
+        success: false,
+        error: {
+          message: push.ResponseDescription || 'M-Pesa rejected the STK push request.',
+          code: 'STK_PUSH_REJECTED',
+        },
+      });
+    }
+
+    const payment = {
+      id: 'pay_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+      invoice_id: invoice ? invoice.id : null,
+      client_id: invoice ? invoice.client_id : null,
+      phone: msisdn,
+      amount: chargeAmount,
+      account_reference: accountRef,
+      merchant_request_id: push.MerchantRequestID || null,
+      checkout_request_id: push.CheckoutRequestID || null,
+      status: 'pending',
+      result_code: null,
+      result_desc: null,
+      mpesa_receipt: null,
+      created_at: new Date().toISOString(),
+      raw_response: push,
+    };
+    await store.upsertPayment(payment);
+
+    if (invoice) {
+      invoice.payment_status = 'pending';
+      invoice.payment_method = `Lipa Na M-Pesa (${msisdn})`;
+      invoice.checkout_request_id = payment.checkout_request_id;
+      await store.upsertInvoice(invoice);
     }
 
     return res.status(200).json({
       success: true,
-      message: `STK Push initiated successfully to ${phone}. Please enter your M-Pesa PIN on your handset.`,
-      checkout_request_id: checkoutRequestId,
-      mpesa_receipt: mpesaReceipt,
-      amount: amount || 4500.00,
-      account_reference: account_reference || 'LAWNCRAFT'
+      message: `STK Push sent to ${msisdn}. Enter your M-Pesa PIN on your handset to complete payment.`,
+      checkout_request_id: payment.checkout_request_id,
+      merchant_request_id: payment.merchant_request_id,
+      customer_message: push.CustomerMessage || null,
+      amount: chargeAmount,
+      account_reference: accountRef,
+    });
+  } catch (err) {
+    console.error('[stkPushMpesa Error]', err.message);
+    return res.status(err.statusCode || 500).json({
+      success: false,
+      error: {
+        message: err.statusCode ? err.message : 'STK push initiation failed.',
+        code: err.code || 'STK_PUSH_FAILED',
+      },
+    });
+  }
+}
+
+// Query the status of a pending M-Pesa payment (used by the client UI to poll).
+export async function mpesaStatus(req, res) {
+  try {
+    if (!(await ensureProviders(res))) return;
+
+    const { checkoutRequestId } = req.params;
+    const payment = await store.paymentByCheckoutId(checkoutRequestId);
+
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Payment record not found.', code: 'PAYMENT_NOT_FOUND' },
+      });
+    }
+
+    let invoice = null;
+    if (payment.invoice_id) {
+      invoice = await store.invoiceById(payment.invoice_id);
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        checkout_request_id: payment.checkout_request_id,
+        status: payment.status,
+        result_code: payment.result_code,
+        result_desc: payment.result_desc,
+        mpesa_receipt: payment.mpesa_receipt || null,
+        amount: payment.amount,
+        invoice_id: payment.invoice_id || null,
+        invoice_status: invoice ? invoice.status : null,
+      },
     });
   } catch (err) {
     return res.status(err.statusCode || 500).json({
       success: false,
       error: {
-        message: 'STK push initiation failed.',
-        code: err.statusCode === 503 ? err.code : 'STK_PUSH_FAILED'
-      }
+        message: 'Failed to retrieve payment status.',
+        code: err.statusCode === 503 ? err.code : 'PAYMENT_STATUS_FAILED',
+      },
     });
+  }
+}
+
+// Safaricom Daraja payment result callback. Always ACK with ResultCode 0 so
+// Safaricom does not retry, even when reconciliation of the transaction fails.
+export async function mpesaCallback(req, res) {
+  const ack = () => res.status(200).json({ ResultCode: 0, ResultDesc: 'Accepted' });
+
+  try {
+    const config = getMpesaConfig();
+    const providedToken = req.params?.token || req.query?.token;
+    if (!verifyCallbackToken(providedToken, config)) {
+      console.warn('[mpesaCallback] Rejected callback with an invalid token.');
+      return res.status(401).json({ ResultCode: 1, ResultDesc: 'Unauthorized' });
+    }
+
+    const callback = req.body?.Body?.stkCallback;
+    if (!callback || !callback.CheckoutRequestID) {
+      console.warn('[mpesaCallback] Received malformed callback payload.');
+      return ack();
+    }
+
+    if (!(await ensureProviders(res))) {
+      // Persistence is unavailable; ACK so Safaricom does not retry, and log for manual reconciliation.
+      console.error('[mpesaCallback] Persistence unavailable while processing callback', callback.CheckoutRequestID);
+      return ack();
+    }
+
+    const payment = await store.paymentByCheckoutId(callback.CheckoutRequestID);
+    if (!payment) {
+      console.warn('[mpesaCallback] No payment found for CheckoutRequestID', callback.CheckoutRequestID);
+      return ack();
+    }
+
+    const resultCode = String(callback.ResultCode);
+    const metadata = Array.isArray(callback.CallbackMetadata?.Item)
+      ? callback.CallbackMetadata.Item
+      : [];
+    const findItem = (name) => metadata.find((item) => item && item.Name === name);
+    const receiptItem = findItem('MpesaReceiptNumber');
+    const amountItem = findItem('Amount');
+    const phoneItem = findItem('PhoneNumber');
+
+    if (resultCode === '0') {
+      const receipt = receiptItem ? String(receiptItem.Value) : null;
+      payment.status = 'success';
+      payment.result_code = resultCode;
+      payment.result_desc = callback.ResultDesc || 'The service request is processed successfully.';
+      payment.mpesa_receipt = receipt;
+      payment.amount = amountItem ? Number(amountItem.Value) : payment.amount;
+      payment.paid_phone = phoneItem ? String(phoneItem.Value) : payment.phone;
+      payment.completed_at = new Date().toISOString();
+      payment.callback_payload = callback;
+      await store.upsertPayment(payment);
+
+      if (payment.invoice_id) {
+        const invoice = await store.invoiceById(payment.invoice_id);
+        if (invoice && invoice.status !== 'paid') {
+          invoice.status = 'paid';
+          invoice.balance_due = 0.0;
+          invoice.paid_at = new Date().toISOString();
+          invoice.payment_method = `Lipa Na M-Pesa (${payment.paid_phone || payment.phone})`;
+          invoice.mpesa_receipt = receipt;
+          invoice.payment_status = 'paid';
+          await store.upsertInvoice(invoice);
+        }
+      }
+    } else {
+      payment.status = resultCode === '1032' ? 'cancelled' : 'failed';
+      payment.result_code = resultCode;
+      payment.result_desc = callback.ResultDesc || 'Payment was not completed.';
+      payment.callback_payload = callback;
+      await store.upsertPayment(payment);
+
+      if (payment.invoice_id) {
+        const invoice = await store.invoiceById(payment.invoice_id);
+        if (invoice && invoice.status !== 'paid') {
+          invoice.payment_status = 'failed';
+          await store.upsertInvoice(invoice);
+        }
+      }
+    }
+
+    return ack();
+  } catch (err) {
+    console.error('[mpesaCallback Error]', err);
+    // Still ACK to prevent Safaricom retry storms; the payment remains pending for reconciliation.
+    return ack();
   }
 }
 
@@ -475,45 +692,6 @@ export async function getInvoice(req, res) {
   }
 }
 
-// Settle Invoice
-export async function settleInvoice(req, res) {
-  try {
-    if (!(await ensureProviders(res))) return;
-
-    const { invoiceId } = req.params;
-    const { payment_method, card_last4 } = req.body || {};
-
-    const inv = await store.invoiceById(invoiceId);
-    if (!inv) {
-      return res.status(404).json({
-        success: false,
-        error: { message: 'Invoice record not found.', code: 'INVOICE_NOT_FOUND' }
-      });
-    }
-
-    inv.status = 'paid';
-    inv.balance_due = 0.00;
-    inv.paid_at = new Date().toISOString();
-    inv.payment_method = payment_method || (card_last4 ? `Card (•••• ${card_last4})` : 'Instant Online Payment');
-    inv.mpesa_receipt = 'TX_' + Math.floor(10000000 + Math.random() * 90000000).toString();
-    await store.upsertInvoice(inv);
-
-    return res.status(200).json({
-      success: true,
-      message: 'Invoice settled successfully. Official tax receipt generated.',
-      data: inv
-    });
-  } catch (err) {
-    return res.status(err.statusCode || 500).json({
-      success: false,
-      error: {
-        message: 'Payment settlement failed.',
-        code: err.statusCode === 503 ? err.code : 'SETTLEMENT_FAILED'
-      }
-    });
-  }
-}
-
 // Coupon Validator
 export async function validateCoupon(req, res) {
   try {
@@ -522,13 +700,7 @@ export async function validateCoupon(req, res) {
     const code = String(req.body?.code || '').trim().toUpperCase();
     const orderAmount = Number(req.body?.amount || 4500);
 
-    const validCoupons = {
-      'SPRING20': { type: 'percent', value: 20, desc: '20% Spring Refresh Discount' },
-      'FIRSTCUT': { type: 'fixed', value: 1500, desc: 'KSh 1,500 Off Your First Lawn Cut' },
-      'VIPLAWN': { type: 'percent', value: 15, desc: '15% Loyalty Member Perks' },
-      'GREEN50': { type: 'fixed', value: 5000, minAmount: 15000, desc: 'KSh 5,000 Off Orders Over KSh 15,000' },
-      'KAREN10': { type: 'percent', value: 10, desc: '10% Karen & Runda Neighborhood Special' }
-    };
+    const validCoupons = getCoupons();
 
     const coupon = validCoupons[code];
 

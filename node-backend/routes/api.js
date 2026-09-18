@@ -8,16 +8,48 @@ import {
   createWorkOrder,
   getWorkOrder,
   stkPushMpesa,
+  mpesaStatus,
+  mpesaCallback,
   getInvoice,
-  settleInvoice,
   validateCoupon,
   getPortalStats,
 } from '../controllers/portalController.js';
 import { checkPostgresReachability } from '../config/db.js';
 import { checkSupabaseReachability } from '../config/supabase.js';
+import { isMpesaConfigured } from '../services/mpesa.js';
 import { store } from '../services/store.js';
 
 const router = Router();
+
+function sanitizeProviderStatus(status) {
+  if (!status || typeof status !== 'object') return status;
+  const { url, ...safe } = status;
+  return safe;
+}
+
+// Diagnostics are operational data. In production they require ADMIN_API_TOKEN;
+// without that token configured the route is hidden entirely.
+function requireAdmin(req, res, next) {
+  const configured = process.env.ADMIN_API_TOKEN;
+  if (!configured) {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'API route not found', code: 'ROUTE_NOT_FOUND' },
+      });
+    }
+    return next();
+  }
+
+  const provided = req.headers['x-admin-token'] || req.query.token;
+  if (provided !== configured) {
+    return res.status(401).json({
+      success: false,
+      error: { message: 'Unauthorized', code: 'UNAUTHORIZED' },
+    });
+  }
+  return next();
+}
 
 router.get('/health', (_req, res) => {
   res.status(200).json({ success: true, message: 'Server is healthy' });
@@ -69,12 +101,15 @@ router.get('/ready', async (_req, res) => {
   });
 });
 
-// System & Database Diagnostic Status
-router.get('/system/status', async (_req, res) => {
+// System & Database Diagnostic Status (admin-only in production)
+router.get('/system/status', requireAdmin, async (_req, res) => {
   const [pgStatus, sbStatus] = await Promise.all([
     checkPostgresReachability(),
     checkSupabaseReachability(),
   ]);
+
+  const safePg = sanitizeProviderStatus(pgStatus);
+  const safeSb = sanitizeProviderStatus(sbStatus);
 
   const activePrimary = !pgStatus.connected && !sbStatus.connected
     ? 'Unavailable'
@@ -86,8 +121,8 @@ router.get('/system/status', async (_req, res) => {
     environment: process.env.NODE_ENV || 'development',
     database: {
       active_primary: activePrimary,
-      postgresql: pgStatus,
-      supabase: sbStatus,
+      postgresql: safePg,
+      supabase: safeSb,
       data_backend: store.backendName(),
       persistence_architecture: 'Supabase (no in-memory fallback in production)'
     },
@@ -96,7 +131,7 @@ router.get('/system/status', async (_req, res) => {
       client_hub_recognition: 'Active',
       gps_crew_tracking: 'Active',
       instant_pricing_calculator: 'Active',
-      mpesa_stk_push_and_receipts: 'Active',
+      mpesa_stk_push_and_receipts: isMpesaConfigured() ? 'Active' : 'Not configured',
       pwa_offline_caching: 'Active'
     }
   });
@@ -116,10 +151,12 @@ router.post('/portal/clients', createClientProfile);
 router.post('/work-orders', createWorkOrder);
 router.get('/work-orders/:orderId', getWorkOrder);
 
-// Payments & Invoices
+// Payments & Invoices (real M-Pesa Daraja integration)
 router.post('/mpesa/stkpush', stkPushMpesa);
+router.post('/mpesa/callback', mpesaCallback);
+router.post('/mpesa/callback/:token', mpesaCallback);
+router.get('/mpesa/status/:checkoutRequestId', mpesaStatus);
 router.get('/invoices/:invoiceId', getInvoice);
-router.post('/invoices/:invoiceId/pay', settleInvoice);
 
 // Promo Coupons
 router.post('/coupons/validate', validateCoupon);
