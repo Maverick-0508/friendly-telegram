@@ -1,31 +1,15 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "cleanUrls": true,
-  "trailingSlash": false,
-  "rewrites": [
-    { "source": "/tracker/:orderId", "destination": "/tracker.html" },
-    { "source": "/pay/:invoiceId", "destination": "/pay.html" },
-    { "source": "/receipt/:invoiceId", "destination": "/receipt.html" },
-    { "source": "/calculator", "destination": "/calculator.html" }
+  "builds": [
+    { "src": "server.js", "use": "@vercel/node" }
   ],
-  "headers": [
-    {
-      "source": "/sw.js",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
-      ]
-    },
-    {
-      "source": "/manifest.json",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-cache" }
-      ]
-    }
+  "routes": [
+    { "src": "/(.*)", "dest": "server.js" }
   ],
   "crons": [
     {
       "path": "/api/mpesa/reconcile",
-      "schedule": "*/30 * * * *"
+      "schedule": "0 2 * * *"
     }
   ]
 }

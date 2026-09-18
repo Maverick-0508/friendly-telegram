@@ -203,6 +203,32 @@ begin
     exception when others then
       null; -- column is not an identity column; ignore
     end;
-    execute format('alter table %I.%I alter column id type text', r.table_schema, r.table_name);
+    begin
+      execute format('alter table %I.%I alter column id type text using id::text', r.table_schema, r.table_name);
+    exception when others then
+      null; -- already text or awaiting FK drop; ignore
+    end;
+  end loop;
+end $$;
+
+-- Also normalize foreign-key columns that carry app-generated text ids
+-- (e.g. quotes.client_id holds "cl_*" ids), so inserts never hit the
+-- "invalid input syntax for type bigint" error on legacy integer columns.
+do $$
+declare
+  c record;
+begin
+  for c in
+    select table_name, column_name
+    from information_schema.columns
+    where table_schema = 'public'
+      and column_name in ('client_id', 'invoice_id', 'checkout_request_id')
+      and data_type <> 'text'
+  loop
+    begin
+      execute format('alter table %I.%I alter column %I type text using %I::text', 'public', c.table_name, c.column_name, c.column_name);
+    exception when others then
+      null; -- e.g. locked by a pending constraint; ignore
+    end;
   end loop;
 end $$;
