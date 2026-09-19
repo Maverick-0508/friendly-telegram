@@ -191,8 +191,22 @@ export function createApp() {
 
   app.use('/api/auth', authLimiter);
 
+  // Note: express-rate-limit keeps counters in process memory, so on a
+  // serverless host each instance counts separately. It still throttles bursts
+  // against a single instance (and fully protects Docker / VM deployments);
+  // payment endpoints additionally enforce database-backed limits, and the
+  // Vercel Firewall should carry the platform-wide rule (see DEPLOYMENT.md).
   app.use(
-    ['/api/contact', '/api/quotes', '/api/portal/lookup', '/api/portal/clients', '/api/coupons/validate'],
+    [
+      '/api/contact',
+      '/api/quotes',
+      '/api/portal/lookup',
+      '/api/portal/clients',
+      '/api/coupons/validate',
+      '/api/work-orders',
+      '/api/mpesa/stkpush',
+      '/api/analytics',
+    ],
     writeLimiter
   );
 
@@ -296,7 +310,9 @@ app.use((req, res, next) => {
     console.error('[Server Error]', err);
 
     const statusCode = err.statusCode || 500;
-    const message = err.message || 'Internal server error';
+    // Only errors we raised deliberately (4xx / 503 with a statusCode) carry
+    // user-facing text; unexpected failures must not leak internals.
+    const message = err.statusCode && err.message ? err.message : 'Internal server error';
 
     res.status(statusCode).json({
       success: false,

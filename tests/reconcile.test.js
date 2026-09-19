@@ -3,14 +3,17 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { startMockDaraja } from './helpers/mock-daraja.js';
-import { store } from '../node-backend/services/store.js';
 
 let server;
 let baseUrl;
 let mockDaraja;
+// Imported after PORTAL_STORE_FILE is set so this suite gets its own store.
+let store;
 
 test.before(async () => {
-  fs.rmSync(path.resolve('data'), { recursive: true, force: true });
+  process.env.PORTAL_STORE_FILE = path.resolve('data', 'test-reconcile.json');
+  fs.rmSync(process.env.PORTAL_STORE_FILE, { force: true });
+  ({ store } = await import('../node-backend/services/store.js'));
   process.env.NODE_ENV = 'development';
   delete process.env.SUPABASE_URL;
   delete process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -62,12 +65,11 @@ async function post(path, payload) {
 
 // Create a work order + invoice, and initiate a real (mock) STK push so a
 // pending payment exists. Then backdate it so reconciliation treats it as stale.
-async function createStalePendingPayment(name, phone, price) {
+async function createStalePendingPayment(name, phone, serviceType) {
   const order = await post('/api/work-orders', {
     client_name: name,
     phone,
-    service_type: 'Lawn Mowing',
-    total_price: price,
+    service_type: serviceType,
     address: '88 Reconciliation Rd',
   });
   assert.equal(order.response.status, 201);
@@ -75,7 +77,7 @@ async function createStalePendingPayment(name, phone, price) {
 
   const mpesa = await post('/api/mpesa/stkpush', {
     phone,
-    amount: price,
+    amount: order.body.invoice.total_amount,
     invoice_id: invoiceId,
   });
   assert.equal(mpesa.response.status, 200);
@@ -97,10 +99,12 @@ test('reconciliation settles a stale pending payment whose callback was lost', a
   const { invoiceId, checkoutId } = await createStalePendingPayment(
     'Recon Success Client',
     '+254700777001',
-    8000
+    'Core Aeration'
   );
 
-  const recon = await post('/api/mpesa/reconcile', {});
+  // Vercel Cron calls the endpoint with GET.
+  const reconResponse = await fetch(`${baseUrl}/api/mpesa/reconcile`);
+  const recon = { response: reconResponse, body: await reconResponse.json() };
   assert.equal(recon.response.status, 200);
   assert.equal(recon.body.success, true);
   assert.ok(recon.body.checked >= 1, 'should have checked at least one payment');
@@ -117,7 +121,7 @@ test('reconciliation marks stale pending payments cancelled when Daraja says so'
   const { invoiceId, checkoutId } = await createStalePendingPayment(
     'Recon Cancel Client',
     '+254700777002',
-    5000
+    'Lawn Mowing'
   );
   globalThis.__reconTestQueryResults[checkoutId] = { resultCode: '1032', resultDesc: 'Request cancelled by user' };
 

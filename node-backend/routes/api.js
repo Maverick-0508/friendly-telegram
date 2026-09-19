@@ -17,8 +17,11 @@ import {
 } from '../controllers/portalController.js';
 import { checkPostgresReachability } from '../config/db.js';
 import { checkSupabaseReachability } from '../config/supabase.js';
+import { auditRuntimeConfig } from '../config/runtime.js';
 import { isMpesaConfigured } from '../services/mpesa.js';
 import { store } from '../services/store.js';
+
+const ANALYTICS_MAX_BYTES = 4096;
 
 const router = Router();
 
@@ -86,8 +89,9 @@ router.get('/ready', async (_req, res) => {
   const authAvailable = sbStatus.connected;
   const persistenceAvailable = pgStatus.connected || sbStatus.connected;
   const dataBackend = store.backendName();
+  const config = auditRuntimeConfig();
   const ready = isProduction
-    ? authConfigured && authAvailable && persistenceAvailable && dataBackend === 'supabase'
+    ? authConfigured && authAvailable && persistenceAvailable && dataBackend === 'supabase' && config.problems.length === 0
     : persistenceAvailable;
 
   const checks = {
@@ -96,8 +100,9 @@ router.get('/ready', async (_req, res) => {
     persistence_configured: pgStatus.configured || sbStatus.configured,
     persistence_available: persistenceAvailable,
     data_backend: dataBackend,
-    postgresql: pgStatus,
-    supabase: sbStatus,
+    postgresql: sanitizeProviderStatus(pgStatus),
+    supabase: sanitizeProviderStatus(sbStatus),
+    features: config.checks,
   };
 
   if (!ready && isProduction) {
@@ -109,14 +114,18 @@ router.get('/ready', async (_req, res) => {
         code: 'READINESS_FAILED',
       },
       checks,
+      problems: config.problems,
+      warnings: config.warnings,
     });
   }
 
   return res.status(200).json({
     success: true,
     ready,
-    degraded: !ready,
+    degraded: !ready || config.warnings.length > 0,
     checks,
+    problems: config.problems,
+    warnings: config.warnings,
   });
 });
 
@@ -152,29 +161,40 @@ router.get('/system/status', requireAdmin, async (_req, res) => {
       instant_pricing_calculator: 'Active',
       mpesa_stk_push_and_receipts: isMpesaConfigured() ? 'Active' : 'Not configured',
       pwa_offline_caching: 'Active'
-    }
+    },
+    config: auditRuntimeConfig(),
   });
 });
 
 // Internal non-blocking analytics receiver. Persists when Supabase is
 // configured; otherwise it safely no-ops so the page never blocks on telemetry.
+// Payloads are capped so the endpoint cannot be used to fill the database.
 router.post('/analytics', async (req, res) => {
   try {
-    const event = req.body && typeof req.body === 'object' && !Array.isArray(req.body)
-      ? req.body
-      : { page: null };
-    void store.trackAnalytics(event).catch((err) => {
-      console.warn('[analytics] Failed to persist event.', err.message);
-    });
+    const body = req.body && typeof req.body === 'object' && !Array.isArray(req.body) ? req.body : null;
+    if (body && JSON.stringify(body).length <= ANALYTICS_MAX_BYTES) {
+      const event = {
+        page: typeof body.page === 'string' ? body.page.slice(0, 200) : null,
+        referrer: typeof body.referrer === 'string' ? body.referrer.slice(0, 500) : null,
+        loadTime: typeof body.loadTime === 'string' ? body.loadTime.slice(0, 20) : undefined,
+        effectiveType: typeof body.effectiveType === 'string' ? body.effectiveType.slice(0, 20) : undefined,
+        memory: body.memory,
+        screen: typeof body.screen === 'string' ? body.screen.slice(0, 20) : undefined,
+        language: typeof body.language === 'string' ? body.language.slice(0, 20) : undefined,
+      };
+      void store.trackAnalytics(event).catch((err) => {
+        console.warn('[analytics] Failed to persist event.', err.message);
+      });
+    }
   } catch (err) {
     console.warn('[analytics] Invalid payload.', err.message);
   }
   res.status(200).json({ success: true });
 });
 
-// Portal & Client Recognition
+// Portal & Client Recognition. Lookup is POST-only so the access PIN never
+// travels in a URL (query strings end up in proxy and platform logs).
 router.post('/portal/lookup', lookupClient);
-router.get('/portal/lookup', lookupClient);
 router.post('/portal/clients', createClientProfile);
 
 // Work Orders & Dispatch Queue
@@ -186,6 +206,8 @@ router.post('/mpesa/stkpush', stkPushMpesa);
 router.post('/mpesa/callback', mpesaCallback);
 router.post('/mpesa/callback/:token', mpesaCallback);
 router.get('/mpesa/status/:checkoutRequestId', mpesaStatus);
+// Vercel Cron invokes its target with GET; admins and local jobs may POST.
+router.get('/mpesa/reconcile', requireAdmin, reconcileHandler);
 router.post('/mpesa/reconcile', requireAdmin, reconcileHandler);
 router.get('/invoices/:invoiceId', getInvoice);
 

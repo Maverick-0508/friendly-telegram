@@ -30,15 +30,45 @@ export function getMpesaConfig() {
   };
 }
 
+function isProductionRuntime() {
+  return process.env.NODE_ENV === 'production';
+}
+
+/** True when the Daraja credentials are present. */
+export function hasMpesaCredentials(c = getMpesaConfig()) {
+  return Boolean(c.consumerKey && c.consumerSecret && c.shortcode && c.passkey && c.callbackUrl);
+}
+
+/**
+ * True when payments may be taken. In production this additionally requires
+ * MPESA_CALLBACK_TOKEN: without it anyone who knows a CheckoutRequestID (the
+ * payer receives it in the STK push response) could forge a "paid" callback.
+ */
 export function isMpesaConfigured() {
   const c = getMpesaConfig();
-  return Boolean(
-    c.consumerKey &&
-      c.consumerSecret &&
-      c.shortcode &&
-      c.passkey &&
-      c.callbackUrl
-  );
+  if (!hasMpesaCredentials(c)) return false;
+  if (isProductionRuntime() && !c.callbackToken) return false;
+  return true;
+}
+
+/** Human-readable configuration problems, for readiness and startup logs. */
+export function mpesaConfigProblems() {
+  const c = getMpesaConfig();
+  const problems = [];
+  if (!hasMpesaCredentials(c)) {
+    problems.push('M-Pesa credentials incomplete (MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET, MPESA_SHORTCODE, MPESA_PASSKEY, MPESA_CALLBACK_URL).');
+    return problems;
+  }
+  if (!c.callbackToken) {
+    problems.push('MPESA_CALLBACK_TOKEN is not set; payments are disabled in production until it is.');
+  }
+  if (c.callbackUrl && !/^https:\/\//i.test(c.callbackUrl)) {
+    problems.push('MPESA_CALLBACK_URL must be a public https:// URL.');
+  }
+  if (isProductionRuntime() && c.environment !== 'production') {
+    problems.push(`MPESA_ENVIRONMENT is "${c.environment}" while NODE_ENV=production; live customers would be pushed to the Daraja sandbox.`);
+  }
+  return problems;
 }
 
 export function mpesaError(message, code = 'MPESA_ERROR', statusCode = 502) {
@@ -51,7 +81,7 @@ export function mpesaError(message, code = 'MPESA_ERROR', statusCode = 502) {
 function assertMpesaConfigured() {
   if (!isMpesaConfigured()) {
     throw mpesaError(
-      'M-Pesa is not configured. Set MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET, MPESA_SHORTCODE, MPESA_PASSKEY and MPESA_CALLBACK_URL.',
+      'M-Pesa is not configured. Set MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET, MPESA_SHORTCODE, MPESA_PASSKEY, MPESA_CALLBACK_URL and (in production) MPESA_CALLBACK_TOKEN.',
       'MPESA_NOT_CONFIGURED',
       503
     );
@@ -264,9 +294,10 @@ export async function queryStkStatus({ checkoutRequestId, config = getMpesaConfi
 /** Verify a callback secret using a constant-time comparison. */
 export function verifyCallbackToken(provided, config = getMpesaConfig()) {
   const expected = config.callbackToken;
-  // Callbacks still ACK when no token is configured so Safaricom does not retry
-  // indefinitely, but reconciliation relies on the CheckoutRequestID lookup.
-  if (!expected) return true;
+  // Without a configured token there is nothing to verify against. Development
+  // and tests accept the callback; production fails closed so a forged
+  // "ResultCode 0" can never settle an invoice.
+  if (!expected) return !isProductionRuntime();
   if (!provided) return false;
   const a = Buffer.from(String(provided));
   const b = Buffer.from(String(expected));

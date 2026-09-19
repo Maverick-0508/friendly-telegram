@@ -5,7 +5,11 @@ import { supabase } from '../config/supabase.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const DATA_FILE = path.join(__dirname, '../../data/portal-store.json');
+// Development-only JSON persistence. Tests point PORTAL_STORE_FILE at a
+// per-suite file so parallel test processes do not clobber each other.
+const DATA_FILE = process.env.PORTAL_STORE_FILE
+  ? path.resolve(process.env.PORTAL_STORE_FILE)
+  : path.join(__dirname, '../../data/portal-store.json');
 
 const isStrictRuntime = process.env.NODE_ENV === 'production' && process.env.ALLOW_IN_MEMORY_FALLBACK !== 'true';
 const allowDiskPersistence = process.env.NODE_ENV !== 'production';
@@ -179,6 +183,32 @@ function hydrate(row) {
   return row;
 }
 
+// PostgREST `or=` filters are a mini-language: an unquoted value containing
+// `,` or `)` would let a caller append their own conditions (e.g. `x,id.neq.0`
+// matches every row). Every user-supplied value is therefore double-quoted
+// with quotes/backslashes escaped, which PostgREST treats as a literal.
+export function quoteFilterValue(value) {
+  const str = String(value ?? '');
+  return `"${str.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
+function eqFilter(column, value) {
+  return `${column}.eq.${quoteFilterValue(value)}`;
+}
+
+// Build the standard "this record belongs to that client" OR-filter.
+function clientMatchFilter(match) {
+  const conds = [];
+  if (match.id) conds.push(eqFilter('client_id', match.id));
+  if (match.phone) {
+    conds.push(eqFilter('phone', match.phone));
+    const key = normalizeIdentifier(match.phone);
+    if (key && key !== match.phone) conds.push(eqFilter('phone', key));
+  }
+  if (match.email) conds.push(eqFilter('email', String(match.email).toLowerCase()));
+  return conds.join(',');
+}
+
 async function findClientSupabase(identifier) {
   if (!identifier) return null;
   const raw = String(identifier).trim();
@@ -187,7 +217,7 @@ async function findClientSupabase(identifier) {
 
   const { data, error } = isEmail
     ? await supabase.from('clients').select('*').eq('email', raw.toLowerCase()).limit(1)
-    : await supabase.from('clients').select('*').or(`phone.eq.${raw},phone.eq.${key}`).limit(1);
+    : await supabase.from('clients').select('*').or(`${eqFilter('phone', raw)},${eqFilter('phone', key)}`).limit(1);
 
   if (error) throw persistenceError(error.message);
   return data && data[0] ? hydrate(data[0]) : null;
@@ -195,12 +225,12 @@ async function findClientSupabase(identifier) {
 
 async function findClientByPhoneOrEmailSupabase(phone, email) {
   const conds = [];
-  if (!conds.length && phone) {
+  if (phone) {
     const key = normalizeIdentifier(phone);
-    conds.push(`phone.eq.${phone}`, `phone.eq.${key}`);
+    conds.push(eqFilter('phone', phone), eqFilter('phone', key));
   }
   if (email) {
-    conds.push(`email.eq.${String(email).trim().toLowerCase()}`);
+    conds.push(eqFilter('email', String(email).trim().toLowerCase()));
   }
   if (!conds.length) return null;
 
@@ -214,13 +244,22 @@ async function findClientByPhoneOrEmailSupabase(phone, email) {
   return data && data[0] ? hydrate(data[0]) : null;
 }
 
+// Indexed phone columns hold the normalized local form (07XXXXXXXX) so a
+// client who registered as +2547... is still found when they type 07...
+// Lookups query both the raw and normalized value, so rows written by earlier
+// versions (raw phone) keep matching too.
+function indexedPhone(raw) {
+  if (!raw) return null;
+  return normalizeIdentifier(raw) || String(raw).trim() || null;
+}
+
 async function upsertClientSupabase(client) {
   const { error } = await supabase
     .from('clients')
     .upsert({
       id: client.id,
       name: client.name || null,
-      phone: client.phone || null,
+      phone: indexedPhone(client.phone),
       email: client.email ? client.email.toLowerCase() : null,
       data: client,
     }, { onConflict: 'id' });
@@ -240,7 +279,7 @@ async function upsertWorkOrderSupabase(wo) {
     client_id: wo.client_id || null,
     status: wo.status || null,
     invoice_id: wo.invoice_id || null,
-    phone: wo.client_phone || null,
+    phone: indexedPhone(wo.client_phone),
     email: wo.client_email ? wo.client_email.toLowerCase() : null,
     data: wo,
   }, { onConflict: 'id' });
@@ -259,7 +298,7 @@ async function upsertInvoiceSupabase(inv) {
     id: inv.id,
     client_id: inv.client_id || null,
     status: inv.status || null,
-    phone: inv.client_phone || null,
+    phone: indexedPhone(inv.client_phone),
     email: inv.client_email ? inv.client_email.toLowerCase() : null,
     data: inv,
   }, { onConflict: 'id' });
@@ -271,7 +310,7 @@ async function upsertQuoteSupabase(quote) {
   const { error } = await supabase.from('quotes').upsert({
     id: quote.id,
     client_id: quote.client_id || null,
-    phone: quote.phone || null,
+    phone: indexedPhone(quote.phone),
     email: quote.email ? quote.email.toLowerCase() : null,
     data: quote,
   }, { onConflict: 'id' });
@@ -322,6 +361,28 @@ async function pendingPaymentsOlderThanSupabase(thresholdIso, limit) {
     .limit(limit);
   if (error) throw persistenceError(error.message);
   return (data || []).map(hydrate);
+}
+
+async function countPaymentsForPhoneSinceSupabase(phone, sinceIso) {
+  const { count, error } = await supabase
+    .from('payments')
+    .select('id', { count: 'exact', head: true })
+    .eq('phone', phone)
+    .gte('created_at', sinceIso);
+  if (error) throw persistenceError(error.message);
+  return count || 0;
+}
+
+async function latestPendingPaymentForInvoiceSupabase(invoiceId) {
+  const { data, error } = await supabase
+    .from('payments')
+    .select('*')
+    .eq('invoice_id', invoiceId)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+    .limit(1);
+  if (error) throw persistenceError(error.message);
+  return data && data[0] ? hydrate(data[0]) : null;
 }
 
 async function trackAnalyticsSupabase(event) {
@@ -376,13 +437,9 @@ export const store = {
   async workOrdersByClient(match) {
     assertStoreAvailable();
     if (willUseSupabase()) {
-      const conds = [];
-      const key = match.phone ? normalizeIdentifier(match.phone) : '';
-      if (match.id) conds.push(`client_id.eq.${match.id}`);
-      if (match.phone) conds.push(`phone.eq.${match.phone}`, `phone.eq.${key}`);
-      if (match.email) conds.push(`email.eq.${String(match.email).toLowerCase()}`);
-      if (!conds.length) return [];
-      const { data, error } = await supabase.from('work_orders').select('*').or(conds.join(','));
+      const filter = clientMatchFilter(match);
+      if (!filter) return [];
+      const { data, error } = await supabase.from('work_orders').select('*').or(filter);
       if (error) throw persistenceError(error.message);
       return (data || []).map(hydrate);
     }
@@ -413,13 +470,9 @@ export const store = {
   async invoicesByClient(match) {
     assertStoreAvailable();
     if (willUseSupabase()) {
-      const conds = [];
-      const key = match.phone ? normalizeIdentifier(match.phone) : '';
-      if (match.id) conds.push(`client_id.eq.${match.id}`);
-      if (match.phone) conds.push(`phone.eq.${match.phone}`, `phone.eq.${key}`);
-      if (match.email) conds.push(`email.eq.${String(match.email).toLowerCase()}`);
-      if (!conds.length) return [];
-      const { data, error } = await supabase.from('invoices').select('*').or(conds.join(','));
+      const filter = clientMatchFilter(match);
+      if (!filter) return [];
+      const { data, error } = await supabase.from('invoices').select('*').or(filter);
       if (error) throw persistenceError(error.message);
       return (data || []).map(hydrate);
     }
@@ -437,13 +490,9 @@ export const store = {
   async quotesByClient(match) {
     assertStoreAvailable();
     if (willUseSupabase()) {
-      const conds = [];
-      const key = match.phone ? normalizeIdentifier(match.phone) : '';
-      if (match.id) conds.push(`client_id.eq.${match.id}`);
-      if (match.phone) conds.push(`phone.eq.${match.phone}`, `phone.eq.${key}`);
-      if (match.email) conds.push(`email.eq.${String(match.email).toLowerCase()}`);
-      if (!conds.length) return [];
-      const { data, error } = await supabase.from('quotes').select('*').or(conds.join(','));
+      const filter = clientMatchFilter(match);
+      if (!filter) return [];
+      const { data, error } = await supabase.from('quotes').select('*').or(filter);
       if (error) throw persistenceError(error.message);
       return (data || []).map(hydrate);
     }
@@ -584,6 +633,26 @@ export const store = {
       .filter((p) => p && p.status === 'pending' && Date.parse(p.created_at || 0) < cut)
       .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at))
       .slice(0, limit);
+  },
+
+  // Number of STK pushes sent to a phone since `sinceIso` (abuse throttle).
+  async countPaymentsForPhoneSince(phone, sinceIso) {
+    assertStoreAvailable();
+    if (willUseSupabase()) return countPaymentsForPhoneSinceSupabase(phone, sinceIso);
+    const cut = Date.parse(sinceIso);
+    return Array.from(payments.values())
+      .filter((p) => p && p.phone === phone && Date.parse(p.created_at || 0) >= cut)
+      .length;
+  },
+
+  // Most recent still-pending STK push for an invoice (duplicate-prompt guard).
+  async latestPendingPaymentForInvoice(invoiceId) {
+    assertStoreAvailable();
+    if (!invoiceId) return null;
+    if (willUseSupabase()) return latestPendingPaymentForInvoiceSupabase(invoiceId);
+    return Array.from(payments.values())
+      .filter((p) => p && p.invoice_id === invoiceId && p.status === 'pending')
+      .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0] || null;
   },
 
   async trackAnalytics(event) {

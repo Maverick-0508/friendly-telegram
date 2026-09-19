@@ -36,6 +36,10 @@ export function ownerEmail() {
   return env('OWNER_EMAIL') || '';
 }
 
+function siteUrl() {
+  return (env('PUBLIC_SITE_URL') || 'https://lawncraft.vercel.app').replace(/\/+$/, '');
+}
+
 async function fetchWithTimeout(url, options, timeoutMs = DEFAULT_TIMEOUT_MS) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -176,7 +180,7 @@ export async function notifyClientOrderBooked(order) {
   if (!order.client_phone) return null;
   return sendSms({
     to: order.client_phone,
-    message: `Lawn Craft: Your order "${order.service_type}" is queued for dispatch (est. 48 hrs). Track it at lawncraft.com.`,
+    message: `Lawn Craft: Your order "${order.service_type}" is queued for dispatch (est. 48 hrs). Track it at ${siteUrl()}/tracker/${order.id}`,
   });
 }
 
@@ -185,7 +189,7 @@ export async function notifyClientPaymentReceipt(payment, invoice) {
   const amount = payment.amount != null ? `KSh ${payment.amount}` : '';
   return sendSms({
     to: payment.phone,
-    message: `Lawn Craft: Payment of ${amount} received${payment.mpesa_receipt ? ` (M-Pesa ref ${payment.mpesa_receipt})` : ''}. ${payment.invoice_id ? 'Your invoice is settled.' : 'Thank you!'}`,
+    message: `Lawn Craft: Payment of ${amount} received${payment.mpesa_receipt ? ` (M-Pesa ref ${payment.mpesa_receipt})` : ''}. ${payment.invoice_id ? `Receipt: ${siteUrl()}/receipt/${payment.invoice_id}` : 'Thank you!'}`,
   });
 }
 

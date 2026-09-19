@@ -12,7 +12,7 @@
     "dev": "node server.js",
     "start": "node server.js",
     "build": "echo 'No build required'",
-    "lint": "node --check app.js && node --check server.js && node --check node-backend/routes/api.js && node --check node-backend/controllers/formController.js && node --check node-backend/controllers/authController.js && node --check node-backend/controllers/portalController.js && node --check node-backend/config/db.js && node --check node-backend/config/supabase.js && node --check node-backend/config/coupons.js && node --check node-backend/config/pins.js && node --check node-backend/services/store.js && node --check node-backend/services/mpesa.js && node --check node-backend/services/notify.js",
+    "lint": "node --check app.js && node --check server.js && node --check node-backend/routes/api.js && node --check node-backend/controllers/formController.js && node --check node-backend/controllers/authController.js && node --check node-backend/controllers/portalController.js && node --check node-backend/config/db.js && node --check node-backend/config/supabase.js && node --check node-backend/config/coupons.js && node --check node-backend/config/pins.js && node --check node-backend/config/pricing.js && node --check node-backend/config/runtime.js && node --check node-backend/services/store.js && node --check node-backend/services/mpesa.js && node --check node-backend/services/notify.js",
     "test": "node --test \"tests/*.test.js\"",
     "test:smoke": "node --test tests/smoke.endpoints.test.js",
     "test:pwa": "node test-pwa.js"

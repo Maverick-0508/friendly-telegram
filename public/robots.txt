@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /pay/
+Disallow: /receipt/
+Disallow: /tracker/
+Disallow: /login
+Disallow: /signup
+Disallow: /offline
+
+Sitemap: https://lawncraft.vercel.app/sitemap.xml

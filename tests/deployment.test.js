@@ -13,7 +13,8 @@ let app;
 let createApp;
 
 test.before(async () => {
-  fs.rmSync(path.resolve('data'), { recursive: true, force: true });
+  process.env.PORTAL_STORE_FILE = path.resolve('data', 'test-deployment.json');
+  fs.rmSync(process.env.PORTAL_STORE_FILE, { force: true });
   process.env.NODE_ENV = 'development';
   delete process.env.SUPABASE_URL;
   delete process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -58,7 +59,6 @@ const API_ENDPOINTS = [
     body: { name: 'Coverage', email: 'c@test.com', phone: '+254700000000' }, expect: 201 },
   { method: 'POST', path: '/api/quotes',
     body: { full_name: 'Coverage', email: 'q@test.com', phone: '+254700000001' }, expect: 201 },
-  { method: 'GET',  path: '/api/portal/lookup?identifier=definitely.not.found@test.com', expect: 404 },
   { method: 'POST', path: '/api/portal/lookup',
     body: { identifier: 'definitely.not.found@test.com' },                            expect: 404 },
   { method: 'POST', path: '/api/portal/clients',
@@ -66,6 +66,8 @@ const API_ENDPOINTS = [
   { method: 'POST', path: '/api/work-orders',
     body: { client_name: 'Coverage', phone: '+254700000003' },              expect: 201 },
   { method: 'GET',  path: '/api/work-orders/nonexistent',                   expect: 404 },
+  { method: 'GET',  path: '/api/mpesa/reconcile',                           expect: 200 },
+  { method: 'POST', path: '/api/mpesa/reconcile',                           expect: 200 },
   { method: 'POST', path: '/api/mpesa/stkpush',
     body: { phone: '+254700000004' },                                       expect: 503 },
   { method: 'GET',  path: '/api/invoices/nonexistent',                      expect: 404 },

@@ -104,7 +104,8 @@ test.before(async () => {
   fakeSupabase = await startFakeSupabase();
   fakeAuthPort = fakeSupabase.port;
 
-  fs.rmSync(path.resolve('data'), { recursive: true, force: true });
+  process.env.PORTAL_STORE_FILE = path.resolve('data', 'test-auth.supabase.json');
+  fs.rmSync(process.env.PORTAL_STORE_FILE, { force: true });
   process.env.NODE_ENV = 'development';
   process.env.SUPABASE_URL = `http://127.0.0.1:${fakeAuthPort}`;
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-key';

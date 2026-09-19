@@ -10,7 +10,8 @@ let baseUrl;
 let mockDaraja;
 
 test.before(async () => {
-  fs.rmSync(path.resolve('data'), { recursive: true, force: true });
+  process.env.PORTAL_STORE_FILE = path.resolve('data', 'test-flows.json');
+  fs.rmSync(process.env.PORTAL_STORE_FILE, { force: true });
   process.env.NODE_ENV = 'development';
   delete process.env.SUPABASE_URL;
   delete process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -98,14 +99,30 @@ test('client profile create, update, and lookup flow works', async () => {
   assert.equal(create.body.success, true);
   const clientId = create.body.client.id;
 
-  const update = await post('/api/portal/clients', {
+  assert.equal('access_pin_hash' in create.body.client, false, 'PIN hash must never be returned');
+  assert.equal('access_pin_salt' in create.body.client, false);
+
+  // Updating an existing profile requires its PIN.
+  const updateNoPin = await post('/api/portal/clients', {
     name: 'Flow Client',
     phone: '+254700111222',
     email: 'flow.client@example.com',
     address: '12 Runda Drive',
   });
+  assert.equal(updateNoPin.response.status, 403);
+  assert.equal(updateNoPin.body.error.code, 'ACCESS_PIN_REQUIRED');
+
+  const update = await post('/api/portal/clients', {
+    name: 'Flow Client',
+    phone: '+254700111222',
+    email: 'flow.client@example.com',
+    address: '12 Runda Drive',
+    pin: '2468',
+  });
   assert.equal(update.response.status, 200);
   assert.equal(update.body.message.includes('updated'), true);
+  assert.equal(update.body.client.address, '12 Runda Drive');
+  assert.equal('access_pin_hash' in update.body.client, false);
 
   // Lookup is gated behind the access PIN.
   const noPin = await post('/api/portal/lookup', { identifier: '0700111222' });
@@ -121,9 +138,13 @@ test('client profile create, update, and lookup flow works', async () => {
   assert.equal(byPhone.body.client.id, clientId);
   assert.equal('access_pin_hash' in byPhone.body.client, false);
 
-  const byEmail = await request('/api/portal/lookup?identifier=flow.client@example.com&pin=2468');
+  const byEmail = await post('/api/portal/lookup', { identifier: 'flow.client@example.com', pin: '2468' });
   assert.equal(byEmail.response.status, 200);
   assert.equal(byEmail.body.client.email, 'flow.client@example.com');
+
+  // The PIN never travels in a URL: the GET variant is gone.
+  const getLookup = await request('/api/portal/lookup?identifier=flow.client@example.com&pin=2468');
+  assert.equal(getLookup.response.status, 404);
 });
 
 test('coupon validation handles valid, invalid, and minimum-order cases', async () => {
@@ -154,12 +175,15 @@ test('work order, invoice, and real M-Pesa STK + callback flow works end-to-end'
     phone: '+254700333444',
     email: 'payment.client@example.com',
     service_type: 'Full Landscape Maintenance',
-    total_price: 12000,
+    total_price: 1, // ignored: the catalogue decides the price
+    status: 'completed', // ignored: orders always start in the dispatch queue
     address: '99 Riverside',
   });
   assert.equal(order.response.status, 201);
   const orderId = order.body.data.id;
   const invoiceId = order.body.invoice.id;
+  assert.equal(order.body.invoice.total_amount, 12000, 'price comes from the server catalogue');
+  assert.equal(order.body.data.status, 'incoming');
 
   const getOrder = await request(`/api/work-orders/${orderId}`);
   assert.equal(getOrder.response.status, 200);
@@ -223,14 +247,13 @@ test('a cancelled M-Pesa callback marks the payment cancelled', async () => {
     phone: '+254700333555',
     email: 'payment.failed@example.com',
     service_type: 'Lawn Mowing',
-    total_price: 5000,
     address: '12 Mombasa Rd',
   });
   const invoiceId = order.body.invoice.id;
 
   const mpesa = await post('/api/mpesa/stkpush', {
     phone: '+254700333555',
-    amount: 5000,
+    amount: order.body.invoice.total_amount,
     invoice_id: invoiceId,
   });
   assert.equal(mpesa.response.status, 200);
@@ -263,7 +286,17 @@ test('quote submission registers a portal quote that lookup returns', async () =
   });
   assert.equal(quote.response.status, 201);
 
-  // Quote-only profiles have no PIN yet; registering one grants hub access.
+  // Quote-only profiles have no PIN yet. Claiming one needs the email on file,
+  // so a phone number alone cannot take over the profile.
+  const wrongEmail = await post('/api/portal/clients', {
+    name: 'Quote Lookup Client',
+    phone: '+254700555666',
+    email: 'attacker@example.com',
+    pin: '1357',
+  });
+  assert.equal(wrongEmail.response.status, 403);
+  assert.equal(wrongEmail.body.error.code, 'CLAIM_EMAIL_MISMATCH');
+
   const adoptPin = await post('/api/portal/clients', {
     name: 'Quote Lookup Client',
     phone: '+254700555666',

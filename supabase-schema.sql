@@ -144,6 +144,9 @@ alter table public.payments add column if not exists completed_at timestamptz;
 create index if not exists payments_checkout_request_idx on public.payments (checkout_request_id);
 create index if not exists payments_invoice_idx on public.payments (invoice_id);
 create index if not exists payments_status_idx on public.payments (status);
+-- Per-phone STK push throttle and duplicate-prompt guard.
+create index if not exists payments_phone_created_idx on public.payments (phone, created_at desc);
+create index if not exists payments_invoice_status_created_idx on public.payments (invoice_id, status, created_at desc);
 
 -- Analytics (page performance & traffic telemetry)
 create table if not exists public.analytics (

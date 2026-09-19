@@ -109,6 +109,20 @@
   // Stored state
   let originalHeroHTML = null;
 
+  // Escape user-controlled values before interpolating them into innerHTML.
+  function esc(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function firstName(name) {
+    return esc(String(name || '').split(' ')[0]);
+  }
+
   // Clear stored identifier and session
   function clearStoredIdentifier() {
     try {
@@ -133,7 +147,8 @@
     const toast = document.createElement('div');
     toast.className = `portal-toast portal-toast-${type}`;
     const icon = type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation';
-    toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${message}</span>`;
+    toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span></span>`;
+    toast.querySelector('span').textContent = message;
     container.appendChild(toast);
 
     setTimeout(() => {
@@ -187,8 +202,8 @@
           <span class="user-avatar-badge tier-${tier.toLowerCase()}">
             <i class="fa-solid fa-seedling"></i>
           </span>
-          <span class="client-nav-name">Hi, ${clientData.client.name.split(' ')[0]}</span>
-          <span class="vip-tier-chip tier-${tier.toLowerCase()}">${tier}</span>
+          <span class="client-nav-name">Hi, ${firstName(clientData.client.name)}</span>
+          <span class="vip-tier-chip tier-${esc(tier.toLowerCase())}">${esc(tier)}</span>
         `;
         btn.classList.add('logged-in');
         btn.setAttribute('title', `Client Hub: ${clientData.client.name}`);
@@ -223,15 +238,15 @@
       heroContent.innerHTML = `
         <div class="client-welcome-badge">
           <span class="pulse-dot"></span>
-          <span>Verified Client Hub • ${client.service_plan || 'Active Care'}</span>
+          <span>Verified Client Hub • ${esc(client.service_plan || 'Active Care')}</span>
         </div>
-        <h1 class="hero-title client-hero-greeting">Welcome back, <span class="highlight-client">${client.name}</span>!</h1>
+        <h1 class="hero-title client-hero-greeting">Welcome back, <span class="highlight-client">${esc(client.name)}</span>!</h1>
         <p class="hero-subtitle client-hero-property">
-          <i class="fa-solid fa-location-dot"></i> <strong>${client.address}</strong>
+          <i class="fa-solid fa-location-dot"></i> <strong>${esc(client.address)}</strong>
           <span class="prop-specs-divider">•</span>
-          <span>${client.property_size.toLocaleString()} sq ft</span>
+          <span>${Number(client.property_size || 0).toLocaleString()} sq ft</span>
           <span class="prop-specs-divider">•</span>
-          <span>${client.grass_type}</span>
+          <span>${esc(client.grass_type)}</span>
         </p>
         <div class="hero-buttons client-quick-actions">
           <a href="#active-service-section" class="btn btn-primary"><i class="fa-solid fa-route"></i> Live Crew Status</a>
@@ -359,8 +374,8 @@
         <h3 style="margin-top: 1.4rem;"><i class="fa-solid fa-clipboard-list"></i> Active Care Package</h3>
         <div class="plan-card">
           <div>
-            <div class="plan-name">${client.service_plan || 'Custom Care'} • ${tier} Member</div>
-            <div class="plan-detail">${activeOrder ? `Next visit: ${activeOrder.scheduled_date}` : 'No upcoming visit — book one below.'}</div>
+            <div class="plan-name">${esc(client.service_plan || 'Custom Care')} • ${esc(tier)} Member</div>
+            <div class="plan-detail">${activeOrder ? `Next visit: ${esc(activeOrder.scheduled_date)}` : 'No upcoming visit — book one below.'}</div>
           </div>
           <a href="#active-service-section" class="plan-btn">Manage</a>
         </div>
@@ -474,14 +489,14 @@
         <!-- Compact status header -->
         <div class="lc-status-header">
           <div class="lc-status-greeting">
-            <h2>Welcome back, ${client.name.split(' ')[0]}!</h2>
+            <h2>Welcome back, ${firstName(client.name)}!</h2>
             <p class="lc-status-property" id="account-details">
               <i class="fa-solid fa-house"></i>
-              <strong>${client.address}</strong>
+              <strong>${esc(client.address)}</strong>
               <span>•</span>
-              <span>${client.property_size.toLocaleString()} sq ft</span>
+              <span>${Number(client.property_size || 0).toLocaleString()} sq ft</span>
               <span>•</span>
-              <span>${client.grass_type}</span>
+              <span>${esc(client.grass_type)}</span>
             </p>
           </div>
           <div class="lc-status-chips">
@@ -591,7 +606,7 @@
                 <div class="service-meta-grid">
                   <div class="meta-item">
                     <span class="meta-label">Date & Time</span>
-                    <span class="meta-value highlight"><i class="fa-solid fa-clock"></i> ${activeOrder.scheduled_date}</span>
+                    <span class="meta-value highlight"><i class="fa-solid fa-clock"></i> ${esc(activeOrder.scheduled_date)}</span>
                   </div>
                   <div class="meta-item">
                     <span class="meta-label">Assigned Crew</span>
@@ -658,9 +673,9 @@
                 <div class="invoice-alert-box">
                   <div class="invoice-summary-row">
                     <div>
-                      <span class="inv-num">${unpaidInvoice.invoice_number}</span>
-                      <div class="inv-title">${unpaidInvoice.service_title || 'Lawn Care Service'}</div>
-                      <div class="inv-due text-muted">Due date: ${unpaidInvoice.due_date}</div>
+                      <span class="inv-num">${esc(unpaidInvoice.invoice_number)}</span>
+                      <div class="inv-title">${esc(unpaidInvoice.service_title || 'Lawn Care Service')}</div>
+                      <div class="inv-due text-muted">Due date: ${esc(unpaidInvoice.due_date)}</div>
                     </div>
                     <div class="inv-amount-box">
                       <span class="balance-label">Balance Due</span>
@@ -668,7 +683,7 @@
                     </div>
                   </div>
                   <div class="payment-action-buttons">
-                    <button class="btn btn-mpesa-instant" data-invoice-id="${unpaidInvoice.id}" data-amount="${unpaidInvoice.balance_due}" id="instant-mpesa-btn">
+                    <button class="btn btn-mpesa-instant" data-invoice-id="${esc(unpaidInvoice.id)}" data-amount="${Number(unpaidInvoice.balance_due) || 0}" id="instant-mpesa-btn">
                       <i class="fa-solid fa-mobile-screen-button"></i> Pay via Lipa Na M-Pesa
                     </button>
                     <a href="/pay/${unpaidInvoice.id}" class="btn btn-card-pay">
@@ -689,7 +704,7 @@
                       <span class="recent-label">Recent Official Receipts:</span>
                       ${invoices.slice(0, 2).map(inv => `
                         <a href="/receipt/${inv.id}" class="recent-receipt-link">
-                          <i class="fa-solid fa-file-invoice"></i> ${inv.invoice_number} (KSh ${Math.round(inv.total_amount).toLocaleString()}) — Tax Receipt
+                          <i class="fa-solid fa-file-invoice"></i> ${esc(inv.invoice_number)} (KSh ${Math.round(inv.total_amount).toLocaleString()}) — Tax Receipt
                         </a>
                       `).join('')}
                     </div>
@@ -706,8 +721,8 @@
           <div class="portal-card-header">
             <div>
               <span class="portal-card-tag"><i class="fa-solid fa-bolt"></i> 1-Click Client Rebooking</span>
-              <h3 class="portal-card-title">Seasonal Add-Ons for ${client.property_size.toLocaleString()} sq ft</h3>
-              <p class="section-desc">Tailored specifically for ${client.grass_type}. Book in one tap without re-entering your details.</p>
+              <h3 class="portal-card-title">Seasonal Add-Ons for ${Number(client.property_size || 0).toLocaleString()} sq ft</h3>
+              <p class="section-desc">Tailored specifically for ${esc(client.grass_type)}. Book in one tap without re-entering your details.</p>
             </div>
           </div>
 
@@ -796,26 +811,25 @@
     addonButtons.forEach(btn => {
       btn.addEventListener('click', async () => {
         const service = btn.getAttribute('data-service');
-        const price = Number(btn.getAttribute('data-price'));
 
         btn.disabled = true;
         btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Booking...`;
 
         try {
+          // The server prices the service from its catalogue; the PIN proves
+          // this booking comes from the account owner.
           const res = await fetch('/api/work-orders', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              client_id: client.id,
               client_name: client.name,
               phone: client.phone,
               email: client.email,
               service_type: service,
-              price: price,
               property_size: client.property_size,
               address: client.address,
-              notes: `Booked via 1-click client portal for ${client.name}`,
-              status: 'incoming' // Feeds directly to supervisor dispatch queue
+              pin: getStoredPin(),
+              notes: 'Booked via 1-click client portal'
             })
           });
 
@@ -826,7 +840,8 @@
             if (typeof window.DashboardOnboarding !== 'undefined') {
               window.DashboardOnboarding.setCompleted('set-preferences', true);
             }
-            showToast(`${service} scheduled! Added to supervisor dispatch queue. +25 Loyalty points earned!`, 'success');
+            const total = Math.round(Number(json.invoice?.total_amount || 0)).toLocaleString();
+            showToast(`${service} scheduled for KSh ${total}! Added to supervisor dispatch queue. +30 Loyalty points earned!`, 'success');
             setTimeout(() => {
               refreshCurrentClient();
             }, 1200);
@@ -990,11 +1005,13 @@
         });
 
         const data = await res.json();
-        if (!data.success) {
+        // A prompt for this invoice is already on the customer's phone: resume
+        // polling that checkout instead of sending a second prompt.
+        const checkoutId = data.checkout_request_id;
+        if (!data.success && !(data.error?.code === 'PAYMENT_IN_PROGRESS' && checkoutId)) {
           throw new Error(data.error?.message || 'STK Push failed');
         }
 
-        const checkoutId = data.checkout_request_id;
         if (!checkoutId) {
           throw new Error('The payment provider did not return a checkout reference.');
         }
@@ -1008,7 +1025,11 @@
           if (typeof window.DashboardOnboarding !== 'undefined') {
             window.DashboardOnboarding.setCompleted('add-payment', true);
           }
-          showToast('Payment confirmed by M-Pesa! Your invoice is marked paid.', 'success');
+          if (result.invoice_status === 'partially_paid') {
+            showToast(`M-Pesa confirmed KSh ${Math.round(Number(result.amount_paid || 0)).toLocaleString()}. KSh ${Math.round(Number(result.invoice_balance_due || 0)).toLocaleString()} is still outstanding.`, 'error');
+          } else {
+            showToast('Payment confirmed by M-Pesa! Your invoice is marked paid.', 'success');
+          }
           refreshCurrentClient();
         } else if (result.status === 'failed' || result.status === 'cancelled') {
           resetForm();
@@ -1482,27 +1503,30 @@
           bookBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Submitting Dispatch...`;
 
           try {
+            // Send the pricing *inputs*; the server computes the invoice total.
             const res = await fetch('/api/work-orders', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                client_id: client.id,
                 client_name: client.name,
                 phone: client.phone,
                 email: client.email,
                 address: client.address,
                 property_size: currentSize,
-                service_type: `${grassRates[currentGrass].name} Cut (${freqMultipliers[currentFrequency].name})`,
-                price: total,
-                status: 'incoming', // supervisor dispatch queue
-                notes: `Calculator Booking with Coupon: ${appliedCoupon?.code || 'None'}`
+                grass: currentGrass,
+                frequency: currentFrequency,
+                addons: Array.from(selectedAddons),
+                coupon_code: appliedCoupon?.code || '',
+                pin: getStoredPin(),
+                notes: 'Calculator booking from client hub'
               })
             });
 
             const json = await res.json();
             if (json.success) {
               bookBtn.innerHTML = `<i class="fa-solid fa-check"></i> Booked Successfully!`;
-              showToast(`Booking for ${client.name} queued for dispatch! +25 Loyalty points earned.`, 'success');
+              const serverTotal = Math.round(Number(json.invoice?.total_amount || total));
+              showToast(`Booking for ${client.name} queued for dispatch at KSh ${serverTotal.toLocaleString()}! +30 Loyalty points earned.`, 'success');
               setTimeout(() => {
                 refreshCurrentClient();
               }, 1200);
@@ -1516,7 +1540,16 @@
           }
         } else {
           // Anonymous visitor: open quick quote/book prompt or modal
-          openAnonymousBookingModal(currentSize, grassRates[currentGrass].name, freqMultipliers[currentFrequency].name, total, appliedCoupon?.code);
+          openAnonymousBookingModal({
+            size: currentSize,
+            grass: grassRates[currentGrass].name,
+            frequency: freqMultipliers[currentFrequency].name,
+            grassKey: currentGrass,
+            frequencyKey: currentFrequency,
+            addons: Array.from(selectedAddons),
+            price: total,
+            couponCode: appliedCoupon?.code || ''
+          });
         }
       });
     }
@@ -1526,7 +1559,7 @@
   }
 
   // Anonymous Visitor Booking / Quote Modal
-  function openAnonymousBookingModal(size, grass, frequency, price, couponCode) {
+  function openAnonymousBookingModal({ size, grass, frequency, grassKey, frequencyKey, addons, price, couponCode }) {
     let modal = document.getElementById('anon-book-modal');
     if (!modal) {
       modal = document.createElement('div');
@@ -1541,7 +1574,7 @@
         <div class="client-modal-header">
           <div class="client-modal-icon"><i class="fa-solid fa-clipboard-check"></i></div>
           <h3>Confirm Your Lawn Service</h3>
-          <p>${size.toLocaleString()} sq ft • ${grass} • ${frequency}</p>
+          <p>${Number(size).toLocaleString()} sq ft • ${esc(grass)} • ${esc(frequency)}</p>
           <div class="anon-estimate-pill">Estimated Total: <strong>KSh ${Math.round(Number(price)).toLocaleString()}</strong></div>
         </div>
 
@@ -1594,11 +1627,12 @@
             phone: phone,
             address: address,
             property_size: size,
-            service_type: `${grass} Cut (${frequency})`,
-            price: price,
-            status: 'incoming', // feeds directly to supervisor dispatch queue
+            grass: grassKey,
+            frequency: frequencyKey,
+            addons: addons || [],
+            coupon_code: couponCode || '',
             pin,
-            notes: `Website Instant Calculator Order. Promo: ${couponCode || 'None'}`
+            notes: 'Website instant calculator order'
           })
         });
 
@@ -1608,7 +1642,8 @@
           setStoredIdentifier(phone);
           setStoredPin(pin);
           modal.classList.remove('active');
-          showToast(`Thank you ${name}! Your order is queued for supervisor dispatch. Welcome to Lawn Craft!`, 'success');
+          const serverTotal = Math.round(Number(json.invoice?.total_amount || price));
+          showToast(`Thank you ${name}! Your KSh ${serverTotal.toLocaleString()} order is queued for supervisor dispatch. Welcome to Lawn Craft!`, 'success');
           
           // Switch to personalized client hub automatically!
           setTimeout(async () => {

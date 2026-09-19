@@ -35,13 +35,23 @@ dynamic SEO-friendly routes (`/tracker/:id`, `/pay/:id`, `/receipt/:id`,
 - `POST /api/analytics` — persists anonymized page-view tracking
 - `POST /api/contact` — stores a lead and notifies the owner
 - `POST /api/quotes` — stores a quote and notifies the owner
-- `POST /api/portal/lookup` (identifier + `pin`), `POST /api/portal/clients`
-- `POST /api/work-orders`, `GET /api/work-orders/:orderId`
-- `POST /api/mpesa/stkpush` — real Safaricom Daraja STK push
-- `POST /api/mpesa/callback[/:token]` — Safaricom result callback (WebHook)
-- `GET /api/mpesa/status/:checkoutRequestId` — client-side status polling
-- `POST /api/mpesa/reconcile` — lost-callback reconciliation; `ADMIN_API_TOKEN`
-  or `CRON_SECRET` bearer required in production
+- `POST /api/portal/lookup` (identifier + `pin`; POST only so the PIN never
+  appears in a URL), `POST /api/portal/clients`
+- `POST /api/work-orders` — the server prices the order from
+  `node-backend/config/pricing.js` (inputs: `service_type` or
+  `grass`/`frequency`/`addons`/`property_size`, plus `coupon_code`); any
+  `price`/`status` in the request is ignored. `GET /api/work-orders/:orderId`
+- `POST /api/mpesa/stkpush` — real Safaricom Daraja STK push; throttled per
+  phone and de-duplicated per invoice (`PAYMENT_IN_PROGRESS` returns the
+  pending checkout so the UI resumes polling)
+- `POST /api/mpesa/callback/:token` — Safaricom result callback (WebHook). In
+  production the token is mandatory and the confirmed amount must cover the
+  balance; a smaller amount records a partial payment.
+- `GET /api/mpesa/status/:checkoutRequestId` — client-side status polling;
+  after 20 s pending it queries Daraja directly (lost-callback recovery)
+- `GET|POST /api/mpesa/reconcile` — batch lost-callback reconciliation;
+  `ADMIN_API_TOKEN` or `CRON_SECRET` bearer required in production (Vercel
+  Cron uses GET)
 - `GET /api/invoices/:invoiceId`
 - `POST /api/coupons/validate`
 - `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`
@@ -68,17 +78,30 @@ job reconciles stale `pending` payments:
   queries Daraja STK query for pending payments older than `RECONCILE_GRACE_MS`
   (default 15 minutes) and settles or cancels them as Daraja reports.
 - On Vercel the scheduled cron in `vercel.json` calls
-  `POST /api/mpesa/reconcile` every 30 minutes (guarded by `CRON_SECRET`).
-- Reconciliation is idempotent; double-settling is prevented by the same
-  `settled` guard used for callbacks.
+  `GET /api/mpesa/reconcile` once a day (Hobby-plan limit; tighten on Pro),
+  guarded by `CRON_SECRET`. The status endpoint already asks Daraja for any
+  payment still pending after `MPESA_STATUS_QUERY_AFTER_MS`, so customers are
+  never left waiting on the cron.
+- Reconciliation is idempotent; a replayed callback never settles or debits an
+  invoice twice.
 
 ### Portal access PIN
 
 Client profiles opened through the portal (`POST /api/portal/lookup`) require an
 access PIN (4–6 digits) chosen at registration. PINs are stored only as a
-scrypt hash + salt and never returned to the client or included in the
-supervisor export. Quote-only profiles have no PIN until the client registers
-one via `POST /api/portal/clients`.
+scrypt hash + salt and never returned to the client. Changing a profile,
+booking against it, or opening the hub requires the PIN. Quote-only profiles
+have no PIN yet; one can be claimed via `POST /api/portal/clients` (or a
+booking) only when the request also matches the email on file, so a phone
+number alone never grants access.
+
+### Production configuration audit
+
+`GET /api/ready` reports `problems` (block readiness: e.g. M-Pesa credentials
+without `MPESA_CALLBACK_TOKEN`, missing `CORS_ORIGIN`) and `warnings`
+(features switched off because their secrets are blank). The same audit is
+logged at startup with a `[config]` prefix. See `DEPLOYMENT.md` for the
+go-live checklist.
 
 ## Local Setup
 
@@ -96,7 +119,12 @@ See `.env.example` for the full list. Key variables:
 - `DATABASE_URL` — optional PostgreSQL (used for the legacy `pg` path)
 - `MPESA_ENVIRONMENT`, `MPESA_CONSUMER_KEY`, `MPESA_CONSUMER_SECRET`,
   `MPESA_SHORTCODE`, `MPESA_PASSKEY`, `MPESA_CALLBACK_URL`,
-  `MPESA_CALLBACK_TOKEN` — Daraja STK push
+  `MPESA_CALLBACK_TOKEN` (required in production) — Daraja STK push
+- `STK_MAX_PER_PHONE`, `STK_PHONE_WINDOW_MS`, `STK_DUPLICATE_WINDOW_MS`,
+  `MPESA_MAX_AMOUNT`, `MPESA_STATUS_QUERY_AFTER_MS` — payment abuse limits and
+  lost-callback recovery
+- `PUBLIC_SITE_URL` — public site URL used in SMS links
+- `PRICING_JSON` — optional override of the server-side price catalogue
 - `ADMIN_API_TOKEN` — gates admin endpoints in production
 - `CRON_SECRET` — bearer token that authorizes the Vercel cron
   (`/api/mpesa/reconcile`)

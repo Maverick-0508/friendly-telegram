@@ -7,7 +7,8 @@ let server;
 let baseUrl;
 
 test.before(async () => {
-  fs.rmSync(path.resolve('data'), { recursive: true, force: true });
+  process.env.PORTAL_STORE_FILE = path.resolve('data', 'test-api.integration.json');
+  fs.rmSync(process.env.PORTAL_STORE_FILE, { force: true });
   process.env.NODE_ENV = 'development';
   delete process.env.SUPABASE_URL;
   delete process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -110,7 +111,11 @@ test('quote and portal flow works end-to-end', async () => {
   });
   assert.equal(registerPin.response.status, 200);
 
-  const lookup = await request('/api/portal/lookup?identifier=client2@example.com&pin=2468');
+  const lookup = await request('/api/portal/lookup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ identifier: 'client2@example.com', pin: '2468' }),
+  });
   assert.equal(lookup.response.status, 200);
   assert.equal(lookup.body.success, true);
 });
@@ -124,7 +129,6 @@ test('work-order and payment flow works end-to-end', async () => {
       phone: '+1 555 010 0102',
       email: 'client3@example.com',
       service_type: 'Lawn Edging',
-      total_price: 7000,
       address: '77 Green Ave',
     }),
   });
@@ -133,6 +137,7 @@ test('work-order and payment flow works end-to-end', async () => {
   assert.equal(order.body.success, true);
   const orderId = order.body.data.id;
   const invoiceId = order.body.invoice.id;
+  assert.equal(order.body.invoice.total_amount, 2500);
 
   const getOrder = await request(`/api/work-orders/${orderId}`);
   assert.equal(getOrder.response.status, 200);
@@ -145,7 +150,7 @@ test('work-order and payment flow works end-to-end', async () => {
   const mpesa = await request('/api/mpesa/stkpush', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone: '+254700010102', amount: 7000, invoice_id: invoiceId }),
+    body: JSON.stringify({ phone: '+254700010102', amount: 2500, invoice_id: invoiceId }),
   });
   // Without Daraja credentials configured the server refuses to take payment
   // rather than silently pretending the invoice was settled.

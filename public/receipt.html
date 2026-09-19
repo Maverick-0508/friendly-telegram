@@ -246,8 +246,8 @@
                     <div>
                         <h1>Lawn Craft</h1>
                         <p>Sustainable Turf Management & Landscaping Ltd</p>
-                        <p>KRA PIN: <strong>P051239841K</strong> • VAT Registered</p>
-                        <p>Karen Road, Nairobi, Kenya • info@lawncraft.co.ke</p>
+                        <p>KRA PIN: <strong id="r-company-pin">—</strong> • VAT Registered</p>
+                        <p>Nairobi, Kenya • contact@lawncraft.com • +254 758 827 319</p>
                     </div>
                 </div>
                 <div class="invoice-doc-meta">
@@ -342,7 +342,17 @@
                     document.getElementById('r-client-address').textContent = inv.client_address || 'Property Location on Record';
                     document.getElementById('r-client-phone').textContent = `Phone: ${inv.client_phone || '—'}`;
                     document.getElementById('r-method').textContent = inv.payment_method || 'Lipa Na M-Pesa';
-                    document.getElementById('r-receipt-ref').textContent = inv.mpesa_receipt || 'NLM-VERIFIED';
+                    document.getElementById('r-receipt-ref').textContent = inv.mpesa_receipt || '—';
+                    if (inv.pin_number) document.getElementById('r-company-pin').textContent = inv.pin_number;
+                    // Only a settled invoice is a receipt; anything else prints as an invoice.
+                    const paidBadge = document.getElementById('r-paid-badge');
+                    if (paidBadge && inv.status !== 'paid') {
+                        paidBadge.innerHTML = '<i class="fa-solid fa-hourglass-half"></i> ' +
+                            (inv.status === 'partially_paid' ? 'PARTIALLY PAID' : 'UNPAID');
+                        paidBadge.style.background = '#b45309';
+                        const title = document.querySelector('.doc-title');
+                        if (title) title.textContent = 'TAX INVOICE';
+                    }
                     const subtotal = Math.round(Number(inv.subtotal || (inv.total_amount * 0.862)));
                     const vat = Math.round(Number(inv.tax_vat || (inv.total_amount * 0.138)));
                     const total = Math.round(Number(inv.total_amount));
@@ -352,9 +362,10 @@
 
                     if (inv.items && inv.items.length > 0) {
                         const tbody = document.getElementById('r-items-body');
+                        const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
                         tbody.innerHTML = inv.items.map(it => `
                             <tr>
-                                <td>${it.description}</td>
+                                <td>${esc(it.description)}</td>
                                 <td class="text-right">${it.quantity || 1}</td>
                                 <td class="text-right">KSh ${Math.round(Number(it.unit_price || it.amount)).toLocaleString()}</td>
                                 <td class="text-right">KSh ${Math.round(Number(it.amount)).toLocaleString()}</td>

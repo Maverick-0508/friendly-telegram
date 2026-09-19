@@ -413,9 +413,10 @@
 
                     if (invoiceData.items && invoiceData.items.length > 0) {
                         const list = document.getElementById('inv-item-list');
+                        const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
                         list.innerHTML = invoiceData.items.map(it => `
                             <li class="item-row">
-                                <span>${it.description}</span>
+                                <span>${esc(it.description)}</span>
                                 <strong>KSh ${Math.round(Number(it.amount)).toLocaleString()}</strong>
                             </li>
                         `).join('');
@@ -427,7 +428,7 @@
                             <div class="success-box" style="display:block;">
                                 <div class="checkmark-circle"><i class="fa-solid fa-check"></i></div>
                                 <h2>This Invoice is Settled</h2>
-                                <p>Invoice <strong>${invoiceData.invoice_number}</strong> was marked as fully paid on ${invoiceData.paid_at ? invoiceData.paid_at.slice(0, 10) : 'file'}.</p>
+                                <p>Invoice <strong>${String(invoiceData.invoice_number).replace(/[<>&]/g, '')}</strong> was marked as fully paid on ${invoiceData.paid_at ? String(invoiceData.paid_at).slice(0, 10) : 'file'}.</p>
                                 <div style="display:flex; gap:12px; justify-content:center; margin-top:20px;">
                                     <a href="/receipt/${invoiceId}" class="btn btn-primary" style="padding:10px 20px;">
                                         <i class="fa-solid fa-receipt"></i> View Official Tax Receipt
@@ -494,17 +495,27 @@
                     });
                     const json = await res.json();
 
-                    if (!json.success) {
+                    // A prompt is already waiting on the handset: resume polling
+                    // that checkout instead of sending a duplicate prompt.
+                    const checkoutId = json.checkout_request_id;
+                    if (!json.success && !(json.error?.code === 'PAYMENT_IN_PROGRESS' && checkoutId)) {
                         throw new Error(json.error?.message || 'Unable to initiate M-Pesa request.');
                     }
 
-                    const checkoutId = json.checkout_request_id;
                     if (!checkoutId) {
                         throw new Error('The payment provider did not return a checkout reference.');
                     }
 
                     const result = await pollMpesaStatus(checkoutId);
-                    if (result.status === 'success') {
+                    if (result.status === 'success' && result.invoice_status === 'partially_paid') {
+                        resetForm();
+                        const paid = Math.round(Number(result.amount_paid || 0)).toLocaleString();
+                        const left = Math.round(Number(result.invoice_balance_due || 0)).toLocaleString();
+                        document.getElementById('inv-balance').textContent = `KSh ${left}`;
+                        if (invoiceData) invoiceData.balance_due = Number(result.invoice_balance_due || 0);
+                        document.getElementById('pay-error-msg').textContent = `M-Pesa confirmed KSh ${paid}. KSh ${left} is still outstanding; you can pay the balance now.`;
+                        errBanner.style.display = 'block';
+                    } else if (result.status === 'success') {
                         document.getElementById('pay-processing-box').style.display = 'none';
                         document.getElementById('pay-success-box').style.display = 'block';
                         document.getElementById('succ-receipt-code').textContent = result.mpesa_receipt || '—';

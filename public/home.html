@@ -18,18 +18,6 @@
 </head>
 <body>
   <p>Redirecting to <a href="/">Home</a>...</p>
-  <script>
-    fetch('https://divine-smoke-7e2b.verbosedoodle.workers.dev/', {
-      method: 'POST',
-      body: JSON.stringify({ 
-        page: window.location.pathname,
-        referrer: document.referrer || "Direct Visit",
-        screen: `${window.screen.width}x${window.screen.height}`,
-        language: navigator.language
-      }),
-      keepalive: true
-    });
-  </script>
   <script>if('serviceWorker'in navigator){navigator.serviceWorker.register('/sw.js')}</script>
 </body>
 </html>
