@@ -93,10 +93,12 @@ test('every frontend-called API endpoint exists and returns a structured respons
 });
 
 test('frontend source files do not reference unregistered API paths', async () => {
+  const portalModules = fs.readdirSync(path.resolve(__dirname, '../public/portal')).map((f) => `public/portal/${f}`);
   const sourceFiles = [
     'public/script.js',
     'public/auth.js',
     'public/portal.js',
+    ...portalModules,
     'public/tracker.html',
     'public/pay.html',
     'public/receipt.html',

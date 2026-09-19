@@ -167,12 +167,20 @@ export function createApp() {
     })
   );
 
+  // General API ceiling per IP. Static assets and pages are deliberately not
+  // counted: a single page view fetches a dozen files (styles, module scripts,
+  // images), so counting them would lock out ordinary browsing.
   app.use(
+    '/api',
     rateLimit({
       windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000),
-      max: Number(process.env.RATE_LIMIT_MAX || 200),
+      max: Number(process.env.RATE_LIMIT_MAX || 300),
       standardHeaders: true,
       legacyHeaders: false,
+      message: {
+        success: false,
+        error: { message: 'Too many requests. Please try again later.', code: 'RATE_LIMITED' },
+      },
     })
   );
 

@@ -338,8 +338,10 @@ test('public pages contain no inline event handlers (blocked by CSP script-src-a
 test('PIN inputs use an HTML pattern that accepts digits', () => {
   // In a JS template literal `\d` collapses to `d`, so pattern="\d{4,6}" would
   // reject every real PIN with "Please match the requested format".
-  const src = fs.readFileSync(path.resolve('public/portal.js'), 'utf8');
-  assert.equal(/pattern="\\d/.test(src), false, 'portal.js still contains pattern="\\d..."');
+  const dir = path.resolve('public/portal');
+  const src = [path.resolve('public/portal.js'), ...fs.readdirSync(dir).map((f) => path.join(dir, f))]
+    .map((f) => fs.readFileSync(f, 'utf8')).join('\n');
+  assert.equal(/pattern="\\d/.test(src), false, 'portal sources still contain pattern="\\d..."');
   const patterns = [...src.matchAll(/id="(?:client-pin-input|reg-pin|anon-pin)"[^>]*pattern="([^"]+)"/g)].map((m) => m[1]);
   assert.equal(patterns.length, 3);
   for (const p of patterns) assert.match('2468', new RegExp(`^(?:${p})$`), `pattern ${p} rejects 2468`);
@@ -363,6 +365,31 @@ test('legacy /login and /signup pages hand off to the Client Hub', async () => {
   }
   const authJs = fs.readFileSync(path.resolve('public/auth.js'), 'utf8');
   assert.equal(/\/api\/auth\//.test(authJs), false, 'auth.js must not call the account API');
+});
+
+test('static assets and pages are not counted against the API rate limit', async () => {
+  const { createApp } = await import('../app.js');
+  process.env.RATE_LIMIT_MAX = '3';
+  const s = createApp().listen(0);
+  await new Promise((r) => s.once('listening', r));
+  try {
+    const base = `http://127.0.0.1:${s.address().port}`;
+    // Far more static requests than the API ceiling...
+    for (let i = 0; i < 10; i += 1) assert.equal((await fetch(`${base}/styles.css`)).status, 200);
+    assert.equal((await fetch(`${base}/services`)).status, 200);
+    // ...and the API still answers until its own ceiling is reached.
+    assert.equal((await fetch(`${base}/api/health`)).status, 200);
+    assert.equal((await fetch(`${base}/api/health`)).status, 200);
+    assert.equal((await fetch(`${base}/api/health`)).status, 200);
+    const limited = await fetch(`${base}/api/health`);
+    assert.equal(limited.status, 429);
+    assert.equal((await limited.json()).error.code, 'RATE_LIMITED');
+    // Pages keep working even when the API is limited.
+    assert.equal((await fetch(`${base}/services`)).status, 200);
+  } finally {
+    process.env.RATE_LIMIT_MAX = '';
+    await new Promise((r) => s.close(r));
+  }
 });
 
 // ---------------- Misc ----------------

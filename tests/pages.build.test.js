@@ -18,7 +18,7 @@ test('every generated page has exactly one header, footer and script bundle', ()
     const html = renderPage(file.replace(/\.html$/, ''), fs.readFileSync(path.join(dir, file), 'utf8'));
     assert.equal((html.match(/<header id="main-header">/g) || []).length, 1, `${file}: header`);
     assert.equal((html.match(/<footer class="footer"/g) || []).length, 1, `${file}: footer`);
-    assert.equal((html.match(/<script src="\/portal\.js">/g) || []).length, 1, `${file}: portal script`);
+    assert.equal((html.match(/<script type="module" src="\/portal\.js">/g) || []).length, 1, `${file}: portal module script`);
     assert.equal((html.match(/<script src="\/script\.js">/g) || []).length, 1, `${file}: main script`);
     assert.equal(/data-nav=/.test(html), false, `${file}: data-nav markers must be stripped`);
     assert.equal(/<!--\s*@(include|if|else|endif|page)/.test(html), false, `${file}: unrendered directive`);
