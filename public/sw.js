@@ -1,4 +1,4 @@
-const CACHE = 'lawncraft-v12';
+const CACHE = 'lawncraft-v14';
 
 const PRECACHE_URLS = [
   '/',
@@ -49,6 +49,11 @@ self.addEventListener('fetch', (event) => {
   }
 
   const url = new URL(request.url);
+
+  // Third-party assets (fonts, icon CSS, map tiles, CDN libraries) are left to
+  // the browser's own HTTP cache. Intercepting them would turn any transient
+  // network error into a synthetic 503 with no retry.
+  if (url.origin !== self.location.origin) return;
 
   // API calls & scripts/styles/navigation — network first, fall back to cache
   if (

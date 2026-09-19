@@ -1098,7 +1098,7 @@
             <label for="client-pin-input">Access PIN</label>
             <div class="input-with-icon">
               <i class="fa-solid fa-shield-halved"></i>
-              <input type="password" id="client-pin-input" class="form-control" inputmode="numeric" pattern="\d{4,6}" maxlength="6" placeholder="4-6 digit PIN" required>
+              <input type="password" id="client-pin-input" class="form-control" inputmode="numeric" pattern="[0-9]{4,6}" maxlength="6" placeholder="4-6 digit PIN" required>
             </div>
             <p style="font-size:0.75rem; color:#6b7280; margin:4px 0 0;">
               Your PIN protects your property, invoices and loyalty details.
@@ -1170,7 +1170,7 @@
             </div>
             <div class="form-group" style="margin-bottom:14px;">
               <label for="reg-pin" style="font-size:0.8rem; font-weight:600;">Create Access PIN (4-6 digits)</label>
-              <input type="password" id="reg-pin" class="form-control" inputmode="numeric" pattern="\d{4,6}" minlength="4" maxlength="6" placeholder="e.g. 1234" required style="padding:8px 12px; font-size:0.9rem;">
+              <input type="password" id="reg-pin" class="form-control" inputmode="numeric" pattern="[0-9]{4,6}" minlength="4" maxlength="6" placeholder="e.g. 1234" required style="padding:8px 12px; font-size:0.9rem;">
               <p style="font-size:0.72rem; color:#6b7280; margin:4px 0 0;">You will use this PIN to open your hub on future visits.</p>
             </div>
             <button type="submit" class="btn btn-primary btn-block" id="reg-submit-btn">
@@ -1593,7 +1593,7 @@
           </div>
           <div class="form-group">
             <label for="anon-pin">Create Access PIN (4-6 digits)</label>
-            <input type="password" id="anon-pin" class="form-control" inputmode="numeric" pattern="\d{4,6}" minlength="4" maxlength="6" placeholder="e.g. 1234" required>
+            <input type="password" id="anon-pin" class="form-control" inputmode="numeric" pattern="[0-9]{4,6}" minlength="4" maxlength="6" placeholder="e.g. 1234" required>
             <p style="font-size:0.75rem; color:#6b7280; margin:4px 0 0;">You will use this PIN to open your hub and track your order.</p>
           </div>
           <button type="submit" class="btn btn-primary btn-block" id="anon-submit-btn">
@@ -1645,10 +1645,13 @@
           const serverTotal = Math.round(Number(json.invoice?.total_amount || price));
           showToast(`Thank you ${name}! Your KSh ${serverTotal.toLocaleString()} order is queued for supervisor dispatch. Welcome to Lawn Craft!`, 'success');
           
-          // Switch to personalized client hub automatically!
+          // Switch to personalized client hub automatically and bring it into view.
           setTimeout(async () => {
             const profile = await fetchClientProfile(phone, pin);
-            if (profile) renderPersonalizedState(profile);
+            if (profile) {
+              renderPersonalizedState(profile);
+              document.getElementById('personalized-dashboard')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
           }, 1000);
         } else {
           throw new Error(json.error?.message || 'Submission failed');

@@ -1,17 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { resetRuntimeEnv } from './helpers/env.js';
 import http from 'node:http';
 
 let createApp;
 
 test.before(async () => {
-  process.env.NODE_ENV = 'development';
+  resetRuntimeEnv();
   process.env.CORS_ORIGIN = 'https://allowed.example.com';
   process.env.AUTH_RATE_LIMIT_MAX = '5';
-  delete process.env.SUPABASE_URL;
-  delete process.env.SUPABASE_SERVICE_ROLE_KEY;
-  delete process.env.SUPABASE_ANON_KEY;
-  delete process.env.DATABASE_URL;
 
   const appModule = await import('../app.js');
   createApp = appModule.createApp;

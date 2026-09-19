@@ -38,3 +38,7 @@ Thumbs.db
 dist/
 .cache/
 .vercel
+
+# Local env files (Vercel pulls, per-environment overrides)
+.env.*
+!.env.example

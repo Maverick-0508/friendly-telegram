@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { resetRuntimeEnv } from './helpers/env.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { startMockDaraja } from './helpers/mock-daraja.js';
@@ -11,17 +12,11 @@ let mockDaraja;
 let store;
 
 test.before(async () => {
+  resetRuntimeEnv();
   process.env.PORTAL_STORE_FILE = path.resolve('data', 'test-reconcile.json');
   fs.rmSync(process.env.PORTAL_STORE_FILE, { force: true });
   ({ store } = await import('../node-backend/services/store.js'));
   process.env.NODE_ENV = 'development';
-  delete process.env.SUPABASE_URL;
-  delete process.env.SUPABASE_SERVICE_ROLE_KEY;
-  delete process.env.SUPABASE_ANON_KEY;
-  delete process.env.DATABASE_URL;
-  delete process.env.ADMIN_API_TOKEN;
-  delete process.env.CRON_SECRET;
-  delete process.env.CORS_ORIGIN;
 
   const queryResults = {};
   mockDaraja = await startMockDaraja({ queryResults });

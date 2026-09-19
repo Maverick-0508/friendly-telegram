@@ -233,7 +233,7 @@
                 <a href="#" id="wa-share-btn" target="_blank" rel="noopener" class="btn btn-whatsapp-share" style="padding:8px 16px;">
                     <i class="fa-brands fa-whatsapp"></i> Share on WhatsApp
                 </a>
-                <button onclick="window.print()" class="btn btn-primary btn-sm">
+                <button type="button" id="r-print-btn" class="btn btn-primary btn-sm">
                     <i class="fa-solid fa-print"></i> Print / Save PDF
                 </button>
             </div>
@@ -271,7 +271,7 @@
                     <h4>Payment Verification</h4>
                     <p>Method: <strong id="r-method">—</strong></p>
                     <p>Transaction Code: <strong id="r-receipt-ref" style="color:#15803d;">—</strong></p>
-                    <p>Status: <span style="color:#059669; font-weight:bold;">Settled & Reconciled</span></p>
+                    <p>Status: <span id="r-status" style="color:#059669; font-weight:bold;">—</span></p>
                 </div>
             </div>
 
@@ -324,6 +324,9 @@
                 invoiceId = params.get('invoiceId') || '';
             }
 
+            const printBtn = document.getElementById('r-print-btn');
+            if (printBtn) printBtn.addEventListener('click', () => window.print());
+
             if (!invoiceId) {
                 document.getElementById('r-inv-num').textContent = 'None Provided';
                 document.getElementById('r-client-name').textContent = 'No Invoice ID Specified';
@@ -345,6 +348,14 @@
                     document.getElementById('r-receipt-ref').textContent = inv.mpesa_receipt || '—';
                     if (inv.pin_number) document.getElementById('r-company-pin').textContent = inv.pin_number;
                     // Only a settled invoice is a receipt; anything else prints as an invoice.
+                    const statusEl = document.getElementById('r-status');
+                    if (statusEl) {
+                        const label = inv.status === 'paid' ? 'Settled & Reconciled'
+                            : inv.status === 'partially_paid' ? `Partially paid — KSh ${Math.round(Number(inv.balance_due || 0)).toLocaleString()} outstanding`
+                            : 'Awaiting payment';
+                        statusEl.textContent = label;
+                        statusEl.style.color = inv.status === 'paid' ? '#059669' : '#b45309';
+                    }
                     const paidBadge = document.getElementById('r-paid-badge');
                     if (paidBadge && inv.status !== 'paid') {
                         paidBadge.innerHTML = '<i class="fa-solid fa-hourglass-half"></i> ' +

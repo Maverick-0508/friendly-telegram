@@ -1,12 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { resetRuntimeEnv } from './helpers/env.js';
 
-import { createApp } from '../app.js';
+let createApp;
 
 let server;
 let baseUrl;
 
 test.before(async () => {
+  resetRuntimeEnv();
+  ({ createApp } = await import('../app.js'));
   const app = createApp();
   server = app.listen(0);
   await new Promise((resolve) => server.once('listening', resolve));

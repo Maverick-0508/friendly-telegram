@@ -43,6 +43,7 @@ const cspDirectives = {
     'https://images.unsplash.com',
     'https://*.tile.openstreetmap.org',
     'https://tile.openstreetmap.org',
+    'https://unpkg.com', // Leaflet default marker icons
   ],
   connectSrc: ["'self'", 'https://api.open-meteo.com'],
   objectSrc: ["'none'"],
@@ -189,6 +190,12 @@ export function createApp() {
     res.redirect(301, '/');
   });
 
+  // Browsers request /favicon.ico regardless of <link rel="icon">.
+  app.get('/favicon.ico', (_req, res) => {
+    res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=604800');
+    res.sendFile(path.join(PUBLIC_DIR, 'assets', 'icons', 'icon-192.png'));
+  });
+
   app.use('/api/auth', authLimiter);
 
   // Note: express-rate-limit keeps counters in process memory, so on a
@@ -228,7 +235,7 @@ export function createApp() {
     res.sendFile(path.join(PUBLIC_DIR, 'calculator.html'));
   });
 
-  const PRIVATE_PATH_PATTERN = /^\/(?:node-backend|node_modules|tests|data|\.github|\.vercel)(?:\/|$)/i;
+  const PRIVATE_PATH_PATTERN = /^\/(?:node-backend|node_modules|tests|scripts|data|\.github|\.vercel)(?:\/|$)/i;
 const PRIVATE_FILE_PATTERN = /^\/\.env/i;
 const BLOCKED_ROOT_FILES = /^\/(?:app|server|package|package-lock|README|AGENTS|LICENSE)(?:\.|$)/i;
 const PUBLIC_ASSET_EXTENSION = /\.(?:html?|css|js|mjs|webmanifest|json|png|jpe?g|gif|svg|ico|webp|avif|woff2?|ttf|xml|txt|map)$/i;
@@ -263,11 +270,29 @@ app.use((req, res, next) => {
     next();
   });
 
+  // On Vercel every static file is served through this function, so the CDN
+  // only caches what we tell it to (s-maxage). Fingerprint-free assets get a
+  // short browser TTL with a longer edge TTL plus stale-while-revalidate, so a
+  // deploy propagates within minutes while repeat visits are served from cache.
+  const staticCacheControl = (filePath) => {
+    if (/[\\/]sw\.js$/.test(filePath)) return 'no-cache, no-store, must-revalidate';
+    if (/[\\/]assets[\\/]/.test(filePath) || /\.(?:png|jpe?g|gif|svg|ico|webp|avif|woff2?|ttf)$/i.test(filePath)) {
+      return 'public, max-age=86400, s-maxage=2592000, stale-while-revalidate=86400';
+    }
+    if (/\.(?:css|js|mjs|json|webmanifest|xml|txt)$/i.test(filePath)) {
+      return 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400';
+    }
+    return 'public, max-age=0, s-maxage=300, stale-while-revalidate=600';
+  };
+
   app.use(
     express.static(PUBLIC_DIR, {
       extensions: ['html', 'htm'],
       index: 'index.html',
       dotfiles: 'ignore',
+      setHeaders(res, filePath) {
+        res.setHeader('Cache-Control', staticCacheControl(filePath));
+      },
     })
   );
 
@@ -295,6 +320,7 @@ app.use((req, res, next) => {
     const candidateHtml = path.join(PUBLIC_DIR, `${sanitizedPath}.html`);
 
     if (sanitizedPath && fs.existsSync(candidateHtml) && fs.statSync(candidateHtml).isFile()) {
+      res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=600');
       return res.sendFile(candidateHtml);
     }
 

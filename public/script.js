@@ -1200,12 +1200,25 @@ document.addEventListener('DOMContentLoaded', () => {
             deferredPrompt = e;
             window.deferredPwaPrompt = e;
             
-            // If user hasn't dismissed and not already installed, show banner
+            // If user hasn't dismissed and not already installed, offer the app,
+            // but not on top of the cookie notice and not before the visitor has
+            // had a moment with the page: one prompt at a time.
             if (!isStandalone && localStorage.getItem(DISMISSED_KEY) !== '1') {
-                showInstallBanner();
+                scheduleInstallBanner();
             }
             updateInstallButtonStates();
         });
+
+        function scheduleInstallBanner() {
+            const attempt = () => {
+                if (document.getElementById('cookie-consent')) {
+                    setTimeout(attempt, 2000);
+                    return;
+                }
+                showInstallBanner();
+            };
+            setTimeout(attempt, 12000);
+        }
 
         function updateInstallButtonStates() {
             document.querySelectorAll('.btn-pwa-install').forEach(btn => {

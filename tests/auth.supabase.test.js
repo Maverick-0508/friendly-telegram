@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { resetRuntimeEnv } from './helpers/env.js';
 import http from 'http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -101,6 +102,7 @@ let server;
 let baseUrl;
 
 test.before(async () => {
+  resetRuntimeEnv();
   fakeSupabase = await startFakeSupabase();
   fakeAuthPort = fakeSupabase.port;
 
@@ -109,9 +111,6 @@ test.before(async () => {
   process.env.NODE_ENV = 'development';
   process.env.SUPABASE_URL = `http://127.0.0.1:${fakeAuthPort}`;
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-key';
-  delete process.env.SUPABASE_ANON_KEY;
-  delete process.env.DATABASE_URL;
-  delete process.env.CORS_ORIGIN;
 
   const appModule = await import('../app.js');
   createApp = appModule.createApp;

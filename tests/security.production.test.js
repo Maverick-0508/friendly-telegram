@@ -1,17 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { resetRuntimeEnv } from './helpers/env.js';
 
 let server;
 let baseUrl;
 
 test.before(async () => {
+  resetRuntimeEnv();
   process.env.NODE_ENV = 'production';
-  delete process.env.SUPABASE_URL;
-  delete process.env.SUPABASE_SERVICE_ROLE_KEY;
-  delete process.env.SUPABASE_ANON_KEY;
-  delete process.env.DATABASE_URL;
-  delete process.env.CORS_ORIGIN;
-  delete process.env.ALLOW_IN_MEMORY_FALLBACK;
 
   const appModule = await import('../app.js');
   const app = appModule.createApp();

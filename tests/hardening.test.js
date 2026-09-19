@@ -3,6 +3,7 @@
 // PostgREST filter injection, STK push abuse, and lost-callback recovery.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { resetRuntimeEnv } from './helpers/env.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { startMockDaraja, buildCallbackPayload } from './helpers/mock-daraja.js';
@@ -17,15 +18,11 @@ let store;
 let quoteFilterValue;
 
 test.before(async () => {
+  resetRuntimeEnv();
   process.env.PORTAL_STORE_FILE = path.resolve('data', 'test-hardening.json');
   fs.rmSync(process.env.PORTAL_STORE_FILE, { force: true });
   ({ store, quoteFilterValue } = await import('../node-backend/services/store.js'));
   process.env.NODE_ENV = 'development';
-  delete process.env.SUPABASE_URL;
-  delete process.env.SUPABASE_SERVICE_ROLE_KEY;
-  delete process.env.SUPABASE_ANON_KEY;
-  delete process.env.DATABASE_URL;
-  delete process.env.CORS_ORIGIN;
   process.env.STK_MAX_PER_PHONE = '2';
   process.env.MPESA_STATUS_QUERY_AFTER_MS = '0';
 
@@ -266,6 +263,29 @@ test('a crafted identifier does not match unrelated profiles', async () => {
     assert.equal(probe.body.success, false);
     assert.equal(await store.findClient(identifier), null);
   }
+});
+
+// ---------------- Frontend markup vs. CSP ----------------
+
+test('public pages contain no inline event handlers (blocked by CSP script-src-attr)', () => {
+  const dir = path.resolve('public');
+  const offenders = [];
+  for (const file of fs.readdirSync(dir).filter((f) => f.endsWith('.html'))) {
+    const html = fs.readFileSync(path.join(dir, file), 'utf8');
+    const m = html.match(/\son(?:load|click|submit|change|input|error|keyup|keydown)\s*=/gi);
+    if (m) offenders.push(`${file} (${m.length})`);
+  }
+  assert.deepEqual(offenders, [], `inline handlers found: ${offenders.join(', ')}`);
+});
+
+test('PIN inputs use an HTML pattern that accepts digits', () => {
+  // In a JS template literal `\d` collapses to `d`, so pattern="\d{4,6}" would
+  // reject every real PIN with "Please match the requested format".
+  const src = fs.readFileSync(path.resolve('public/portal.js'), 'utf8');
+  assert.equal(/pattern="\\d/.test(src), false, 'portal.js still contains pattern="\\d..."');
+  const patterns = [...src.matchAll(/id="(?:client-pin-input|reg-pin|anon-pin)"[^>]*pattern="([^"]+)"/g)].map((m) => m[1]);
+  assert.equal(patterns.length, 3);
+  for (const p of patterns) assert.match('2468', new RegExp(`^(?:${p})$`), `pattern ${p} rejects 2468`);
 });
 
 // ---------------- Misc ----------------

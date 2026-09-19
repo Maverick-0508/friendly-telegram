@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { resetRuntimeEnv } from './helpers/env.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { startMockDaraja, buildCallbackPayload } from './helpers/mock-daraja.js';
@@ -10,13 +11,10 @@ let baseUrl;
 let mockDaraja;
 
 test.before(async () => {
+  resetRuntimeEnv();
   process.env.PORTAL_STORE_FILE = path.resolve('data', 'test-flows.json');
   fs.rmSync(process.env.PORTAL_STORE_FILE, { force: true });
   process.env.NODE_ENV = 'development';
-  delete process.env.SUPABASE_URL;
-  delete process.env.SUPABASE_SERVICE_ROLE_KEY;
-  delete process.env.SUPABASE_ANON_KEY;
-  delete process.env.DATABASE_URL;
 
   mockDaraja = await startMockDaraja();
   process.env.MPESA_ENVIRONMENT = 'sandbox';

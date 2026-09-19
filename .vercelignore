@@ -6,4 +6,4 @@ node-backend/.env
 .git
 tests
 test-pwa.js
-.DS_Store
+.DS_Storescripts

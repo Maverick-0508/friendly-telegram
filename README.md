@@ -163,3 +163,19 @@ npm test
 npm run test:smoke
 npm run test:pwa
 ```
+
+Tests pin every runtime variable to empty before importing the app (see
+`tests/helpers/env.js`), so a developer's local `.env` never changes results.
+
+Against a deployment:
+
+```bash
+# Every public flow + persistence read-back against the live site. Creates
+# labelled "E2E Test" records and prints cleanup SQL (or deletes them when
+# E2E_SUPABASE_URL / E2E_SUPABASE_SERVICE_ROLE_KEY are set).
+E2E_BASE=https://lawncraft.vercel.app npm run test:e2e:prod
+
+# Real-browser walkthrough (booking → hub → pay → receipt → PIN login, mobile
+# layout, console errors) with screenshots. Needs: npm i --no-save puppeteer-core
+UX_BASE=https://lawncraft.vercel.app UX_LABEL=prod npm run test:ux
+```
