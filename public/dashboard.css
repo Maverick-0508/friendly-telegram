@@ -1,0 +1,451 @@
+/* ============================================================
+   Dashboard UX layer — scoped to the authenticated Client Hub.
+
+   A self-contained, offline-safe replacement for a Tailwind build.
+   Every selector lives under #personalized-dashboard so nothing here
+   leaks into the public marketing pages. Design tokens mirror the
+   :root variables already in styles.css.
+   ============================================================ */
+
+#personalized-dashboard {
+  --lc-red: #dc2626;
+  --lc-radius: 16px;
+}
+
+/* ---------------- Layout grid (2/3 + 1/3) ---------------- */
+
+#personalized-dashboard .lc-dash-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  align-items: start;
+}
+
+#personalized-dashboard .lc-dash-main,
+#personalized-dashboard .lc-dash-side {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+@media (max-width: 992px) {
+  #personalized-dashboard .lc-dash-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------------- Compact status header ---------------- */
+
+#personalized-dashboard .lc-status-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  background: #ffffff;
+  border: 1px solid var(--slate-border);
+  border-radius: 18px;
+  padding: 1.15rem 1.5rem;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+  margin-bottom: 1.5rem;
+}
+
+#personalized-dashboard .lc-status-greeting h2 {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--slate-text);
+  letter-spacing: -0.4px;
+  line-height: 1.2;
+}
+
+#personalized-dashboard .lc-status-property {
+  color: var(--slate-muted);
+  font-size: 0.85rem;
+  margin-top: 0.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+#personalized-dashboard .lc-status-property i {
+  color: var(--emerald-strong);
+}
+
+#personalized-dashboard .lc-status-chips {
+  display: flex;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
+#personalized-dashboard .lc-chip {
+  background: var(--bg-light);
+  border: 1px solid var(--slate-border);
+  border-radius: 13px;
+  padding: 0.5rem 0.9rem;
+  text-align: center;
+  min-width: 108px;
+}
+
+#personalized-dashboard .lc-chip-label {
+  display: block;
+  font-size: 0.64rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--slate-muted);
+  margin-bottom: 0.2rem;
+}
+
+#personalized-dashboard .lc-chip-value {
+  display: block;
+  font-weight: 800;
+  font-size: 0.88rem;
+  color: var(--slate-text);
+}
+
+#personalized-dashboard .lc-text-emerald {
+  color: var(--emerald-strong);
+}
+
+#personalized-dashboard .lc-text-red {
+  color: var(--lc-red);
+}
+
+@media (max-width: 620px) {
+  #personalized-dashboard .lc-status-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  #personalized-dashboard .lc-status-chips {
+    width: 100%;
+  }
+}
+
+/* ---------------- Card base ---------------- */
+
+#personalized-dashboard .lc-card {
+  background: #ffffff;
+  border: 1px solid var(--slate-border);
+  border-radius: var(--lc-radius);
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
+}
+
+/* ---------------- Onboarding checklist card ---------------- */
+
+#personalized-dashboard .lc-onboard-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+  border: 1px solid #bbf7d0;
+  border-radius: 20px;
+  padding: 1.5rem 1.6rem;
+  box-shadow: 0 10px 30px rgba(21, 128, 61, 0.08);
+}
+
+#personalized-dashboard .lc-onboard-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+#personalized-dashboard .lc-onboard-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--emerald-soft);
+  color: var(--emerald-strong);
+  border: 1px solid #bbf7d0;
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  margin-bottom: 0.5rem;
+}
+
+#personalized-dashboard .lc-onboard-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--slate-text);
+  letter-spacing: -0.3px;
+}
+
+#personalized-dashboard .lc-onboard-sub {
+  font-size: 0.85rem;
+  color: var(--slate-muted);
+  margin-top: 0.2rem;
+  max-width: 52ch;
+}
+
+/* Progress */
+
+#personalized-dashboard .lc-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin: 1.1rem 0 1.25rem;
+}
+
+#personalized-dashboard .lc-progress-track {
+  flex: 1;
+  height: 8px;
+  background: var(--emerald-soft);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+#personalized-dashboard .lc-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--emerald-bright), var(--emerald-strong));
+  border-radius: 999px;
+  transition: width 0.35s ease;
+}
+
+#personalized-dashboard .lc-progress-summary {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--emerald-strong);
+  white-space: nowrap;
+}
+
+/* Checklist */
+
+#personalized-dashboard .lc-checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+#personalized-dashboard .lc-checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  background: #ffffff;
+  border: 1px solid var(--slate-border);
+  border-radius: 14px;
+  padding: 0.75rem 0.95rem;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+#personalized-dashboard .lc-checklist-item:hover {
+  border-color: #86efac;
+  box-shadow: 0 6px 16px rgba(21, 128, 61, 0.07);
+  transform: translateY(-1px);
+}
+
+#personalized-dashboard .lc-checklist-item.is-done {
+  background: var(--emerald-light);
+  border-color: #86efac;
+}
+
+#personalized-dashboard .lc-check {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-lighter);
+  color: #94a3b8;
+  border: 1px solid var(--slate-border);
+  font-size: 0.95rem;
+  transition: all 0.18s ease;
+}
+
+#personalized-dashboard .lc-checklist-item.is-done .lc-check {
+  background: var(--emerald-strong);
+  color: #ffffff;
+  border-color: var(--emerald-strong);
+}
+
+#personalized-dashboard .lc-check-text {
+  flex: 1;
+  min-width: 0;
+}
+
+#personalized-dashboard .lc-check-text strong {
+  display: block;
+  font-size: 0.92rem;
+  color: var(--slate-text);
+  font-weight: 700;
+}
+
+#personalized-dashboard .lc-checklist-item.is-done .lc-check-text strong {
+  color: var(--emerald-strong);
+}
+
+#personalized-dashboard .lc-check-text span {
+  display: block;
+  font-size: 0.79rem;
+  color: var(--slate-muted);
+  margin-top: 0.12rem;
+}
+
+#personalized-dashboard .lc-chev {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  flex: none;
+}
+
+/* ---------------- Getting Started focus grid ---------------- */
+
+#personalized-dashboard .lc-focus-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.9rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+  #personalized-dashboard .lc-focus-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+#personalized-dashboard .lc-focus-card {
+  background: #ffffff;
+  border: 1px solid var(--slate-border);
+  border-radius: 16px;
+  padding: 1.1rem 1.15rem;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+#personalized-dashboard .lc-focus-card:hover {
+  border-color: #86efac;
+  box-shadow: 0 10px 24px rgba(21, 128, 61, 0.09);
+  transform: translateY(-2px);
+}
+
+#personalized-dashboard .lc-focus-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  background: var(--emerald-soft);
+  color: var(--emerald-strong);
+}
+
+#personalized-dashboard .lc-focus-card h4 {
+  font-size: 0.96rem;
+  font-weight: 800;
+  color: var(--slate-text);
+  margin: 0;
+}
+
+#personalized-dashboard .lc-focus-card p {
+  font-size: 0.78rem;
+  color: var(--slate-muted);
+  line-height: 1.45;
+  flex: 1;
+  margin: 0;
+}
+
+#personalized-dashboard .lc-focus-go {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--emerald-strong);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+#personalized-dashboard .lc-focus-card.is-done {
+  background: var(--emerald-light);
+  border-color: #bbf7d0;
+}
+
+#personalized-dashboard .lc-focus-card.is-done .lc-focus-go {
+  color: #16a34a;
+}
+
+#personalized-dashboard .lc-focus-card.is-done .lc-focus-icon {
+  background: var(--emerald-strong);
+  color: #ffffff;
+}
+
+/* ---------------- Side rail cards ---------------- */
+
+#personalized-dashboard .lc-side-card {
+  background: #ffffff;
+  border: 1px solid var(--slate-border);
+  border-radius: 18px;
+  padding: 1.3rem 1.4rem;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
+}
+
+#personalized-dashboard .lc-side-card h3 {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--slate-text);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+}
+
+#personalized-dashboard .lc-side-card h3 i {
+  color: var(--emerald-strong);
+}
+
+#personalized-dashboard .lc-support-card {
+  display: flex;
+  gap: 0.9rem;
+  align-items: flex-start;
+  background: linear-gradient(135deg, #f8fafc 0%, #f0fdf4 100%);
+  border: 1px dashed #86efac;
+}
+
+#personalized-dashboard .lc-support-card > i {
+  font-size: 1.3rem;
+  color: var(--emerald-strong);
+  margin-top: 0.15rem;
+}
+
+#personalized-dashboard .lc-support-card strong {
+  font-size: 0.9rem;
+  color: var(--slate-text);
+  display: block;
+}
+
+#personalized-dashboard .lc-support-card p {
+  font-size: 0.8rem;
+  color: var(--slate-muted);
+  margin: 0.15rem 0 0.4rem;
+}
+
+#personalized-dashboard .lc-link {
+  color: var(--emerald-strong);
+  font-weight: 700;
+  font-size: 0.82rem;
+  text-decoration: none;
+}
+
+#personalized-dashboard .lc-link:hover {
+  text-decoration: underline;
+}
+
+/* ---------------- Motion safety ---------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  #personalized-dashboard .lc-progress-bar,
+  #personalized-dashboard .lc-checklist-item,
+  #personalized-dashboard .lc-focus-card {
+    transition: none;
+  }
+}

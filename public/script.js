@@ -1050,24 +1050,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // Hide floating CTA on contact section
+    // Hide floating CTA when the contact section or footer scrolls into view
+    // (prevents the fixed widget from covering footer text/links), and let
+    // the bottom overlays hide it via CSS when they are open.
     const floatingCta = document.querySelector('.floating-cta');
-    const contactSection = document.getElementById('contact');
-    
-    if (floatingCta && contactSection) {
+
+    if (floatingCta) {
+        const contactSection = document.getElementById('contact');
+        const footerEl = document.querySelector('.footer');
+
         const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    floatingCta.style.opacity = '0';
-                    floatingCta.style.pointerEvents = 'none';
-                } else {
-                    floatingCta.style.opacity = '1';
-                    floatingCta.style.pointerEvents = 'auto';
-                }
-            });
-        }, { threshold: 0.1 });
-        
-        observer.observe(contactSection);
+            const anyVisible = entries.some((entry) => entry.isIntersecting);
+            if (anyVisible) {
+                floatingCta.classList.add('floating-cta--hidden');
+            } else {
+                floatingCta.classList.remove('floating-cta--hidden');
+            }
+        }, { threshold: 0.05 });
+
+        if (contactSection) observer.observe(contactSection);
+        if (footerEl && footerEl !== contactSection) observer.observe(footerEl);
     }
     
     // Initialize area chip panel (works without Leaflet — Leaflet map adds map-panning enhancement)
@@ -1102,10 +1104,39 @@ document.addEventListener('DOMContentLoaded', () => {
     
     console.log('Lawn Craft website loaded successfully!');
 
+    // Keep the page footer readable and the fixed cookie/install overlays
+    // stacked cleanly — reserving body padding so neither ever blocks content.
+    window.refreshBottomOverlayLayout = function () {
+        const cookie = document.getElementById('cookie-consent');
+        const install = document.getElementById('install-banner');
+        const cookieH = cookie && cookie.classList.contains('visible') ? cookie.offsetHeight : 0;
+        const installH = install && install.classList.contains('visible') ? install.offsetHeight : 0;
+
+        document.documentElement.style.setProperty('--cookie-banner-offset', (cookieH || 0) + 'px');
+        if (install) {
+            install.style.bottom = cookieH ? (cookieH + 14) + 'px' : '0px';
+        }
+        document.body.style.paddingBottom =
+            (cookieH ? cookieH + 16 : 0) + (installH ? installH + 16 : 0) + 'px';
+    };
+
+    window.addEventListener('resize', () => {
+        if (typeof window.refreshBottomOverlayLayout === 'function') window.refreshBottomOverlayLayout();
+    });
+
     // Cookie Consent Banner
     (function () {
         const COOKIE_KEY = 'lawn-craft-cookies-accepted';
         if (localStorage.getItem(COOKIE_KEY) !== null) return;
+
+        function dismissCookieBanner(banner) {
+            banner.classList.remove('visible');
+            document.body.classList.remove('cookie-consent-visible');
+            setTimeout(() => {
+                banner.remove();
+                window.refreshBottomOverlayLayout();
+            }, 400);
+        }
 
         function showCookieBanner() {
             if (document.getElementById('cookie-consent')) return;
@@ -1129,19 +1160,19 @@ document.addEventListener('DOMContentLoaded', () => {
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     banner.classList.add('visible');
+                    document.body.classList.add('cookie-consent-visible');
+                    window.refreshBottomOverlayLayout();
                 });
             });
 
             banner.querySelector('.btn-cookie-accept').addEventListener('click', () => {
                 localStorage.setItem(COOKIE_KEY, 'accepted');
-                banner.classList.remove('visible');
-                setTimeout(() => banner.remove(), 400);
+                dismissCookieBanner(banner);
             });
 
             banner.querySelector('.btn-cookie-decline').addEventListener('click', () => {
                 localStorage.setItem(COOKIE_KEY, 'declined');
-                banner.classList.remove('visible');
-                setTimeout(() => banner.remove(), 400);
+                dismissCookieBanner(banner);
             });
         }
 
@@ -1350,6 +1381,8 @@ document.addEventListener('DOMContentLoaded', () => {
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     banner.classList.add('visible');
+                    document.body.classList.add('install-banner-visible');
+                    window.refreshBottomOverlayLayout();
                 });
             });
 
@@ -1380,7 +1413,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const banner = document.getElementById('install-banner');
             if (banner) {
                 banner.classList.remove('visible');
-                setTimeout(() => banner.remove(), 400);
+                document.body.classList.remove('install-banner-visible');
+                setTimeout(() => {
+                    banner.remove();
+                    window.refreshBottomOverlayLayout();
+                }, 400);
             }
         }
 

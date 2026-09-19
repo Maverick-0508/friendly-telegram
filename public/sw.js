@@ -1,11 +1,13 @@
-const CACHE = 'lawncraft-v10';
+const CACHE = 'lawncraft-v11';
 
 const PRECACHE_URLS = [
   '/',
   '/styles.css',
+  '/dashboard.css',
   '/script.js',
   '/auth.js',
   '/portal.js',
+  '/dashboard-onboarding.js',
   '/manifest.json',
   '/assets/icons/icon-192.png',
   '/assets/icons/icon-512.png',

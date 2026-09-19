@@ -5,6 +5,7 @@
   const STORAGE_KEY = 'lawncraft_client_identifier';
   const STORAGE_KEY_PIN = 'lawncraft_client_pin';
   let currentClientData = null;
+  let onboardingUnsub = null;
 
   // WMO weather codes -> short human labels (Open-Meteo)
   const WMO_TEXT = {
@@ -290,13 +291,191 @@
       'Diamond VIP': 'fa-star text-diamond'
     };
 
+    // --- Dashboard render helpers (SaaS-style, Kaggle-esque) ---
+    const onboarding = (typeof window.DashboardOnboarding !== 'undefined') ? window.DashboardOnboarding : null;
+
+    const onboardingMainHTML = (snap) => `
+      <section class="lc-onboard-card" aria-label="Account setup checklist">
+        <div class="lc-onboard-head">
+          <div>
+            <span class="lc-onboard-tag"><i class="fa-solid fa-wand-magic-sparkles"></i> Getting Started</span>
+            <h3 class="lc-onboard-title">Set up your Lawn Care hub</h3>
+            <p class="lc-onboard-sub">Three quick steps unlock live tracking, one-tap rebooking and loyalty rewards.</p>
+          </div>
+        </div>
+
+        <div class="lc-progress-row">
+          <div class="lc-progress-track" title="${snap.percentComplete}% complete">
+            <div class="lc-progress-bar" style="width:${snap.percentComplete}%"></div>
+          </div>
+          <span class="lc-progress-summary">${snap.doneCount} of ${snap.totalCount} • ${snap.percentComplete}%</span>
+        </div>
+
+        <ul class="lc-checklist">
+          ${snap.milestones.map(m => `
+            <li class="lc-checklist-item ${m.done ? 'is-done' : ''}" data-key="${m.key}" role="button" tabindex="0"
+                aria-label="${m.done ? 'Completed: ' : 'Complete: '}${m.label}">
+              <span class="lc-check">${m.done
+                ? '<i class="fa-solid fa-check" aria-hidden="true"></i>'
+                : `<i class="fa-solid ${m.icon}" aria-hidden="true"></i>`}</span>
+              <span class="lc-check-text">
+                <strong>${m.label}</strong>
+                <span>${m.description}</span>
+              </span>
+              <i class="fa-solid fa-chevron-right lc-chev" aria-hidden="true"></i>
+            </li>
+          `).join('')}
+        </ul>
+      </section>
+
+      <section aria-label="Getting started focus cards">
+        <div class="lc-focus-grid">
+          ${snap.milestones.map(m => `
+            <div class="lc-focus-card ${m.done ? 'is-done' : ''}" data-key="${m.key}" role="button" tabindex="0">
+              <span class="lc-focus-icon"><i class="fa-solid ${m.done ? 'fa-check' : m.icon}" aria-hidden="true"></i></span>
+              <h4>${m.label}</h4>
+              <p>${m.description}</p>
+              <span class="lc-focus-go">${m.done ? 'Done' : 'Get started'} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+            </div>
+          `).join('')}
+        </div>
+      </section>
+    `;
+
+    const operationalMainHTML = () => `
+      <div class="dash-widget">
+        <h3><i class="fa-solid fa-bolt"></i> Quick Actions <span class="dash-widget-sub">Book &amp; manage in one tap</span></h3>
+        <div class="dash-actions-grid">
+          <a href="#quick-addons-section" class="dash-action"><i class="fa-solid fa-plus"></i> Request Extra Mow</a>
+          ${activeOrder
+            ? `<a href="/tracker/${activeOrder.id}" class="dash-action"><i class="fa-solid fa-location-crosshairs"></i> Live Crew GPS</a>`
+            : `<span class="dash-action disabled"><i class="fa-solid fa-location-crosshairs"></i> Live Crew GPS</span>`}
+          ${unpaidInvoice
+            ? `<button type="button" class="dash-action" id="dash-pay-btn" data-invoice-id="${unpaidInvoice.id}" data-amount="${unpaidInvoice.balance_due}"><i class="fa-solid fa-mobile-screen-button"></i> Pay With M-Pesa</button>`
+            : `<span class="dash-action disabled"><i class="fa-solid fa-circle-check"></i> Balance Settled</span>`}
+          <a href="#contact" class="dash-action"><i class="fa-solid fa-headset"></i> Contact Support</a>
+        </div>
+
+        <h3 style="margin-top: 1.4rem;"><i class="fa-solid fa-clipboard-list"></i> Active Care Package</h3>
+        <div class="plan-card">
+          <div>
+            <div class="plan-name">${client.service_plan || 'Custom Care'} • ${tier} Member</div>
+            <div class="plan-detail">${activeOrder ? `Next visit: ${activeOrder.scheduled_date}` : 'No upcoming visit — book one below.'}</div>
+          </div>
+          <a href="#active-service-section" class="plan-btn">Manage</a>
+        </div>
+      </div>
+    `;
+
+    const wireDashPay = () => {
+      const btn = document.getElementById('dash-pay-btn');
+      if (btn && !btn.dataset.wired) {
+        btn.dataset.wired = '1';
+        btn.addEventListener('click', () => {
+          openMpesaModal(
+            btn.getAttribute('data-invoice-id'),
+            btn.getAttribute('data-amount'),
+            client.phone
+          );
+        });
+      }
+    };
+
+    const scrollToAnchor = (key) => {
+      if (!onboarding) return;
+      const milestone = onboarding.MILESTONES.find((m) => m.key === key);
+      if (milestone && milestone.anchor) {
+        const target = document.getElementById(milestone.anchor);
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    };
+
+    const syncMainColumn = (snap) => {
+      const mainEl = document.getElementById('lc-dash-main');
+      if (!mainEl) return;
+
+      const bar = mainEl.querySelector('.lc-progress-bar');
+      const summary = mainEl.querySelector('.lc-progress-summary');
+      if (bar) bar.style.width = `${snap.percentComplete}%`;
+      if (summary) summary.textContent = `${snap.doneCount} of ${snap.totalCount} • ${snap.percentComplete}%`;
+
+      mainEl.querySelectorAll('.lc-checklist-item, .lc-focus-card').forEach((el) => {
+        const m = snap.milestones.find((mm) => mm.key === el.dataset.key);
+        if (m) {
+          el.classList.toggle('is-done', m.done);
+          const check = el.querySelector('.lc-check');
+          const icon = el.querySelector('.lc-focus-icon i');
+          if (check) check.innerHTML = m.done ? '<i class="fa-solid fa-check" aria-hidden="true"></i>' : `<i class="fa-solid ${m.icon}" aria-hidden="true"></i>`;
+          if (icon) icon.className = `fa-solid ${m.done ? 'fa-check' : m.icon}`;
+        }
+      });
+
+      const focusGo = mainEl.querySelectorAll('.lc-focus-go');
+      focusGo.forEach((el) => {
+        const key = el.closest('.lc-focus-card')?.dataset.key;
+        const m = snap.milestones.find((mm) => mm.key === key);
+        if (m) {
+          el.childNodes[0].textContent = m.done ? 'Done ' : 'Get started ';
+        }
+      });
+
+      if (snap.isComplete && !snap.isDismissed) {
+        onboarding.dismiss();
+      } else if (snap.isDismissed && snap.isComplete) {
+        if (onboardingUnsub) { onboardingUnsub(); onboardingUnsub = null; }
+        mainEl.innerHTML = operationalMainHTML();
+        wireDashPay();
+        showToast('Onboarding complete — full command center unlocked!', 'success');
+      }
+    };
+
+    const renderMainColumn = () => {
+      if (!onboarding) {
+        document.getElementById('lc-dash-main').innerHTML = operationalMainHTML();
+        wireDashPay();
+        return;
+      }
+      const snap = onboarding.get();
+      const mainEl = document.getElementById('lc-dash-main');
+      if (snap.isComplete || snap.isDismissed) {
+        mainEl.innerHTML = operationalMainHTML();
+        wireDashPay();
+        return;
+      }
+      mainEl.innerHTML = onboardingMainHTML(snap);
+
+      mainEl.querySelectorAll('.lc-checklist-item').forEach((item) => {
+        const activate = () => {
+          const key = item.dataset.key;
+          const current = onboarding.get().milestones.find((m) => m.key === key);
+          const doing = !current.done;
+          onboarding.toggle(key);
+          if (doing) scrollToAnchor(key);
+        };
+        item.addEventListener('click', activate);
+        item.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
+        });
+      });
+      mainEl.querySelectorAll('.lc-focus-card').forEach((card) => {
+        const activate = () => scrollToAnchor(card.dataset.key);
+        card.addEventListener('click', activate);
+        card.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
+        });
+      });
+
+      if (onboardingUnsub) onboardingUnsub();
+      onboardingUnsub = onboarding.subscribe(syncMainColumn);
+    };
+
     dashboardContainer.innerHTML = `
       <div class="container">
-        <!-- Dashboard Status Bar (at-a-glance) -->
-        <div class="dashboard-status-bar">
-          <div class="dash-greeting">
+        <!-- Compact status header -->
+        <div class="lc-status-header">
+          <div class="lc-status-greeting">
             <h2>Welcome back, ${client.name.split(' ')[0]}!</h2>
-            <p class="dash-property">
+            <p class="lc-status-property" id="account-details">
               <i class="fa-solid fa-house"></i>
               <strong>${client.address}</strong>
               <span>•</span>
@@ -305,64 +484,56 @@
               <span>${client.grass_type}</span>
             </p>
           </div>
-          <div class="dash-status-chips">
-            <div class="dash-chip">
-              <span class="chip-label">Next Service</span>
-              <span class="chip-value">${activeOrder ? activeOrder.scheduled_date : '—'}</span>
+          <div class="lc-status-chips">
+            <div class="lc-chip">
+              <span class="lc-chip-label">Next Service</span>
+              <span class="lc-chip-value">${activeOrder ? activeOrder.scheduled_date : '—'}</span>
             </div>
-            <div class="dash-chip">
-              <span class="chip-label">Account Balance</span>
-              <span class="chip-value ${unpaidInvoice ? '' : 'text-emerald'}">${unpaidInvoice ? 'KSh ' + Math.round(unpaidInvoice.balance_due).toLocaleString() : 'All Paid'}</span>
+            <div class="lc-chip">
+              <span class="lc-chip-label">Account Balance</span>
+              <span class="lc-chip-value ${unpaidInvoice ? '' : 'lc-text-emerald'}">${unpaidInvoice ? 'KSh ' + Math.round(unpaidInvoice.balance_due).toLocaleString() : 'All Paid'}</span>
             </div>
-            <div class="dash-chip">
-              <span class="chip-label">Reward Points</span>
-              <span class="chip-value text-emerald">${loyalty.points_balance} pts</span>
+            <div class="lc-chip">
+              <span class="lc-chip-label">Reward Points</span>
+              <span class="lc-chip-value lc-text-emerald">${loyalty.points_balance} pts</span>
             </div>
           </div>
         </div>
 
-        <!-- Dashboard Widget Grid (Kaggle-style two columns) -->
-        <div class="dashboard-widgets-grid">
-          <div class="dash-widget">
-            <h3><i class="fa-solid fa-bolt"></i> Quick Actions <span class="dash-widget-sub">Book &amp; manage in one tap</span></h3>
-            <div class="dash-actions-grid">
-              <a href="#quick-addons-section" class="dash-action"><i class="fa-solid fa-plus"></i> Request Extra Mow</a>
-              ${activeOrder
-                ? `<a href="/tracker/${activeOrder.id}" class="dash-action"><i class="fa-solid fa-location-crosshairs"></i> Live Crew GPS</a>`
-                : `<span class="dash-action disabled"><i class="fa-solid fa-location-crosshairs"></i> Live Crew GPS</span>`}
-              ${unpaidInvoice
-                ? `<button type="button" class="dash-action" id="dash-pay-btn" data-invoice-id="${unpaidInvoice.id}" data-amount="${unpaidInvoice.balance_due}"><i class="fa-solid fa-mobile-screen-button"></i> Pay With M-Pesa</button>`
-                : `<span class="dash-action disabled"><i class="fa-solid fa-circle-check"></i> Balance Settled</span>`}
-              <a href="#contact" class="dash-action"><i class="fa-solid fa-headset"></i> Contact Support</a>
-            </div>
+        <!-- Main SaaS grid: 2/3 content + 1/3 side rail -->
+        <div class="lc-dash-grid">
+          <div class="lc-dash-main" id="lc-dash-main"></div>
 
-            <h3 style="margin-top: 1.4rem;"><i class="fa-solid fa-clipboard-list"></i> Active Care Package</h3>
-            <div class="plan-card">
-              <div>
-                <div class="plan-name">${client.service_plan || 'Custom Care'} • ${tier} Member</div>
-                <div class="plan-detail">${activeOrder ? `Next visit: ${activeOrder.scheduled_date}` : 'No upcoming visit — book one below.'}</div>
+          <div class="lc-dash-side">
+            <div class="lc-side-card">
+              <h3><i class="fa-solid fa-cloud-sun"></i> Yard Conditions</h3>
+              <div class="yard-conditions">
+                <div class="yc-title" id="yard-conditions-title"><i class="fa-solid fa-droplet"></i> ${kshSeasonTip.title}</div>
+                <div class="yc-body" id="yard-conditions-body">${kshSeasonTip.body}</div>
               </div>
-              <a href="#active-service-section" class="plan-btn">Manage</a>
-            </div>
-          </div>
-
-          <div class="dash-widget">
-            <h3><i class="fa-solid fa-cloud-sun"></i> Yard Conditions</h3>
-            <div class="yard-conditions">
-              <div class="yc-title" id="yard-conditions-title"><i class="fa-solid fa-droplet"></i> ${kshSeasonTip.title}</div>
-              <div class="yc-body" id="yard-conditions-body">${kshSeasonTip.body}</div>
             </div>
 
-            <h3 style="margin-top: 1.4rem;"><i class="fa-solid fa-clock-rotate-left"></i> Recent Visits</h3>
-            ${recentVisits.length
-              ? `
-                <ul class="visits-list">
-                  ${recentVisits.map(v => `
-                    <li><span>${v.title || v.service_type || 'Lawn Care Visit'}</span><span class="visit-date">${v.completed_at ? v.completed_at.slice(0, 10) : (v.scheduled_date || '')}</span></li>
-                  `).join('')}
-                </ul>
-              `
-              : '<p class="no-records-note">No completed visits yet — your first one will show up here.</p>'}
+            <div class="lc-side-card">
+              <h3><i class="fa-solid fa-clock-rotate-left"></i> Recent Visits</h3>
+              ${recentVisits.length
+                ? `
+                  <ul class="visits-list">
+                    ${recentVisits.map(v => `
+                      <li><span>${v.title || v.service_type || 'Lawn Care Visit'}</span><span class="visit-date">${v.completed_at ? v.completed_at.slice(0, 10) : (v.scheduled_date || '')}</span></li>
+                    `).join('')}
+                  </ul>
+                `
+                : '<p class="no-records-note">No completed visits yet — your first one will show up here.</p>'}
+            </div>
+
+            <div class="lc-side-card lc-support-card">
+              <i class="fa-solid fa-headset" aria-hidden="true"></i>
+              <div>
+                <strong>Need help with your lawn?</strong>
+                <p>Our care crew replies within minutes during business hours.</p>
+                <a href="#contact" class="lc-link">Contact Support <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -594,6 +765,9 @@
       </div>
     `;
 
+    // Render the main column: onboarding checklist while incomplete, full tools when done.
+    renderMainColumn();
+
     // Wire Copy Referral Button
     const copyRefBtn = document.getElementById('copy-ref-btn');
     if (copyRefBtn) {
@@ -615,17 +789,7 @@
       });
     }
 
-    // Wire dashboard quick-action Pay button
-    const dashPayBtn = document.getElementById('dash-pay-btn');
-    if (dashPayBtn) {
-      dashPayBtn.addEventListener('click', () => {
-        openMpesaModal(
-          dashPayBtn.getAttribute('data-invoice-id'),
-          dashPayBtn.getAttribute('data-amount'),
-          client.phone
-        );
-      });
-    }
+    // Dashboard quick-action Pay button is wired inside renderMainColumn/syncMainColumn.
 
     // Wire 1-Click Add-on buttons
     const addonButtons = dashboardContainer.querySelectorAll('.btn-addon-book');
@@ -659,6 +823,9 @@
           if (json.success) {
             btn.innerHTML = `<i class="fa-solid fa-check"></i> Booked!`;
             btn.classList.add('booked-success');
+            if (typeof window.DashboardOnboarding !== 'undefined') {
+              window.DashboardOnboarding.setCompleted('set-preferences', true);
+            }
             showToast(`${service} scheduled! Added to supervisor dispatch queue. +25 Loyalty points earned!`, 'success');
             setTimeout(() => {
               refreshCurrentClient();
@@ -702,6 +869,9 @@
 
     // Restore the marketing funnel view
     document.body.classList.remove('hub-authenticated');
+
+    // Stop listening to onboarding state changes for this session
+    if (onboardingUnsub) { onboardingUnsub(); onboardingUnsub = null; }
 
     // 1. Immediately remove personalized dashboard container from DOM
     const dash = document.getElementById('personalized-dashboard');
@@ -835,6 +1005,9 @@
           const successStep = document.getElementById('mpesa-success-step');
           successStep.style.display = 'block';
           document.getElementById('mpesa-receipt-code').textContent = result.mpesa_receipt || '—';
+          if (typeof window.DashboardOnboarding !== 'undefined') {
+            window.DashboardOnboarding.setCompleted('add-payment', true);
+          }
           showToast('Payment confirmed by M-Pesa! Your invoice is marked paid.', 'success');
           refreshCurrentClient();
         } else if (result.status === 'failed' || result.status === 'cancelled') {
