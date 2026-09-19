@@ -449,3 +449,22 @@
     transition: none;
   }
 }
+/* Booking request / estimate states (confirmed-quote flow) */
+.status-badge.status-pending {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+.invoice-alert-box.estimate-box {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+}
+.invoice-alert-box.estimate-box .balance-amount {
+  color: #475569;
+}
+.inv-num small {
+  font-weight: 400;
+  color: #64748b;
+  text-transform: none;
+  letter-spacing: 0;
+}

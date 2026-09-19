@@ -29,6 +29,16 @@ const STATUS_QUERY_AFTER_MS = Number(process.env.MPESA_STATUS_QUERY_AFTER_MS || 
 let lastReachabilityCheck = 0;
 let reachabilityCached = null;
 
+// Booking flow. 'confirm' (default): an online booking creates a *request* and
+// an *estimate*; a supervisor confirms the final price (via the admin endpoint
+// or the dashboard writing invoice.status='unpaid') before the client can pay.
+// 'instant': the legacy behaviour where the estimate is immediately payable.
+export function bookingMode() {
+  return String(process.env.BOOKING_MODE || 'confirm').toLowerCase() === 'instant' ? 'instant' : 'confirm';
+}
+
+const PAYABLE_INVOICE_STATUSES = new Set(['unpaid', 'partially_paid']);
+
 function ensureRuntimePersistence(res) {
   if (isStrictRuntime && !store.backendName().startsWith('supabase')) {
     res.status(503).json({
@@ -416,6 +426,7 @@ export async function createWorkOrder(req, res) {
 
     const newOrderId = newId('wo');
     const invoiceId = newId('inv');
+    const mode = bookingMode();
 
     const workOrder = {
       id: newOrderId,
@@ -425,7 +436,8 @@ export async function createWorkOrder(req, res) {
       client_email: clientEmail,
       title: `${serviceType} - ${clientName}`,
       service_type: serviceType,
-      status: 'incoming', // always enters the supervisor dispatch queue
+      // confirm mode: a request the supervisor must confirm; instant mode: straight into the queue
+      status: mode === 'confirm' ? 'pending_confirmation' : 'incoming',
       scheduled_date: scheduledDate,
       total_price: price,
       property_size: propertySize,
@@ -460,7 +472,9 @@ export async function createWorkOrder(req, res) {
       service_title: serviceType,
       total_amount: price,
       balance_due: price,
-      status: 'unpaid',
+      // 'estimate' is not payable until a supervisor confirms it ('unpaid').
+      status: mode === 'confirm' ? 'estimate' : 'unpaid',
+      estimated_total: price,
       issue_date: new Date().toISOString().split('T')[0],
       due_date: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
       subtotal,
@@ -474,12 +488,15 @@ export async function createWorkOrder(req, res) {
     await store.upsertInvoice(invoiceRecord);
 
     // Non-blocking notifications to the client and the business owner.
-    void notify.notifyClientOrderBooked(workOrder).catch(() => {});
+    void notify.notifyClientOrderBooked(workOrder, { mode }).catch(() => {});
     void notify.notifyOwnerNewOrder(workOrder, invoiceRecord).catch(() => {});
 
     return res.status(201).json({
       success: true,
-      message: 'Work order scheduled successfully and added to dispatch queue.',
+      message: mode === 'confirm'
+        ? 'Booking request received. We will confirm the final price with you before any payment is due.'
+        : 'Work order scheduled successfully and added to dispatch queue.',
+      booking_mode: mode,
       data: workOrder,
       invoice: invoiceRecord,
       pricing: {
@@ -498,6 +515,75 @@ export async function createWorkOrder(req, res) {
         message: 'Failed to create work order.',
         code: err.statusCode === 503 ? err.code : 'CREATE_WORK_ORDER_FAILED',
       },
+    });
+  }
+}
+
+// Supervisor confirmation (admin token required). Turns a booking request +
+// estimate into a confirmed order + payable invoice, optionally with a final
+// price and schedule, and texts the client a payment link. The supervisor
+// dashboard may instead write invoice.status='unpaid' / work_order.status=
+// 'confirmed' directly; this endpoint just keeps VAT math and notifications in
+// one place.
+export async function confirmWorkOrder(req, res) {
+  try {
+    if (!(await ensureProviders(res))) return;
+
+    const order = await store.workOrderById(text(req.params.orderId, 64));
+    if (!order) return fail(res, 404, 'WORK_ORDER_NOT_FOUND', 'Work order not found.');
+
+    const invoice = order.invoice_id ? await store.invoiceById(order.invoice_id) : null;
+    if (!invoice) return fail(res, 404, 'INVOICE_NOT_FOUND', 'Invoice for this work order not found.');
+    if (invoice.status === 'paid') return fail(res, 409, 'INVOICE_ALREADY_PAID', 'This invoice has already been paid.');
+
+    const body = req.body || {};
+    let finalTotal = Number(invoice.total_amount);
+    if (body.total_amount !== undefined && body.total_amount !== null && body.total_amount !== '') {
+      finalTotal = Number(body.total_amount);
+      if (!Number.isFinite(finalTotal) || finalTotal < 1 || finalTotal > MPESA_MAX_AMOUNT) {
+        return fail(res, 400, 'INVALID_AMOUNT', `total_amount must be between 1 and ${MPESA_MAX_AMOUNT}.`);
+      }
+      finalTotal = Math.round(finalTotal);
+    }
+
+    const alreadyConfirmed = PAYABLE_INVOICE_STATUSES.has(invoice.status);
+    const paidSoFar = Math.max(0, Number(invoice.total_amount) - Number(invoice.balance_due ?? invoice.total_amount));
+    invoice.total_amount = finalTotal;
+    invoice.balance_due = Math.max(0, Math.round((finalTotal - paidSoFar) * 100) / 100);
+    invoice.subtotal = Math.round((finalTotal / 1.16) * 100) / 100;
+    invoice.tax_vat = Math.round((finalTotal - invoice.subtotal) * 100) / 100;
+    if (Array.isArray(invoice.items) && invoice.items.length === 1) {
+      invoice.items[0].unit_price = finalTotal;
+      invoice.items[0].amount = finalTotal;
+    } else if (Array.isArray(invoice.items) && invoice.items.length > 1 && finalTotal !== Number(invoice.estimated_total)) {
+      invoice.items = [{ description: invoice.service_title || 'Lawn care service (confirmed price)', quantity: 1, unit_price: finalTotal, amount: finalTotal }];
+    }
+    if (!alreadyConfirmed) invoice.status = 'unpaid';
+    invoice.confirmed_at = new Date().toISOString();
+    invoice.confirmed_by = text(body.confirmed_by, 80) || 'supervisor';
+    if (body.due_date) invoice.due_date = text(body.due_date, 20);
+    await store.upsertInvoice(invoice);
+
+    if (order.status === 'pending_confirmation' || order.status === 'incoming') order.status = 'confirmed';
+    order.total_price = finalTotal;
+    if (body.scheduled_date) order.scheduled_date = text(body.scheduled_date, 60);
+    if (body.crew_name) order.crew_name = text(body.crew_name, 80);
+    if (body.crew_lead) order.crew_lead = text(body.crew_lead, 80);
+    if (body.crew_phone) order.crew_phone = text(body.crew_phone, 30);
+    if (body.notes) order.supervisor_notes = text(body.notes, 500);
+    order.confirmed_at = invoice.confirmed_at;
+    await store.upsertWorkOrder(order);
+
+    if (!alreadyConfirmed) {
+      void notify.notifyClientOrderConfirmed(order, invoice).catch(() => {});
+    }
+
+    return res.status(200).json({ success: true, data: order, invoice });
+  } catch (err) {
+    console.error('[confirmWorkOrder Error]', err);
+    return res.status(err.statusCode || 500).json({
+      success: false,
+      error: { message: 'Failed to confirm work order.', code: err.statusCode === 503 ? err.code : 'CONFIRM_FAILED' },
     });
   }
 }
@@ -566,6 +652,10 @@ export async function stkPushMpesa(req, res) {
       }
       if (invoice.status === 'paid') {
         return fail(res, 409, 'INVOICE_ALREADY_PAID', 'This invoice has already been paid.');
+      }
+      if (!PAYABLE_INVOICE_STATUSES.has(invoice.status)) {
+        return fail(res, 409, 'INVOICE_NOT_CONFIRMED',
+          'This estimate is awaiting confirmation from Lawn Craft. You will receive an SMS with a payment link once the final price is confirmed.');
       }
 
       // Duplicate-prompt guard: if a push for this invoice is still awaiting

@@ -46,7 +46,8 @@ the value). Everything marked required must exist before go-live.
 | `MPESA_CALLBACK_URL` | yes | `https://<your-domain>/api/mpesa/callback` |
 | `MPESA_CALLBACK_TOKEN` | yes | random secret from step 2 |
 | `CRON_SECRET` | yes | random secret; Vercel sends it as `Authorization: Bearer` to the cron |
-| `ADMIN_API_TOKEN` | yes | random secret for `/api/system/status` and manual reconciliation |
+| `ADMIN_API_TOKEN` | yes | random secret for `/api/system/status`, manual reconciliation and the supervisor confirm endpoint |
+| `BOOKING_MODE` | optional | `confirm` (default): bookings are requests a supervisor confirms before payment; `instant` to make estimates payable immediately |
 | `COMPANY_KRA_PIN` | yes | printed on tax receipts |
 | `RESEND_API_KEY`, `NOTIFY_FROM_EMAIL`, `OWNER_EMAIL` | recommended | owner email alerts for leads, quotes and orders |
 | `AFRICAS_TALKING_USERNAME`, `AFRICAS_TALKING_API_KEY`, `AFRICAS_TALKING_SENDER` | recommended | booking confirmations and receipts by SMS |

@@ -38,6 +38,11 @@ export function auditRuntimeConfig() {
     problems.push('CORS_ORIGIN is not set; browser requests from your own domain will be rejected.');
   }
 
+  const bookingMode = (env('BOOKING_MODE') || 'confirm').toLowerCase() === 'instant' ? 'instant' : 'confirm';
+  if (bookingMode === 'confirm' && !env('ADMIN_API_TOKEN')) {
+    warnings.push('BOOKING_MODE=confirm but ADMIN_API_TOKEN is not set; the /api/admin/work-orders/:id/confirm endpoint is disabled, so the supervisor dashboard must set invoice.status=unpaid directly.');
+  }
+
   if (!env('ADMIN_API_TOKEN') && !env('CRON_SECRET')) {
     warnings.push('Neither ADMIN_API_TOKEN nor CRON_SECRET is set; /api/system/status and /api/mpesa/reconcile are disabled.');
   } else if (!env('CRON_SECRET')) {
@@ -58,6 +63,7 @@ export function auditRuntimeConfig() {
   }
 
   const checks = {
+    booking_mode: bookingMode,
     payments_enabled: paymentsEnabled,
     payments_callback_protected: Boolean(env('MPESA_CALLBACK_TOKEN')),
     payments_environment: env('MPESA_ENVIRONMENT') || 'sandbox',

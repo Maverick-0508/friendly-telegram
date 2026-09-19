@@ -88,6 +88,50 @@ job reconciles stale `pending` payments:
 - Reconciliation is idempotent; a replayed callback never settles or debits an
   invoice twice.
 
+### Booking flow and the supervisor dashboard contract
+
+`BOOKING_MODE=confirm` (default): an online booking creates a **request**
+(`work_orders.status = 'pending_confirmation'`) and an **estimate**
+(`invoices.status = 'estimate'`). The estimate is visible in the client hub,
+the pay page and the receipt page but cannot be paid (`/api/mpesa/stkpush`
+answers `409 INVOICE_NOT_CONFIRMED`). A supervisor confirms it in one of two
+ways:
+
+- `POST /api/admin/work-orders/:orderId/confirm` with header
+  `x-admin-token: $ADMIN_API_TOKEN` and optional body
+  `{ total_amount, scheduled_date, crew_name, crew_lead, crew_phone, due_date, notes }`.
+  The server sets the final price (recomputing VAT and line items), flips the
+  invoice to `unpaid`, the order to `confirmed`, and texts the client a pay link.
+- Or the supervisor dashboard writes directly to Supabase: set
+  `invoices.status = 'unpaid'` (and `total_amount` / `balance_due` if the price
+  changed) and `work_orders.status = 'confirmed'`. Both the indexed `status`
+  column and `data.status` inside the JSON must be updated.
+
+Status vocabularies the client UI understands:
+
+| work_orders.status | shown as |
+|---|---|
+| `pending_confirmation` | Awaiting Confirmation |
+| `confirmed`, `incoming` | Confirmed / Queued for Dispatch |
+| `scheduled` | Scheduled |
+| `dispatched` | Crew En Route (tracker shows live marker when `crew_lat`/`crew_lng` set) |
+| `in_progress` | Crew On-Site |
+| `completed` | Completed |
+| `cancelled` | Cancelled |
+
+| invoices.status | payable |
+|---|---|
+| `estimate` | no |
+| `unpaid`, `partially_paid` | yes |
+| `paid` | no |
+
+Optional order fields the tracker renders when present: `crew_lead`,
+`crew_name`, `crew_phone`, `crew_vehicle`, `crew_lat`, `crew_lng`,
+`checklist[] = { task, status: pending|in_progress|completed, completed_at? }`.
+
+`BOOKING_MODE=instant` restores the previous behaviour (estimate immediately
+payable, order enters the queue as `incoming`).
+
 ### Portal access PIN
 
 Client profiles opened through the portal (`POST /api/portal/lookup`) require an

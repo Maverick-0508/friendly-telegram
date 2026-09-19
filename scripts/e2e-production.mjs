@@ -120,7 +120,7 @@ let orderId = null, invoiceId = null;
   orderId = order.json?.data?.id; invoiceId = order.json?.invoice?.id;
   record('booking created', order.status === 201 && orderId && invoiceId, `HTTP ${order.status} ${order.json?.error?.message || ''}`);
   record('server-side price (Core Aeration = 8500, tampered 1 ignored)', order.json?.invoice?.total_amount === 8500, `total=${order.json?.invoice?.total_amount}`);
-  record('status forced to incoming', order.json?.data?.status === 'incoming', order.json?.data?.status);
+  record('booking enters confirm flow (pending_confirmation + estimate)', order.json?.data?.status === 'pending_confirmation' && order.json?.invoice?.status === 'estimate', `${order.json?.data?.status}/${order.json?.invoice?.status}`);
 
   const calc = await post('/api/work-orders', { client_name: TAG + ' Anon', phone: PHONE_B, address: 'E2E Anon', property_size: 10000, grass: 'buffalo', frequency: 'onetime', addons: ['edging'], coupon_code: 'SPRING20', pin: '5555' });
   record('calculator booking priced with coupon (14100 - 20% = 11280)', calc.json?.invoice?.total_amount === 11280, `total=${calc.json?.invoice?.total_amount} ${calc.json?.error?.message || ''}`);
@@ -130,7 +130,7 @@ let orderId = null, invoiceId = null;
   const wo = await http(`/api/work-orders/${orderId}`);
   record('fetch work order', wo.status === 200 && wo.json?.data?.id === orderId);
   const inv = await http(`/api/invoices/${invoiceId}`);
-  record('fetch invoice', inv.status === 200 && inv.json?.data?.status === 'unpaid' && inv.json?.data?.items?.length === 1);
+  record('fetch invoice (estimate)', inv.status === 200 && inv.json?.data?.status === 'estimate' && inv.json?.data?.items?.length === 1);
   for (const p of [`/tracker/${orderId}`, `/pay/${invoiceId}`, `/receipt/${invoiceId}`]) {
     const r = await http(p);
     record(`page ${p.split('/')[1]}/:id`, r.status === 200 && /<!DOCTYPE html>/i.test(r.text), `HTTP ${r.status}`);
@@ -143,11 +143,13 @@ let orderId = null, invoiceId = null;
 // ---------- 6. payments (expected: not configured in production yet) ----------
 {
   const stk = await post('/api/mpesa/stkpush', { phone: PHONE_A, invoice_id: invoiceId });
-  record('STK push refused while M-Pesa unconfigured', stk.status === 503 && stk.json?.error?.code === 'MPESA_NOT_CONFIGURED', `HTTP ${stk.status} ${stk.json?.error?.code}`);
+  record('STK push refused (M-Pesa unconfigured or estimate not confirmed)', [503, 409].includes(stk.status) && ['MPESA_NOT_CONFIGURED', 'INVOICE_NOT_CONFIRMED'].includes(stk.json?.error?.code), `HTTP ${stk.status} ${stk.json?.error?.code}`);
   const forged = await post('/api/mpesa/callback', { Body: { stkCallback: { CheckoutRequestID: 'x', ResultCode: 0 } } });
   record('forged callback without token rejected (fail closed)', forged.status === 401, `HTTP ${forged.status}`);
   const inv = await http(`/api/invoices/${invoiceId}`);
-  record('invoice still unpaid after forged callback', inv.json?.data?.status === 'unpaid');
+  record('invoice not paid after forged callback', inv.json?.data?.status !== 'paid', inv.json?.data?.status);
+  const confirmAnon = await post(`/api/work-orders/${orderId}/confirm`.replace('/api/work-orders', '/api/admin/work-orders'), { total_amount: 1 });
+  record('supervisor confirm endpoint requires admin token', [401, 404].includes(confirmAnon.status), `HTTP ${confirmAnon.status}`);
   const recon = await http('/api/mpesa/reconcile');
   record('reconcile hidden without admin/cron secret', recon.status === 404, `HTTP ${recon.status}`);
   const sys = await http('/api/system/status');

@@ -279,9 +279,13 @@
       }
     }
 
-    // Identify In-Progress or Scheduled Work Order
-    const activeOrder = workOrders.find(w => w.status === 'in_progress') || workOrders.find(w => w.status === 'scheduled') || workOrders[0];
-    const unpaidInvoice = invoices.find(i => i.status === 'unpaid' && i.balance_due > 0);
+    // Identify the most relevant work order: live > confirmed/scheduled > awaiting confirmation
+    const ACTIVE_ORDER_STATUSES = ['in_progress', 'dispatched', 'scheduled', 'confirmed', 'incoming', 'pending_confirmation'];
+    const activeOrder = ACTIVE_ORDER_STATUSES.map(s => workOrders.find(w => w.status === s)).find(Boolean) || workOrders[0];
+    const orderAwaitingConfirmation = Boolean(activeOrder && activeOrder.status === 'pending_confirmation');
+    // Payable = confirmed by a supervisor; an 'estimate' is shown but cannot be paid yet
+    const unpaidInvoice = invoices.find(i => (i.status === 'unpaid' || i.status === 'partially_paid') && Number(i.balance_due) > 0);
+    const estimateInvoice = !unpaidInvoice ? invoices.find(i => i.status === 'estimate') : null;
 
     // Recent completed visits feed
     const recentVisits = workOrders
@@ -588,18 +592,22 @@
           <div class="portal-card active-service-card" id="active-service-section">
             <div class="portal-card-header">
               <div class="header-left">
-                <span class="portal-card-tag"><i class="fa-solid fa-calendar-check"></i> Upcoming Appointment</span>
-                <h3 class="portal-card-title">${activeOrder ? activeOrder.title : 'Regular Maintenance Scheduled'}</h3>
+                <span class="portal-card-tag"><i class="fa-solid fa-calendar-check"></i> ${orderAwaitingConfirmation ? 'Booking Request' : 'Upcoming Appointment'}</span>
+                <h3 class="portal-card-title">${activeOrder ? esc(activeOrder.title) : 'No service scheduled'}</h3>
               </div>
               ${activeOrder && activeOrder.status === 'in_progress' ? `
                 <span class="status-badge status-in-progress pulse-glow">
                   <span class="live-dot"></span> Crew On-Site
                 </span>
-              ` : `
-                <span class="status-badge status-scheduled">
-                  <i class="fa-regular fa-clock"></i> Confirmed
+              ` : orderAwaitingConfirmation ? `
+                <span class="status-badge status-pending">
+                  <i class="fa-regular fa-hourglass-half"></i> Awaiting Confirmation
                 </span>
-              `}
+              ` : activeOrder ? `
+                <span class="status-badge status-scheduled">
+                  <i class="fa-regular fa-clock"></i> ${activeOrder.status === 'completed' ? 'Completed' : 'Confirmed'}
+                </span>
+              ` : ''}
             </div>
 
             <div class="portal-card-body">
@@ -611,15 +619,15 @@
                   </div>
                   <div class="meta-item">
                     <span class="meta-label">Assigned Crew</span>
-                    <span class="meta-value"><i class="fa-solid fa-users-gear"></i> ${activeOrder.crew_name || 'Alpha Care Crew'}</span>
+                    <span class="meta-value"><i class="fa-solid fa-users-gear"></i> ${esc(activeOrder.crew_name || 'To be assigned')}</span>
                   </div>
                   <div class="meta-item">
                     <span class="meta-label">Service Type</span>
-                    <span class="meta-value">${activeOrder.service_type || 'Precision Lawn Mowing'}</span>
+                    <span class="meta-value">${esc(activeOrder.service_type || 'Lawn care service')}</span>
                   </div>
                   <div class="meta-item">
-                    <span class="meta-label">Total Price</span>
-                    <span class="meta-value text-accent">KSh ${Math.round(activeOrder.total_price || 4500).toLocaleString()}</span>
+                    <span class="meta-label">${orderAwaitingConfirmation ? 'Estimated Price' : 'Confirmed Price'}</span>
+                    <span class="meta-value text-accent">KSh ${Math.round(activeOrder.total_price || 0).toLocaleString()}</span>
                   </div>
                 </div>
 
@@ -638,10 +646,15 @@
                       <i class="fa-solid fa-location-crosshairs"></i> Open Live GPS Tracker
                     </a>
                   </div>
+                ` : orderAwaitingConfirmation ? `
+                  <div class="service-schedule-notice">
+                    <p><i class="fa-solid fa-circle-info"></i> We are reviewing your request. A supervisor will confirm the final price and date by SMS, and payment is only requested after that.</p>
+                    <a href="/tracker/${esc(activeOrder.id)}" class="btn btn-outline-secondary btn-sm">View Request Status</a>
+                  </div>
                 ` : `
                   <div class="service-schedule-notice">
-                    <p><i class="fa-solid fa-circle-info"></i> Your team is preparing equipment for this visit. A live GPS tracking link will activate automatically on service day.</p>
-                    <a href="/tracker/${activeOrder.id}" class="btn btn-outline-secondary btn-sm">Preview Route & Checklist</a>
+                    <p><i class="fa-solid fa-circle-info"></i> Your visit is confirmed. Live tracking activates on service day once the crew is dispatched.</p>
+                    <a href="/tracker/${esc(activeOrder.id)}" class="btn btn-outline-secondary btn-sm">View Schedule & Checklist</a>
                   </div>
                 `}
               ` : `
@@ -662,6 +675,10 @@
                 <span class="status-badge status-unpaid">
                   <i class="fa-solid fa-triangle-exclamation"></i> Payment Due
                 </span>
+              ` : estimateInvoice ? `
+                <span class="status-badge status-pending">
+                  <i class="fa-regular fa-hourglass-half"></i> Estimate Pending
+                </span>
               ` : `
                 <span class="status-badge status-paid">
                   <i class="fa-solid fa-circle-check"></i> Account Up-to-Date
@@ -670,7 +687,26 @@
             </div>
 
             <div class="portal-card-body">
-              ${unpaidInvoice ? `
+              ${estimateInvoice ? `
+                <div class="invoice-alert-box estimate-box">
+                  <div class="invoice-summary-row">
+                    <div>
+                      <span class="inv-num">${esc(estimateInvoice.invoice_number)} <small>(estimate)</small></span>
+                      <div class="inv-title">${esc(estimateInvoice.service_title || 'Lawn Care Service')}</div>
+                      <div class="inv-due text-muted">Nothing to pay yet. We confirm the final price with you first.</div>
+                    </div>
+                    <div class="inv-amount-box">
+                      <span class="balance-label">Estimated</span>
+                      <span class="balance-amount">KSh ${Math.round(estimateInvoice.total_amount).toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <div class="payment-action-buttons">
+                    <a href="/receipt/${esc(estimateInvoice.id)}" class="btn btn-view-invoice" title="View Estimate">
+                      <i class="fa-solid fa-file-lines"></i> View Estimate
+                    </a>
+                  </div>
+                </div>
+              ` : unpaidInvoice ? `
                 <div class="invoice-alert-box">
                   <div class="invoice-summary-row">
                     <div>
@@ -842,7 +878,9 @@
               window.DashboardOnboarding.setCompleted('set-preferences', true);
             }
             const total = Math.round(Number(json.invoice?.total_amount || 0)).toLocaleString();
-            showToast(`${service} scheduled for KSh ${total}! Added to supervisor dispatch queue. +30 Loyalty points earned!`, 'success');
+            showToast(json.booking_mode === 'confirm'
+              ? `${service} requested (estimate KSh ${total}). We will confirm the final price by SMS before any payment. +30 Loyalty points earned!`
+              : `${service} scheduled for KSh ${total}! Added to supervisor dispatch queue. +30 Loyalty points earned!`, 'success');
             setTimeout(() => {
               refreshCurrentClient();
             }, 1200);
@@ -1501,7 +1539,7 @@
         // If client already recognized, book in 1 click!
         if (client) {
           bookBtn.disabled = true;
-          bookBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Submitting Dispatch...`;
+          bookBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Sending request...`;
 
           try {
             // Send the pricing *inputs*; the server computes the invoice total.
@@ -1525,9 +1563,11 @@
 
             const json = await res.json();
             if (json.success) {
-              bookBtn.innerHTML = `<i class="fa-solid fa-check"></i> Booked Successfully!`;
+              bookBtn.innerHTML = `<i class="fa-solid fa-check"></i> Request Sent!`;
               const serverTotal = Math.round(Number(json.invoice?.total_amount || total));
-              showToast(`Booking for ${client.name} queued for dispatch at KSh ${serverTotal.toLocaleString()}! +30 Loyalty points earned.`, 'success');
+              showToast(json.booking_mode === 'confirm'
+                ? `Request received, ${client.name}. Estimate KSh ${serverTotal.toLocaleString()}; we will confirm the final price by SMS before any payment. +30 Loyalty points earned.`
+                : `Booking for ${client.name} queued for dispatch at KSh ${serverTotal.toLocaleString()}! +30 Loyalty points earned.`, 'success');
               setTimeout(() => {
                 refreshCurrentClient();
               }, 1200);
@@ -1536,7 +1576,7 @@
             }
           } catch (err) {
             bookBtn.disabled = false;
-            bookBtn.innerHTML = `<i class="fa-solid fa-calendar-check"></i> Instant Book Lawn Service`;
+            bookBtn.innerHTML = `<i class="fa-solid fa-calendar-check"></i> Request This Service`;
             showToast(err.message, 'error');
           }
         } else {
@@ -1576,7 +1616,10 @@
           <div class="client-modal-icon"><i class="fa-solid fa-clipboard-check"></i></div>
           <h3>Confirm Your Lawn Service</h3>
           <p>${Number(size).toLocaleString()} sq ft • ${esc(grass)} • ${esc(frequency)}</p>
-          <div class="anon-estimate-pill">Estimated Total: <strong>KSh ${Math.round(Number(price)).toLocaleString()}</strong></div>
+          <div class="anon-estimate-pill">Estimate: <strong>KSh ${Math.round(Number(price)).toLocaleString()}</strong></div>
+          <p class="anon-estimate-note" style="font-size:0.82rem; color:#4b5563; margin:8px 0 0;">
+            <i class="fa-solid fa-circle-info"></i> This is an estimate. A supervisor confirms the final price by SMS before any payment is requested.
+          </p>
         </div>
 
         <form id="anon-booking-form">
@@ -1598,7 +1641,7 @@
             <p style="font-size:0.75rem; color:#6b7280; margin:4px 0 0;">You will use this PIN to open your hub and track your order.</p>
           </div>
           <button type="submit" class="btn btn-primary btn-block" id="anon-submit-btn">
-            <i class="fa-solid fa-paper-plane"></i> Submit to Supervisor Dispatch Queue
+            <i class="fa-solid fa-paper-plane"></i> Send Booking Request
           </button>
         </form>
       </div>
@@ -1644,7 +1687,9 @@
           setStoredPin(pin);
           modal.classList.remove('active');
           const serverTotal = Math.round(Number(json.invoice?.total_amount || price));
-          showToast(`Thank you ${name}! Your KSh ${serverTotal.toLocaleString()} order is queued for supervisor dispatch. Welcome to Lawn Craft!`, 'success');
+          showToast(json.booking_mode === 'confirm'
+            ? `Thank you ${name}! Your request (estimate KSh ${serverTotal.toLocaleString()}) is with our supervisor. We will confirm the final price by SMS before any payment.`
+            : `Thank you ${name}! Your KSh ${serverTotal.toLocaleString()} order is queued for supervisor dispatch. Welcome to Lawn Craft!`, 'success');
           
           // Switch to personalized client hub automatically and bring it into view.
           setTimeout(async () => {
@@ -1659,7 +1704,7 @@
         }
       } catch (err) {
         btn.disabled = false;
-        btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Submit to Supervisor Dispatch Queue`;
+        btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Send Booking Request`;
         showToast(err.message || 'Submission error. Please check your connection.', 'error');
       }
     });

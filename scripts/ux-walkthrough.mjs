@@ -24,6 +24,7 @@ const candidates = [
 const exe = candidates.find((p) => fs.existsSync(p));
 if (!exe) { console.log('NO BROWSER FOUND'); process.exit(2); }
 
+const document_has_pay = (txt) => /Pay via Lipa Na M-Pesa/.test(txt);
 const results = [];
 const rec = (name, ok, detail = '') => results.push({ name, ok, detail });
 const shot = async (page, name) => { const f = path.join(SHOTS, `${LABEL}-${name}.png`); await page.screenshot({ path: f, fullPage: false }); return f; };
@@ -96,26 +97,27 @@ try {
     .catch(async () => rec('booking submits and hub opens automatically', false, await page.$eval('#portal-toast-container', (e) => e.textContent).catch(() => 'no toast')));
   await new Promise((r) => setTimeout(r, 1200));
   const hubText = await page.evaluate(() => document.getElementById('personalized-dashboard')?.innerText || '');
-  const invoiceAmountMatch = hubText.match(/Balance Due\s*KSh\s*([\d,]+)/i);
-  rec('hub shows the new invoice with balance due', Boolean(invoiceAmountMatch), `estimate "${estimate}" hub balance ${invoiceAmountMatch?.[1] || 'n/a'}`);
+  const invoiceAmountMatch = hubText.match(/Estimated\s*KSh\s*([\d,]+)/i);
+  rec('hub shows the estimate awaiting confirmation (no pay button)', Boolean(invoiceAmountMatch) && /Estimate Pending|Awaiting Confirmation/.test(hubText) && !document_has_pay(hubText), `estimate "${estimate}" hub estimate ${invoiceAmountMatch?.[1] || 'n/a'}`);
   rec('hub greets the client by name', /Welcome back, UX/.test(hubText));
   shots.push(await shot(page, 'client-hub'));
 
   // pay page for that invoice
-  const invoiceId = await page.evaluate(() => document.getElementById('instant-mpesa-btn')?.getAttribute('data-invoice-id') || document.getElementById('dash-pay-btn')?.getAttribute('data-invoice-id'));
+  const invoiceId = await page.evaluate(() => (document.querySelector('a[href^="/receipt/"]')?.getAttribute('href') || '').split('/').pop() || null);
   if (invoiceId) {
     await page.goto(`${BASE}/pay/${invoiceId}`, { waitUntil: 'networkidle2' });
     await page.waitForFunction(() => (document.getElementById('inv-num')?.textContent || '').startsWith('INV-'), { timeout: 10000 }).catch(() => {});
     const invNum = await page.$eval('#inv-num', (el) => el.textContent.trim()).catch(() => '');
     const bal = await page.$eval('#inv-balance', (el) => el.textContent.trim()).catch(() => '');
     const prefilled = await page.$eval('#mpesa-phone', (el) => el.value).catch(() => '');
-    rec('pay page renders invoice and prefills phone', invNum.startsWith('INV-') && bal.includes('KSh') && prefilled.length > 6, `${invNum} ${bal} phone=${prefilled}`);
+    const payDisabled = await page.$eval('#submit-mpesa-btn', (el) => el.disabled).catch(() => false);
+    rec('pay page renders estimate, prefills phone, and blocks payment until confirmed', invNum.startsWith('INV-') && bal.includes('estimate') && prefilled.length > 6 && payDisabled, `${invNum} ${bal} phone=${prefilled} disabled=${payDisabled}`);
     shots.push(await shot(page, 'pay-page'));
     await page.goto(`${BASE}/receipt/${invoiceId}`, { waitUntil: 'networkidle2' });
     await new Promise((r) => setTimeout(r, 800));
     const badge = await page.$eval('#r-paid-badge', (el) => el.textContent.trim()).catch(() => '');
     const docTitle = await page.$eval('.doc-title', (el) => el.textContent.trim()).catch(() => '');
-    rec('receipt page marks unpaid invoice as INVOICE / UNPAID', /UNPAID/.test(badge) && /INVOICE/.test(docTitle), `${docTitle} / ${badge}`);
+    rec('receipt page renders the estimate as ESTIMATE', /ESTIMATE/.test(badge) && /ESTIMATE/.test(docTitle), `${docTitle} / ${badge}`);
     shots.push(await shot(page, 'receipt-unpaid'));
   } else {
     rec('pay page renders invoice and prefills phone', false, 'no invoice id in hub');
@@ -135,7 +137,7 @@ try {
       tasks: document.querySelectorAll('#tracker-checklist .task-item').length,
       counter: document.getElementById('checklist-counter')?.textContent.trim(),
     }));
-    rec('tracker: queued order shows honest state (no fake crew, no fake phone)', t.status === 'Queued for Dispatch' && !t.contactVisible && t.crewPins === 0, JSON.stringify(t));
+    rec('tracker: new request shows honest state (awaiting confirmation, no fake crew/phone)', t.status === 'Awaiting Confirmation' && !t.contactVisible && t.crewPins === 0, JSON.stringify(t));
     rec('tracker: checklist rendered from the order', t.tasks === 5 && /0 of 5/.test(t.counter || ''), `${t.tasks} tasks, ${t.counter}`);
     shots.push(await shot(page, 'tracker'));
   } else {

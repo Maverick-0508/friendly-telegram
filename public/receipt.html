@@ -352,17 +352,19 @@
                     if (statusEl) {
                         const label = inv.status === 'paid' ? 'Settled & Reconciled'
                             : inv.status === 'partially_paid' ? `Partially paid — KSh ${Math.round(Number(inv.balance_due || 0)).toLocaleString()} outstanding`
+                            : inv.status === 'estimate' ? 'Estimate — awaiting supervisor confirmation, nothing to pay yet'
                             : 'Awaiting payment';
                         statusEl.textContent = label;
                         statusEl.style.color = inv.status === 'paid' ? '#059669' : '#b45309';
                     }
                     const paidBadge = document.getElementById('r-paid-badge');
                     if (paidBadge && inv.status !== 'paid') {
+                        const isEstimate = inv.status === 'estimate';
                         paidBadge.innerHTML = '<i class="fa-solid fa-hourglass-half"></i> ' +
-                            (inv.status === 'partially_paid' ? 'PARTIALLY PAID' : 'UNPAID');
-                        paidBadge.style.background = '#b45309';
+                            (isEstimate ? 'ESTIMATE' : inv.status === 'partially_paid' ? 'PARTIALLY PAID' : 'UNPAID');
+                        paidBadge.style.background = isEstimate ? '#475569' : '#b45309';
                         const title = document.querySelector('.doc-title');
-                        if (title) title.textContent = 'TAX INVOICE';
+                        if (title) title.textContent = isEstimate ? 'ESTIMATE' : 'TAX INVOICE';
                     }
                     const subtotal = Math.round(Number(inv.subtotal || (inv.total_amount * 0.862)));
                     const vat = Math.round(Number(inv.tax_vat || (inv.total_amount * 0.138)));

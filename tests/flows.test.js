@@ -11,7 +11,7 @@ let baseUrl;
 let mockDaraja;
 
 test.before(async () => {
-  resetRuntimeEnv();
+  resetRuntimeEnv({ BOOKING_MODE: 'instant' });
   process.env.PORTAL_STORE_FILE = path.resolve('data', 'test-flows.json');
   fs.rmSync(process.env.PORTAL_STORE_FILE, { force: true });
   process.env.NODE_ENV = 'development';

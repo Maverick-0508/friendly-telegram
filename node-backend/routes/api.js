@@ -14,6 +14,7 @@ import {
   validateCoupon,
   reconcileHandler,
   getPortalStats,
+  confirmWorkOrder,
 } from '../controllers/portalController.js';
 import { checkPostgresReachability } from '../config/db.js';
 import { checkSupabaseReachability } from '../config/supabase.js';
@@ -200,6 +201,9 @@ router.post('/portal/clients', createClientProfile);
 // Work Orders & Dispatch Queue
 router.post('/work-orders', createWorkOrder);
 router.get('/work-orders/:orderId', getWorkOrder);
+// Supervisor confirmation of a booking request (x-admin-token). Body:
+// { total_amount?, scheduled_date?, crew_name?, crew_lead?, crew_phone?, due_date?, notes?, confirmed_by? }
+router.post('/admin/work-orders/:orderId/confirm', requireAdmin, confirmWorkOrder);
 
 // Payments & Invoices (real M-Pesa Daraja integration)
 router.post('/mpesa/stkpush', stkPushMpesa);

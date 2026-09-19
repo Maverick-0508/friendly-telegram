@@ -18,7 +18,7 @@ let store;
 let quoteFilterValue;
 
 test.before(async () => {
-  resetRuntimeEnv();
+  resetRuntimeEnv({ BOOKING_MODE: 'instant' });
   process.env.PORTAL_STORE_FILE = path.resolve('data', 'test-hardening.json');
   fs.rmSync(process.env.PORTAL_STORE_FILE, { force: true });
   ({ store, quoteFilterValue } = await import('../node-backend/services/store.js'));
@@ -159,6 +159,63 @@ test('status polling recovers a lost callback by querying Daraja directly', asyn
 
   const invoice = await get(`/api/invoices/${invoiceId}`);
   assert.equal(invoice.body.data.status, 'paid');
+});
+
+// ---------------- Confirmed-quote booking flow ----------------
+
+test('default booking mode creates an estimate that cannot be paid until a supervisor confirms it', async () => {
+  const prevMode = process.env.BOOKING_MODE;
+  process.env.BOOKING_MODE = ''; // default = confirm
+  process.env.ADMIN_API_TOKEN = 'test-admin-token';
+  try {
+    const order = await post('/api/work-orders', {
+      client_name: 'Confirm Flow Client', phone: '+254700900030', service_type: 'Core Aeration', pin: '1212',
+    });
+    assert.equal(order.response.status, 201);
+    assert.equal(order.body.booking_mode, 'confirm');
+    assert.equal(order.body.data.status, 'pending_confirmation');
+    assert.equal(order.body.invoice.status, 'estimate');
+    assert.equal(order.body.invoice.total_amount, 8500);
+    const orderId = order.body.data.id;
+    const invoiceId = order.body.invoice.id;
+
+    // Not payable yet.
+    const push = await post('/api/mpesa/stkpush', { phone: '+254700900030', invoice_id: invoiceId });
+    assert.equal(push.response.status, 409);
+    assert.equal(push.body.error.code, 'INVOICE_NOT_CONFIRMED');
+
+    // Confirmation requires the admin token.
+    const anon = await post(`/api/admin/work-orders/${orderId}/confirm`, { total_amount: 9000 });
+    assert.equal(anon.response.status, 401);
+
+    const confirm = await fetch(`${baseUrl}/api/admin/work-orders/${orderId}/confirm`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': 'test-admin-token' },
+      body: JSON.stringify({ total_amount: 9000, scheduled_date: 'Tue 23 Sep, 8:00 AM', crew_name: 'Alpha Crew' }),
+    });
+    const confirmed = await confirm.json();
+    assert.equal(confirm.status, 200);
+    assert.equal(confirmed.data.status, 'confirmed');
+    assert.equal(confirmed.data.scheduled_date, 'Tue 23 Sep, 8:00 AM');
+    assert.equal(confirmed.invoice.status, 'unpaid');
+    assert.equal(confirmed.invoice.total_amount, 9000);
+    assert.equal(confirmed.invoice.balance_due, 9000);
+    assert.equal(confirmed.invoice.items[0].amount, 9000);
+    assert.equal(Math.round(confirmed.invoice.subtotal + confirmed.invoice.tax_vat), 9000);
+
+    // Now payable, at the confirmed amount.
+    const push2 = await post('/api/mpesa/stkpush', { phone: '+254700900030', invoice_id: invoiceId });
+    assert.equal(push2.response.status, 200);
+    assert.equal(push2.body.amount, 9000);
+
+    // The hub shows the confirmed order and payable invoice.
+    const hub = await post('/api/portal/lookup', { identifier: '+254700900030', pin: '1212' });
+    assert.equal(hub.body.work_orders[0].status, 'confirmed');
+    assert.equal(hub.body.invoices[0].status, 'unpaid');
+  } finally {
+    process.env.BOOKING_MODE = prevMode;
+    process.env.ADMIN_API_TOKEN = '';
+  }
 });
 
 // ---------------- Pricing ----------------

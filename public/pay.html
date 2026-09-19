@@ -422,7 +422,12 @@
                         `).join('');
                     }
 
-                    if (invoiceData.status === 'paid') {
+                    if (invoiceData.status === 'estimate') {
+                        document.getElementById('inv-balance').textContent = `KSh ${dueAmt.toLocaleString()} (estimate)`;
+                        document.getElementById('submit-mpesa-btn').disabled = true;
+                        document.getElementById('pay-error-msg').textContent = 'This estimate is awaiting confirmation from Lawn Craft. You will receive an SMS with a payment link once the final price is confirmed. No payment is due yet.';
+                        errBanner.style.display = 'block';
+                    } else if (invoiceData.status === 'paid') {
                         document.getElementById('inv-balance').textContent = 'KSh 0 (PAID)';
                         document.getElementById('payment-main-view').innerHTML = `
                             <div class="success-box" style="display:block;">

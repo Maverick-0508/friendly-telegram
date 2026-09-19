@@ -176,11 +176,21 @@ export async function notifyOwnerNewOrder(order, invoice) {
   return sendEmail({ to, subject: `New work order: ${order.service_type}`, html });
 }
 
-export async function notifyClientOrderBooked(order) {
+export async function notifyClientOrderBooked(order, { mode = 'confirm' } = {}) {
   if (!order.client_phone) return null;
+  const message = mode === 'confirm'
+    ? `Lawn Craft: We received your request for "${order.service_type}" (estimate KSh ${Math.round(order.total_price || 0)}). We will confirm the final price by SMS before any payment. Track: ${siteUrl()}/tracker/${order.id}`
+    : `Lawn Craft: Your order "${order.service_type}" is queued for dispatch (est. 48 hrs). Track it at ${siteUrl()}/tracker/${order.id}`;
+  return sendSms({ to: order.client_phone, message });
+}
+
+export async function notifyClientOrderConfirmed(order, invoice) {
+  if (!order.client_phone) return null;
+  const amount = Math.round(Number(invoice?.balance_due ?? invoice?.total_amount ?? order.total_price ?? 0));
+  const when = order.scheduled_date ? ` Scheduled: ${order.scheduled_date}.` : '';
   return sendSms({
     to: order.client_phone,
-    message: `Lawn Craft: Your order "${order.service_type}" is queued for dispatch (est. 48 hrs). Track it at ${siteUrl()}/tracker/${order.id}`,
+    message: `Lawn Craft: Your "${order.service_type}" booking is confirmed at KSh ${amount}.${when} Pay securely with M-Pesa: ${siteUrl()}/pay/${invoice?.id || order.invoice_id}`,
   });
 }
 

@@ -415,6 +415,8 @@
 
             const $ = (id) => document.getElementById(id);
             const STATUS = {
+                pending_confirmation: { badge: 'Awaiting Confirmation', eta: 'Under Review', live: false, desc: 'A supervisor is reviewing your request and will confirm the final price and date by SMS. No payment is due until then.' },
+                confirmed:   { badge: 'Confirmed',           eta: 'Awaiting Dispatch',  live: false, desc: 'Your booking is confirmed. A crew lead will be assigned and you will be notified by SMS.' },
                 incoming:    { badge: 'Queued for Dispatch', eta: 'Awaiting Dispatch',  live: false, desc: 'Your booking is in the supervisor dispatch queue. A crew lead will be assigned and you will be notified by SMS.' },
                 pending:     { badge: 'Queued for Dispatch', eta: 'Awaiting Dispatch',  live: false, desc: 'Your booking is in the supervisor dispatch queue. A crew lead will be assigned and you will be notified by SMS.' },
                 scheduled:   { badge: 'Scheduled',           eta: 'Crew Scheduled',     live: false, desc: 'A crew has been assigned and will be dispatched on the scheduled date.' },

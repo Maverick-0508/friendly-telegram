@@ -8,7 +8,7 @@ let server;
 let baseUrl;
 
 test.before(async () => {
-  resetRuntimeEnv({ ENABLE_ACCOUNT_AUTH: 'true' });
+  resetRuntimeEnv({ ENABLE_ACCOUNT_AUTH: 'true', BOOKING_MODE: 'instant' });
   process.env.PORTAL_STORE_FILE = path.resolve('data', 'test-api.integration.json');
   fs.rmSync(process.env.PORTAL_STORE_FILE, { force: true });
   process.env.NODE_ENV = 'development';

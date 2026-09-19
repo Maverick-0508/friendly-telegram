@@ -12,7 +12,7 @@ let mockDaraja;
 let store;
 
 test.before(async () => {
-  resetRuntimeEnv();
+  resetRuntimeEnv({ BOOKING_MODE: 'instant' });
   process.env.PORTAL_STORE_FILE = path.resolve('data', 'test-reconcile.json');
   fs.rmSync(process.env.PORTAL_STORE_FILE, { force: true });
   ({ store } = await import('../node-backend/services/store.js'));
