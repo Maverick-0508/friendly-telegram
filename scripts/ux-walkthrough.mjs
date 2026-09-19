@@ -38,7 +38,8 @@ try {
   const page = await browser.newPage();
   const consoleErrors = [];
   const failedRequests = [];
-  page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(m.text().slice(0, 200)); });
+  // The deliberate wrong-PIN attempt produces a 403 the browser logs as an error.
+  page.on('console', (m) => { if (m.type() === 'error' && !/status of 403/.test(m.text())) consoleErrors.push(m.text().slice(0, 200)); });
   page.on('requestfailed', (r) => { if (!r.url().includes('open-meteo')) failedRequests.push(`${r.failure()?.errorText} ${r.url()}`.slice(0, 200)); });
   page.on('response', (r) => { if (r.status() >= 400 && !r.url().includes('open-meteo') && !r.url().includes('/api/portal/lookup')) failedRequests.push(`HTTP ${r.status()} ${r.url()}`.slice(0, 200)); });
 

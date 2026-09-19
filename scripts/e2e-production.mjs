@@ -63,7 +63,9 @@ for (const p of ['/', '/services', '/calculator', '/service-area', '/process', '
   const beacon = await http('/about');
   record('third-party beacon removed', !beacon.text.includes('verbosedoodle'));
   const sw = await http('/sw.js');
-  record('service worker cache v12', sw.text.includes('lawncraft-v12'));
+  const localSw = (await import('node:fs')).readFileSync(new URL('../public/sw.js', import.meta.url), 'utf8');
+  const wanted = localSw.match(/lawncraft-v\d+/)?.[0];
+  record('service worker version matches this checkout', Boolean(wanted) && sw.text.includes(wanted), `deployed=${sw.text.match(/lawncraft-v\d+/)?.[0]} local=${wanted}`);
 }
 
 // ---------- 3. lead + quote (Supabase) ----------
