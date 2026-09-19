@@ -160,8 +160,12 @@ let orderId = null, invoiceId = null;
   record('coupon validate', c.status === 200 && c.json?.discount_amount === 1500);
   const a = await post('/api/analytics', { page: '/e2e', referrer: 'e2e' });
   record('analytics accepted', a.status === 200);
+  // Email/password accounts are off by default (ENABLE_ACCOUNT_AUTH); when on,
+  // a wrong password must still be rejected.
   const login = await post('/api/auth/login', { email: 'nobody@e2e-test.invalid', password: 'wrongpass' });
-  record('auth login wrong credentials -> 401', login.status === 401, `HTTP ${login.status} ${login.json?.error?.message || ''}`);
+  record('account auth disabled (404) or rejects bad credentials (401)', [404, 401].includes(login.status), `HTTP ${login.status}`);
+  const reg = await post('/api/auth/register', { email: 'spam@e2e-test.invalid', password: 'secret123' });
+  record('open account registration not exposed by default', reg.status === 404 || reg.status === 401, `HTTP ${reg.status}`);
 }
 
 // ---------- 8. persistence proof via API + cleanup ----------
