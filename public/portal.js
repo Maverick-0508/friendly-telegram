@@ -198,15 +198,16 @@
     navButtons.forEach(btn => {
       if (clientData) {
         const tier = clientData.loyalty?.tier || 'Member';
+        // The icon is a direct child: narrow headers hide the <span>s and show
+        // the button as a 38px circle, so the icon must survive on its own.
         btn.innerHTML = `
-          <span class="user-avatar-badge tier-${tier.toLowerCase()}">
-            <i class="fa-solid fa-seedling"></i>
-          </span>
+          <i class="fa-solid fa-user-check" aria-hidden="true"></i>
           <span class="client-nav-name">Hi, ${firstName(clientData.client.name)}</span>
           <span class="vip-tier-chip tier-${esc(tier.toLowerCase())}">${esc(tier)}</span>
         `;
         btn.classList.add('logged-in');
         btn.setAttribute('title', `Client Hub: ${clientData.client.name}`);
+        btn.setAttribute('aria-label', `Open Client Hub for ${clientData.client.name}`);
       } else {
         btn.innerHTML = `<i class="fa-solid fa-user-check"></i> <span>Client Hub</span>`;
         btn.classList.remove('logged-in');
@@ -686,8 +687,8 @@
                     <button class="btn btn-mpesa-instant" data-invoice-id="${esc(unpaidInvoice.id)}" data-amount="${Number(unpaidInvoice.balance_due) || 0}" id="instant-mpesa-btn">
                       <i class="fa-solid fa-mobile-screen-button"></i> Pay via Lipa Na M-Pesa
                     </button>
-                    <a href="/pay/${unpaidInvoice.id}" class="btn btn-card-pay">
-                      <i class="fa-regular fa-credit-card"></i> Card / Options
+                    <a href="/pay/${esc(unpaidInvoice.id)}" class="btn btn-card-pay">
+                      <i class="fa-solid fa-mobile-screen-button"></i> Pay Online
                     </a>
                     <a href="/receipt/${unpaidInvoice.id}" class="btn btn-view-invoice" title="View Tax Invoice">
                       <i class="fa-solid fa-file-pdf"></i> View Invoice
@@ -1683,9 +1684,24 @@
   }
 
   // Main Auto-Initialization
+  // Open the hub sign-in with the identifier prefilled (deep links from SMS,
+  // the PWA shortcut, /login redirects).
+  function promptForHub(prefillIdentifier) {
+    if (!document.getElementById('instant-calculator') && !document.querySelector('.client-access-trigger')) return;
+    openClientAccessModal();
+    const input = document.getElementById('client-identifier-input');
+    if (input && prefillIdentifier) {
+      input.value = prefillIdentifier;
+      document.getElementById('client-pin-input')?.focus();
+    }
+  }
+
   async function init() {
     initClientNavTriggers();
     initPricingCalculator();
+
+    const params = new URLSearchParams(window.location.search);
+    const wantsHub = params.get('client_portal') === 'open' || params.get('hub') === 'open' || window.location.hash === '#client-hub';
 
     // 1. Check URL query params for ?client= or ?phone=
     const queryId = getQueryIdentifier();
@@ -1698,10 +1714,12 @@
           showToast(`Recognized from link: Welcome ${data.client.name}!`, 'success');
           return;
         }
-      } else {
-        updateTopNavUser(null);
-        return;
       }
+      // Known identifier but no session PIN: ask for the PIN instead of
+      // silently showing the public page.
+      updateTopNavUser(null);
+      promptForHub(queryId);
+      return;
     }
 
     // 2. Check localStorage for returning client (requires an active session PIN)
@@ -1710,12 +1728,14 @@
       const data = await fetchClientProfile(storedId);
       if (data) {
         renderPersonalizedState(data);
+        if (wantsHub) document.getElementById('personalized-dashboard')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
       }
     }
 
     // 3. Anonymous state
     updateTopNavUser(null);
+    if (wantsHub) promptForHub(storedId || '');
   }
 
   // Expose global methods

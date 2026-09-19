@@ -334,16 +334,16 @@
         <aside class="tracker-sidebar">
             <div>
                 <span class="status-pill-large" id="tracker-status-badge">
-                    <span class="pulse-beacon"></span>
-                    <span id="tracker-status-text">Crew On-Site</span>
+                    <span class="pulse-beacon" id="tracker-pulse" style="display:none;"></span>
+                    <span id="tracker-status-text">Loading order…</span>
                 </span>
             </div>
 
             <!-- ETA Banner -->
             <div class="eta-banner">
                 <div class="eta-sub">Service Progress</div>
-                <div class="eta-time" id="tracker-eta">Active On-Site</div>
-                <p class="eta-desc" id="tracker-eta-desc">Team is currently executing precision mowing.</p>
+                <div class="eta-time" id="tracker-eta">Loading…</div>
+                <p class="eta-desc" id="tracker-eta-desc">Fetching the latest status of your service.</p>
             </div>
 
             <!-- Assigned Crew Profile -->
@@ -353,62 +353,35 @@
                         <i class="fa-solid fa-user-shield"></i>
                     </div>
                     <div class="crew-info-text">
-                        <h3 id="crew-lead-name">Assigned Field Specialist</h3>
-                        <p id="crew-team-title">Lead Specialist • Lawn Craft Dispatch</p>
-                        <p id="crew-vehicle">Vehicle: Service Unit Dispatched</p>
+                        <h3 id="crew-lead-name">Crew lead to be assigned</h3>
+                        <p id="crew-team-title">Pending Supervisor Dispatch</p>
+                        <p id="crew-vehicle"></p>
                     </div>
                 </div>
-                <div class="crew-contact-buttons">
-                    <a href="tel:+254700000000" class="btn-call" id="crew-call-btn">
+                <!-- Contact buttons appear only once a crew lead with a phone is assigned -->
+                <div class="crew-contact-buttons" id="crew-contact-row" style="display:none;">
+                    <a href="#" class="btn-call" id="crew-call-btn">
                         <i class="fa-solid fa-phone"></i> Call Lead
                     </a>
-                    <a href="https://wa.me/254700000000?text=Hi,%20regarding%20our%20lawn%20service%20today" target="_blank" rel="noopener" class="btn-whatsapp" id="crew-wa-btn">
+                    <a href="#" target="_blank" rel="noopener" class="btn-whatsapp" id="crew-wa-btn">
                         <i class="fa-brands fa-whatsapp"></i> WhatsApp
                     </a>
                 </div>
+                <p class="text-muted" id="crew-support-note" style="font-size:0.85rem; margin-top:10px;">
+                    Questions before dispatch? <a href="tel:+254758827319">Call Lawn Craft</a> or <a href="https://wa.me/254758827319?text=Hi%2C%20regarding%20my%20lawn%20service%20booking" target="_blank" rel="noopener">WhatsApp us</a>.
+                </p>
             </div>
 
-            <!-- Live Checklist -->
-            <div class="checklist-box">
+            <!-- Live Checklist (rendered from the order) -->
+            <div class="checklist-box" id="checklist-box">
                 <div class="checklist-title">
                     <span>Task Checklist</span>
-                    <span class="text-muted" id="checklist-counter" style="font-size: 0.8rem; font-weight: normal;">3 of 5 Completed</span>
+                    <span class="text-muted" id="checklist-counter" style="font-size: 0.8rem; font-weight: normal;"></span>
                 </div>
                 <ul class="task-list" id="tracker-checklist">
-                    <li class="task-item completed">
-                        <div class="task-icon"><i class="fa-solid fa-check"></i></div>
-                        <div class="task-text">
-                            <strong>Perimeter Boundary & Safety Sweep</strong>
-                            <span>Completed at 10:35 AM</span>
-                        </div>
-                    </li>
-                    <li class="task-item completed">
-                        <div class="task-icon"><i class="fa-solid fa-check"></i></div>
-                        <div class="task-text">
-                            <strong>Border Edging & Concrete Trimming</strong>
-                            <span>Completed at 10:48 AM</span>
-                        </div>
-                    </li>
-                    <li class="task-item in_progress">
-                        <div class="task-icon"><i class="fa-solid fa-spinner fa-spin"></i></div>
-                        <div class="task-text">
-                            <strong>Rotary Precision Cut (2.5 inches)</strong>
-                            <span>In Progress Now</span>
-                        </div>
-                    </li>
                     <li class="task-item pending">
                         <div class="task-icon"><i class="fa-solid fa-circle"></i></div>
-                        <div class="task-text">
-                            <strong>Cuttings Vacuuming & Bagging</strong>
-                            <span>Pending</span>
-                        </div>
-                    </li>
-                    <li class="task-item pending">
-                        <div class="task-icon"><i class="fa-solid fa-circle"></i></div>
-                        <div class="task-text">
-                            <strong>Driveway & Pathway Blower Cleanup</strong>
-                            <span>Pending</span>
-                        </div>
+                        <div class="task-text"><strong>Loading checklist…</strong></div>
                     </li>
                 </ul>
             </div>
@@ -440,40 +413,75 @@
                 }
             }
 
-            if (orderData) {
-                if (orderData.crew_lead) document.getElementById('crew-lead-name').textContent = orderData.crew_lead;
-                if (orderData.crew_name) document.getElementById('crew-team-title').textContent = orderData.crew_name;
-                if (orderData.crew_vehicle) document.getElementById('crew-vehicle').textContent = `Vehicle: ${orderData.crew_vehicle}`;
-                if (orderData.crew_phone) {
-                    const cleanPhone = orderData.crew_phone.replace(/[^0-9+]/g, '');
-                    document.getElementById('crew-call-btn').href = `tel:${cleanPhone}`;
-                    document.getElementById('crew-wa-btn').href = `https://wa.me/${cleanPhone}?text=${encodeURIComponent('Hi, regarding our scheduled lawn service today')}`;
-                }
-                if (orderData.status) {
-                    const statusMap = {
-                        'in_progress': 'Active On-Site',
-                        'scheduled': 'Scheduled / Dispatched',
-                        'completed': 'Service Completed',
-                        'pending': 'Queued for Dispatch'
-                    };
-                    document.getElementById('tracker-eta').textContent = statusMap[orderData.status] || orderData.status;
-                }
-                if (orderData.service_type) {
-                    document.getElementById('tracker-eta-desc').textContent = `${orderData.service_type} • ${orderData.address || 'Client Address'}`;
-                }
-            } else if (!orderId) {
-                document.getElementById('tracker-eta').textContent = 'No Order Selected';
-                document.getElementById('tracker-eta-desc').textContent = 'Please open tracking via your active job link in the Lawn Craft Client Hub.';
+            const $ = (id) => document.getElementById(id);
+            const STATUS = {
+                incoming:    { badge: 'Queued for Dispatch', eta: 'Awaiting Dispatch',  live: false, desc: 'Your booking is in the supervisor dispatch queue. A crew lead will be assigned and you will be notified by SMS.' },
+                pending:     { badge: 'Queued for Dispatch', eta: 'Awaiting Dispatch',  live: false, desc: 'Your booking is in the supervisor dispatch queue. A crew lead will be assigned and you will be notified by SMS.' },
+                scheduled:   { badge: 'Scheduled',           eta: 'Crew Scheduled',     live: false, desc: 'A crew has been assigned and will be dispatched on the scheduled date.' },
+                dispatched:  { badge: 'Crew En Route',       eta: 'On The Way',         live: true,  desc: 'Your crew is on the way. Live location updates while they travel.' },
+                in_progress: { badge: 'Crew On-Site',        eta: 'Active On-Site',     live: true,  desc: 'The team is currently working on your lawn.' },
+                completed:   { badge: 'Service Completed',   eta: 'Completed',          live: false, desc: 'This service has been completed. Thank you for choosing Lawn Craft!' },
+                cancelled:   { badge: 'Cancelled',           eta: 'Cancelled',          live: false, desc: 'This booking was cancelled. Contact us if that is unexpected.' },
+            };
+
+            function renderChecklist(items) {
+                const list = $('tracker-checklist');
+                const box = $('checklist-box');
+                if (!Array.isArray(items) || items.length === 0) { box.style.display = 'none'; return; }
+                const icon = (s) => s === 'completed' ? 'fa-check' : s === 'in_progress' ? 'fa-spinner fa-spin' : 'fa-circle';
+                const label = (s) => s === 'completed' ? 'Completed' : s === 'in_progress' ? 'In progress now' : 'Pending';
+                list.textContent = '';
+                items.forEach((item) => {
+                    const li = document.createElement('li');
+                    li.className = `task-item ${item.status || 'pending'}`;
+                    li.innerHTML = `<div class="task-icon"><i class="fa-solid ${icon(item.status)}"></i></div><div class="task-text"><strong></strong><span></span></div>`;
+                    li.querySelector('strong').textContent = item.task || '';
+                    li.querySelector('span').textContent = item.completed_at ? `Completed at ${item.completed_at}` : label(item.status);
+                    list.appendChild(li);
+                });
+                const done = items.filter((i) => i.status === 'completed').length;
+                $('checklist-counter').textContent = `${done} of ${items.length} completed`;
             }
 
-            // Coordinates for Nairobi / Karen property
-            const propertyLat = orderData?.property_lat || -1.3198;
-            const propertyLng = orderData?.property_lng || 36.7085;
-            let crewLat = orderData?.crew_lat || -1.3193;
-            let crewLng = orderData?.crew_lng || 36.7080;
+            let hasCrewLocation = false;
+            if (orderData) {
+                const s = STATUS[orderData.status] || STATUS.incoming;
+                $('tracker-status-text').textContent = s.badge;
+                $('tracker-pulse').style.display = s.live ? '' : 'none';
+                $('tracker-eta').textContent = s.eta;
+                $('tracker-eta-desc').textContent = `${orderData.service_type || 'Lawn service'} • ${orderData.address || 'Client address'}. ${s.desc}`;
+
+                if (orderData.crew_lead) $('crew-lead-name').textContent = orderData.crew_lead;
+                if (orderData.crew_name) $('crew-team-title').textContent = orderData.crew_name;
+                $('crew-vehicle').textContent = orderData.crew_vehicle
+                    ? `Vehicle: ${orderData.crew_vehicle}`
+                    : (orderData.scheduled_date ? `Scheduled: ${orderData.scheduled_date}` : '');
+                if (orderData.crew_phone) {
+                    const cleanPhone = String(orderData.crew_phone).replace(/[^0-9+]/g, '');
+                    $('crew-call-btn').href = `tel:${cleanPhone}`;
+                    $('crew-wa-btn').href = `https://wa.me/${cleanPhone.replace(/^\+/, '')}?text=${encodeURIComponent('Hi, regarding our scheduled lawn service today')}`;
+                    $('crew-contact-row').style.display = '';
+                    $('crew-support-note').style.display = 'none';
+                }
+                hasCrewLocation = Number.isFinite(Number(orderData.crew_lat)) && Number.isFinite(Number(orderData.crew_lng));
+                renderChecklist(orderData.checklist);
+            } else {
+                $('tracker-status-text').textContent = orderId ? 'Order Not Found' : 'No Order Selected';
+                $('tracker-eta').textContent = orderId ? 'Order Not Found' : 'No Order Selected';
+                $('tracker-eta-desc').textContent = orderId
+                    ? 'We could not find this order. Open tracking from your Client Hub or check the link in your SMS.'
+                    : 'Please open tracking via your active job link in the Lawn Craft Client Hub.';
+                $('checklist-box').style.display = 'none';
+            }
+
+            // Property location (defaults to central Nairobi until geocoded)
+            const propertyLat = Number(orderData?.property_lat) || -1.2921;
+            const propertyLng = Number(orderData?.property_lng) || 36.8219;
+            let crewLat = hasCrewLocation ? Number(orderData.crew_lat) : null;
+            let crewLng = hasCrewLocation ? Number(orderData.crew_lng) : null;
 
             // Initialize Leaflet Map
-            const map = L.map('tracker-map').setView([propertyLat, propertyLng], 16);
+            const map = L.map('tracker-map').setView([propertyLat, propertyLng], hasCrewLocation ? 15 : 13);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
@@ -488,40 +496,27 @@
                 iconAnchor: [20, 20]
             });
             const propMarker = L.marker([propertyLat, propertyLng], { icon: propertyIcon }).addTo(map);
-            const propLabel = orderData?.client_name ? `${orderData.client_name}'s Property` : 'Client Service Location';
-            const propAddr = orderData?.address || 'Nairobi, Kenya';
-            propMarker.bindPopup(`<b>${propLabel}</b><br>${propAddr}`).openPopup();
+            const escapeHtml = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+            const propLabel = orderData?.client_name ? `${escapeHtml(orderData.client_name)}'s Property` : 'Client Service Location';
+            const propAddr = escapeHtml(orderData?.address || 'Nairobi, Kenya');
+            const propNote = hasCrewLocation ? '' : '<br><small>Live crew location appears here once your team is dispatched.</small>';
+            propMarker.bindPopup(`<b>${propLabel}</b><br>${propAddr}${propNote}`).openPopup();
 
-            // Crew vehicle marker (Truck with pulse)
-            const crewIcon = L.divIcon({
-                className: 'custom-crew-pin',
-                html: `<div style="background:#2563eb; color:#fff; border-radius:50%; width:44px; height:44px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 6px rgba(37,99,235,0.35); border:3px solid #fff;"><i class="fa-solid fa-truck-pickup" style="font-size:18px;"></i></div>`,
-                iconSize: [44, 44],
-                iconAnchor: [22, 22]
-            });
-            const crewMarker = L.marker([crewLat, crewLng], { icon: crewIcon }).addTo(map);
-            crewMarker.bindPopup(`<b>${orderData?.crew_name || 'Assigned Crew'}</b><br>Active on-site servicing turf`);
-
-            // Draw route connection line
-            const routeLine = L.polyline([[crewLat, crewLng], [propertyLat, propertyLng]], {
-                color: '#15803d',
-                weight: 4,
-                dashArray: '8, 8',
-                opacity: 0.8
-            }).addTo(map);
-
-            // Fit bounds
-            map.fitBounds(L.latLngBounds([[crewLat, crewLng], [propertyLat, propertyLng]]), { padding: [60, 60] });
-
-            // Simulated live position micro-drift
-            setInterval(() => {
-                const deltaLat = (Math.random() - 0.5) * 0.0001;
-                const deltaLng = (Math.random() - 0.5) * 0.0001;
-                crewLat += deltaLat;
-                crewLng += deltaLng;
-                crewMarker.setLatLng([crewLat, crewLng]);
-                routeLine.setLatLngs([[crewLat, crewLng], [propertyLat, propertyLng]]);
-            }, 3000);
+            // Crew vehicle marker: only when the dispatch system has a real position.
+            if (hasCrewLocation) {
+                const crewIcon = L.divIcon({
+                    className: 'custom-crew-pin',
+                    html: `<div style="background:#2563eb; color:#fff; border-radius:50%; width:44px; height:44px; display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 6px rgba(37,99,235,0.35); border:3px solid #fff;"><i class="fa-solid fa-truck-pickup" style="font-size:18px;"></i></div>`,
+                    iconSize: [44, 44],
+                    iconAnchor: [22, 22]
+                });
+                const crewMarker = L.marker([crewLat, crewLng], { icon: crewIcon }).addTo(map);
+                crewMarker.bindPopup(`<b>${escapeHtml(orderData?.crew_name || 'Assigned Crew')}</b><br>Live position`);
+                L.polyline([[crewLat, crewLng], [propertyLat, propertyLng]], {
+                    color: '#15803d', weight: 4, dashArray: '8, 8', opacity: 0.8
+                }).addTo(map);
+                map.fitBounds(L.latLngBounds([[crewLat, crewLng], [propertyLat, propertyLng]]), { padding: [60, 60] });
+            }
         });
     </script>
 </body>

@@ -288,13 +288,49 @@ test('PIN inputs use an HTML pattern that accepts digits', () => {
   for (const p of patterns) assert.match('2468', new RegExp(`^(?:${p})$`), `pattern ${p} rejects 2468`);
 });
 
+test('email/password account routes are disabled unless ENABLE_ACCOUNT_AUTH=true', async () => {
+  const reg = await post('/api/auth/register', { email: 'x@example.com', password: 'secret123' });
+  assert.equal(reg.response.status, 404);
+  const login = await post('/api/auth/login', { email: 'x@example.com', password: 'secret123' });
+  assert.equal(login.response.status, 404);
+  const me = await get('/api/auth/me');
+  assert.equal(me.response.status, 404);
+});
+
+test('legacy /login and /signup pages hand off to the Client Hub', async () => {
+  for (const p of ['/login', '/signup']) {
+    const res = await fetch(`${baseUrl}${p}`);
+    const html = await res.text();
+    assert.equal(res.status, 200);
+    assert.match(html, /url=\/\?client_portal=open/);
+  }
+  const authJs = fs.readFileSync(path.resolve('public/auth.js'), 'utf8');
+  assert.equal(/\/api\/auth\//.test(authJs), false, 'auth.js must not call the account API');
+});
+
 // ---------------- Misc ----------------
 
-test('analytics payloads are trimmed to known fields', async () => {
+test('analytics payloads are trimmed to known fields and never error the page', async () => {
   const big = await post('/api/analytics', { page: '/', junk: 'x'.repeat(10000) });
   assert.equal(big.response.status, 200);
   const ok = await post('/api/analytics', { page: '/', referrer: 'r', loadTime: '1.2s' });
   assert.equal(ok.response.status, 200);
+  // Over its own budget the beacon is dropped with a 200, not a 429.
+  const { createApp } = await import('../app.js');
+  process.env.ANALYTICS_RATE_LIMIT_MAX = '2';
+  const s = createApp().listen(0);
+  await new Promise((r) => s.once('listening', r));
+  try {
+    const url = `http://127.0.0.1:${s.address().port}/api/analytics`;
+    const send = () => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"page":"/"}' });
+    await send(); await send();
+    const third = await send();
+    assert.equal(third.status, 200);
+    assert.equal((await third.json()).dropped, true);
+  } finally {
+    process.env.ANALYTICS_RATE_LIMIT_MAX = '';
+    await new Promise((r) => s.close(r));
+  }
 });
 
 test('unexpected server errors do not leak internal messages', async () => {

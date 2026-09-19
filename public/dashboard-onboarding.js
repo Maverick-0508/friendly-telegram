@@ -38,9 +38,9 @@
     },
     {
       key: 'add-payment',
-      label: 'Add Payment Method',
-      description: 'Link M-Pesa or a card so every invoice settles in one tap.',
-      icon: 'credit-card',
+      label: 'Pay with M-Pesa',
+      description: 'Settle your first invoice with Lipa Na M-Pesa: a prompt is sent to your phone and your receipt appears here.',
+      icon: 'mobile-screen-button',
       anchor: 'outstanding-bills-section'
     }
   ];

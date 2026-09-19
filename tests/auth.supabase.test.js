@@ -102,7 +102,7 @@ let server;
 let baseUrl;
 
 test.before(async () => {
-  resetRuntimeEnv();
+  resetRuntimeEnv({ ENABLE_ACCOUNT_AUTH: 'true' });
   fakeSupabase = await startFakeSupabase();
   fakeAuthPort = fakeSupabase.port;
 

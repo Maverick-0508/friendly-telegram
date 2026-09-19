@@ -6,7 +6,7 @@ let server;
 let baseUrl;
 
 test.before(async () => {
-  resetRuntimeEnv();
+  resetRuntimeEnv({ ENABLE_ACCOUNT_AUTH: 'true' });
   process.env.NODE_ENV = 'production';
 
   const appModule = await import('../app.js');

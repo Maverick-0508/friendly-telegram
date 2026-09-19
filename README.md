@@ -54,7 +54,10 @@ dynamic SEO-friendly routes (`/tracker/:id`, `/pay/:id`, `/receipt/:id`,
   Cron uses GET)
 - `GET /api/invoices/:invoiceId`
 - `POST /api/coupons/validate`
-- `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`
+- `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` —
+  Supabase email/password accounts; registered only when
+  `ENABLE_ACCOUNT_AUTH=true` (clients sign in to the PIN hub; `/login` and
+  `/signup` redirect there)
 
 ### M-Pesa payments
 

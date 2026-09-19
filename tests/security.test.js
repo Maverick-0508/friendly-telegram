@@ -6,7 +6,7 @@ import http from 'node:http';
 let createApp;
 
 test.before(async () => {
-  resetRuntimeEnv();
+  resetRuntimeEnv({ ENABLE_ACCOUNT_AUTH: 'true' });
   process.env.CORS_ORIGIN = 'https://allowed.example.com';
   process.env.AUTH_RATE_LIMIT_MAX = '5';
 

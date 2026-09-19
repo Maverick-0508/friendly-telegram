@@ -89,10 +89,24 @@ function createAuthRateLimiter() {
   });
 }
 
+// Page-view telemetry fires on every navigation, so it gets its own budget;
+// otherwise a client browsing the site could exhaust the write limit and be
+// locked out of their hub.
+function createAnalyticsRateLimiter() {
+  return rateLimit({
+    windowMs: Number(process.env.ANALYTICS_RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000),
+    max: Number(process.env.ANALYTICS_RATE_LIMIT_MAX || 300),
+    standardHeaders: true,
+    legacyHeaders: false,
+    // Telemetry is fire-and-forget: never surface an error to the page.
+    handler: (_req, res) => res.status(200).json({ success: true, dropped: true }),
+  });
+}
+
 function createWriteRateLimiter() {
   return rateLimit({
     windowMs: Number(process.env.WRITE_RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000),
-    max: Number(process.env.WRITE_RATE_LIMIT_MAX || 50),
+    max: Number(process.env.WRITE_RATE_LIMIT_MAX || 100),
     standardHeaders: true,
     legacyHeaders: false,
     message: {
@@ -164,6 +178,7 @@ export function createApp() {
 
   const authLimiter = createAuthRateLimiter();
   const writeLimiter = createWriteRateLimiter();
+  const analyticsLimiter = createAnalyticsRateLimiter();
 
   app.use(
     cors({
@@ -212,10 +227,10 @@ export function createApp() {
       '/api/coupons/validate',
       '/api/work-orders',
       '/api/mpesa/stkpush',
-      '/api/analytics',
     ],
     writeLimiter
   );
+  app.use('/api/analytics', analyticsLimiter);
 
   app.use('/api', apiRoutes);
 

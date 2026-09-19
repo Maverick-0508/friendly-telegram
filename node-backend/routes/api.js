@@ -218,10 +218,15 @@ router.post('/coupons/validate', validateCoupon);
 router.post('/contact', submitContactForm);
 router.post('/quotes', submitQuoteForm);
 
-// Auth
-router.post('/auth/register', register);
-router.post('/auth/login', login);
-router.get('/auth/me', me);
+// Email/password accounts (Supabase Auth). Clients use the PIN-protected hub,
+// so these routes are off unless ENABLE_ACCOUNT_AUTH=true: an open
+// registration endpoint that auto-confirms emails is otherwise just a spam
+// surface for your Supabase Auth project.
+if (String(process.env.ENABLE_ACCOUNT_AUTH || '').toLowerCase() === 'true') {
+  router.post('/auth/register', register);
+  router.post('/auth/login', login);
+  router.get('/auth/me', me);
+}
 
 export default router;
 

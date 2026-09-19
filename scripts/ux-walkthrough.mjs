@@ -39,7 +39,12 @@ try {
   const consoleErrors = [];
   const failedRequests = [];
   // The deliberate wrong-PIN attempt produces a 403 the browser logs as an error.
-  page.on('console', (m) => { if (m.type() === 'error' && !/status of 403/.test(m.text())) consoleErrors.push(m.text().slice(0, 200)); });
+  page.on('console', (m) => {
+    if (m.type() !== 'error') return;
+    if (/status of 403/.test(m.text())) return;
+    if (/open-meteo/.test(m.location()?.url || '')) return; // third-party weather API
+    consoleErrors.push(`${m.text()} @ ${m.location()?.url || '?'}`.slice(0, 220));
+  });
   page.on('requestfailed', (r) => { if (!r.url().includes('open-meteo')) failedRequests.push(`${r.failure()?.errorText} ${r.url()}`.slice(0, 200)); });
   page.on('response', (r) => { if (r.status() >= 400 && !r.url().includes('open-meteo') && !r.url().includes('/api/portal/lookup')) failedRequests.push(`HTTP ${r.status()} ${r.url()}`.slice(0, 200)); });
 
@@ -116,6 +121,28 @@ try {
     rec('pay page renders invoice and prefills phone', false, 'no invoice id in hub');
   }
 
+  // tracker page for the new (not yet dispatched) order
+  await page.goto(BASE + '/', { waitUntil: 'networkidle2' });
+  await page.waitForFunction(() => document.body.classList.contains('hub-authenticated'), { timeout: 15000 }).catch(() => {});
+  const trackerHref = await page.evaluate(() => document.querySelector('a[href^="/tracker/"]')?.getAttribute('href') || '');
+  if (trackerHref) {
+    await page.goto(BASE + trackerHref, { waitUntil: 'networkidle2' });
+    await page.waitForFunction(() => !/Loading/.test(document.getElementById('tracker-status-text')?.textContent || ''), { timeout: 15000 }).catch(() => {});
+    const t = await page.evaluate(() => ({
+      status: document.getElementById('tracker-status-text')?.textContent.trim(),
+      contactVisible: getComputedStyle(document.getElementById('crew-contact-row')).display !== 'none',
+      crewPins: document.querySelectorAll('.custom-crew-pin').length,
+      tasks: document.querySelectorAll('#tracker-checklist .task-item').length,
+      counter: document.getElementById('checklist-counter')?.textContent.trim(),
+    }));
+    rec('tracker: queued order shows honest state (no fake crew, no fake phone)', t.status === 'Queued for Dispatch' && !t.contactVisible && t.crewPins === 0, JSON.stringify(t));
+    rec('tracker: checklist rendered from the order', t.tasks === 5 && /0 of 5/.test(t.counter || ''), `${t.tasks} tasks, ${t.counter}`);
+    shots.push(await shot(page, 'tracker'));
+  } else {
+    rec('tracker: link present in hub', false, 'no tracker link');
+  }
+
+
   // returning visitor: hub persists across reload within the session
   await page.goto(BASE + '/', { waitUntil: 'networkidle2' });
   await page.waitForFunction(() => document.body.classList.contains('hub-authenticated'), { timeout: 15000 })
@@ -128,6 +155,13 @@ try {
   await page.waitForFunction(() => !document.body.classList.contains('hub-authenticated'), { timeout: 10000 })
     .then(() => rec('switch account signs out cleanly', true))
     .catch(() => rec('switch account signs out cleanly', false));
+
+  // legacy /login (signed out) redirects into the hub sign-in modal
+  await page.goto(BASE + '/login', { waitUntil: 'networkidle2' });
+  await page.waitForSelector('#client-access-modal.active', { timeout: 15000 })
+    .then(() => rec('/login opens the Client Hub sign-in', /client_portal=open/.test(page.url())))
+    .catch(() => rec('/login opens the Client Hub sign-in', false, page.url()));
+  await page.click('#close-login-modal').catch(() => {});
 
   // hub login modal with wrong PIN then right PIN
   await page.goto(BASE + '/', { waitUntil: 'networkidle2' });
