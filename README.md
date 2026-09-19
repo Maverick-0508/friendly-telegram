@@ -150,6 +150,31 @@ without `MPESA_CALLBACK_TOKEN`, missing `CORS_ORIGIN`) and `warnings`
 logged at startup with a `[config]` prefix. See `DEPLOYMENT.md` for the
 go-live checklist.
 
+## Editing pages (shared layout)
+
+The marketing pages in `public/*.html` are **generated**. Edit the sources and
+rebuild:
+
+```text
+src/partials/head-assets.html   shared <head> links (styles, fonts, icons, manifest)
+src/partials/header.html        site header + mega menu (active link marked per page)
+src/partials/footer.html        site footer
+src/partials/scripts.html       standard trailing scripts
+src/pages/<name>.html           one source per page; first line:
+                                <!-- @page nav="services" home="false" -->
+```
+
+```bash
+npm run build:pages          # regenerate public/*.html
+npm run build:pages:check    # exit 1 if any generated page is stale (runs in tests)
+```
+
+Pages include partials with `<!-- @include header -->` etc. Partials support
+`{{var}}` from the page config and `<!-- @if home --> … <!-- @else --> … <!-- @endif -->`.
+Any `<a data-nav="x">` in a partial gets `class="active"` on the page whose
+`nav="x"`. Pages outside the layout (`pay`, `receipt`, `tracker`, `offline`,
+`login`/`signup` stubs, `home` redirect) are plain files.
+
 ## Local Setup
 
 ```bash

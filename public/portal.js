@@ -511,7 +511,7 @@
             </div>
             <div class="lc-chip">
               <span class="lc-chip-label">Account Balance</span>
-              <span class="lc-chip-value ${unpaidInvoice ? '' : 'lc-text-emerald'}">${unpaidInvoice ? 'KSh ' + Math.round(unpaidInvoice.balance_due).toLocaleString() : 'All Paid'}</span>
+              <span class="lc-chip-value ${unpaidInvoice ? '' : 'lc-text-emerald'}">${unpaidInvoice ? 'KSh ' + Math.round(unpaidInvoice.balance_due).toLocaleString() : estimateInvoice ? 'Estimate pending' : 'All Paid'}</span>
             </div>
             <div class="lc-chip">
               <span class="lc-chip-label">Reward Points</span>

@@ -46,7 +46,12 @@ try {
     if (/open-meteo/.test(m.location()?.url || '')) return; // third-party weather API
     consoleErrors.push(`${m.text()} @ ${m.location()?.url || '?'}`.slice(0, 220));
   });
-  page.on('requestfailed', (r) => { if (!r.url().includes('open-meteo')) failedRequests.push(`${r.failure()?.errorText} ${r.url()}`.slice(0, 200)); });
+  page.on('requestfailed', (r) => {
+    if (r.url().includes('open-meteo')) return;
+    // Map tiles still downloading when we navigate away are aborted by the browser, not failed.
+    if (r.failure()?.errorText === 'net::ERR_ABORTED' && /tile\.openstreetmap\.org|unsplash\.com/.test(r.url())) return;
+    failedRequests.push(`${r.failure()?.errorText} ${r.url()}`.slice(0, 200));
+  });
   page.on('response', (r) => { if (r.status() >= 400 && !r.url().includes('open-meteo') && !r.url().includes('/api/portal/lookup')) failedRequests.push(`HTTP ${r.status()} ${r.url()}`.slice(0, 200)); });
 
   // ---- Desktop home ----

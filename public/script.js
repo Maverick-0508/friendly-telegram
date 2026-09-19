@@ -671,7 +671,13 @@ if ('IntersectionObserver' in window) {
 const highlightSections = Array.from(document.querySelectorAll('section[id]'));
 let scrollSpyTicking = false;
 
+// Scroll-spy only makes sense on the single-page home, whose nav links are
+// in-page anchors. Sub-pages ship the active link in their markup and must not
+// have it overridden with "Home" at scroll top.
+const isAnchorNavPage = Boolean(document.querySelector('.nav-links a[href^="#"]'));
+
 const highlightNavigation = () => {
+    if (!isAnchorNavPage) return;
     const scrollY = window.pageYOffset;
     const headerOffset = 100;
     const navItems = Array.from(document.querySelectorAll('.nav-links a, .hero-quick-chip'));

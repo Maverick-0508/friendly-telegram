@@ -7,3 +7,4 @@ node-backend/.env
 tests
 test-pwa.js
 .DS_Storescripts
+src
