@@ -95,11 +95,26 @@ try {
   await page.type('#anon-name', 'UX Test Visitor');
   await page.type('#anon-phone', phone);
   await page.type('#anon-address', 'Runda, Nairobi');
-  await page.type('#anon-pin', '2468');
+  rec('booking form asks for three fields only (no PIN up front)', (await page.$('#anon-pin')) === null);
   await page.click('#anon-submit-btn');
+  await page.waitForSelector('#anon-success', { visible: true, timeout: 20000 })
+    .then(() => rec('booking request sent and success panel shown', true))
+    .catch(async () => rec('booking request sent and success panel shown', false, await page.$eval('#portal-toast-container', (e) => e.textContent).catch(() => 'no toast')));
+  const successText = await page.$eval('#anon-success', (e) => e.innerText).catch(() => '');
+  const trackHref = await page.$eval('#anon-track-link', (e) => e.getAttribute('href')).catch(() => '');
+  rec('success panel offers tracking link and optional PIN setup', /Track my request/.test(successText) && /PIN/.test(successText) && /^\/tracker\/wo_/.test(trackHref), `${trackHref}`);
+  shots.push(await shot(page, 'booking-success'));
+
+  // Optional PIN setup straight from the success panel, prefilled from the booking.
+  await page.click('#anon-create-pin');
+  await page.waitForSelector('#client-register-container', { visible: true, timeout: 10000 });
+  const regPrefill = await page.evaluate(() => ({ name: document.getElementById('reg-name').value, phone: document.getElementById('reg-phone').value, address: document.getElementById('reg-address').value, loginHidden: getComputedStyle(document.getElementById('client-login-form')).display === 'none' }));
+  rec('PIN setup form prefilled from the booking', regPrefill.name === 'UX Test Visitor' && regPrefill.phone === phone && regPrefill.loginHidden, JSON.stringify(regPrefill));
+  await page.type('#reg-pin', '2468');
+  await page.click('#reg-submit-btn');
   await page.waitForFunction(() => document.body.classList.contains('hub-authenticated'), { timeout: 20000 })
-    .then(() => rec('booking submits and hub opens automatically', true))
-    .catch(async () => rec('booking submits and hub opens automatically', false, await page.$eval('#portal-toast-container', (e) => e.textContent).catch(() => 'no toast')));
+    .then(() => rec('PIN saved and hub opens', true))
+    .catch(async () => rec('PIN saved and hub opens', false, await page.$eval('#portal-toast-container', (e) => e.textContent).catch(() => 'no toast')));
   await new Promise((r) => setTimeout(r, 1200));
   const hubText = await page.evaluate(() => document.getElementById('personalized-dashboard')?.innerText || '');
   const invoiceAmountMatch = hubText.match(/Estimated\s*KSh\s*([\d,]+)/i);
@@ -196,8 +211,29 @@ try {
   }
   shots.push(await shot(page, 'services'));
 
-  // ---- Mobile ----
+  // ---- Installed app (PWA) mode ----
   await page.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true });
+  await page.evaluate(() => { try { sessionStorage.clear(); localStorage.removeItem('lawncraft_client_identifier'); } catch {} });
+  await page.goto(BASE + '/?source=pwa', { waitUntil: 'networkidle2' });
+  await new Promise((r) => setTimeout(r, 800));
+  const pwa = await page.evaluate(() => ({
+    htmlPwa: document.documentElement.classList.contains('pwa'),
+    tiles: document.querySelectorAll('.app-tile').length,
+    tabbar: Boolean(document.querySelector('.app-tabbar')),
+    cookieVisible: Boolean(document.getElementById('cookie-consent')) && getComputedStyle(document.getElementById('cookie-consent')).display !== 'none',
+    heroMarketingHidden: getComputedStyle(document.querySelector('.hero-trust-badges') || document.body).display === 'none',
+    ctaHidden: getComputedStyle(document.querySelector('.btn-quote-cta')).display === 'none',
+  }));
+  rec('installed app opens on an app home with tiles, tab bar, no cookie bar', pwa.htmlPwa && pwa.tiles >= 5 && pwa.tabbar && !pwa.cookieVisible && pwa.ctaHidden, JSON.stringify(pwa));
+  shots.push(await shot(page, 'pwa-home'));
+  await page.click('#app-tile-hub');
+  await page.waitForSelector('#client-access-modal.active', { timeout: 10000 })
+    .then(() => rec('app home "My Lawn" tile opens sign-in', true))
+    .catch(() => rec('app home "My Lawn" tile opens sign-in', false));
+  await page.click('#close-login-modal').catch(() => {});
+  await page.evaluate(() => { try { sessionStorage.removeItem('lc_pwa'); } catch {} });
+
+  // ---- Mobile web ----
   await page.goto(BASE + '/', { waitUntil: 'networkidle2' });
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   rec('mobile: no horizontal overflow', overflow <= 1, `overflow ${overflow}px`);

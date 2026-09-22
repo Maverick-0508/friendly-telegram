@@ -5,6 +5,7 @@ import { fetchClientProfile } from './portal/api.js';
 import { initPricingCalculator } from './portal/calculator.js';
 import { updateTopNavUser, renderPersonalizedState, refreshCurrentClient, handleLogout } from './portal/hub.js';
 import { state, getQueryIdentifier, getStoredIdentifier, setStoredIdentifier, getStoredPin, showToast } from './portal/state.js';
+import { isPwaMode, renderAppHome, renderAppTabbar } from './portal/app-shell.js';
 
 export function initClientNavTriggers() {
   document.querySelectorAll('.client-access-trigger').forEach(trigger => {
@@ -39,6 +40,7 @@ export function promptForHub(prefillIdentifier) {
 export async function init() {
   initClientNavTriggers();
   initPricingCalculator();
+  if (isPwaMode()) renderAppTabbar();
 
   const params = new URLSearchParams(window.location.search);
   const wantsHub = params.get('client_portal') === 'open' || params.get('hub') === 'open' || window.location.hash === '#client-hub';
@@ -58,6 +60,7 @@ export async function init() {
     // Known identifier but no session PIN: ask for the PIN instead of
     // silently showing the public page.
     updateTopNavUser(null);
+    if (isPwaMode()) renderAppHome();
     promptForHub(queryId);
     return;
   }
@@ -75,6 +78,7 @@ export async function init() {
 
   // 3. Anonymous state
   updateTopNavUser(null);
+  if (isPwaMode()) renderAppHome();
   if (wantsHub) promptForHub(storedId || '');
 }
 

@@ -1,7 +1,7 @@
 // Personalised client hub: header state, dashboard rendering, refresh and sign-out.
 import { fetchClientProfile } from './api.js';
 import { openMpesaModal } from './payments.js';
-import { state, getStoredIdentifier, getStoredPin, esc, firstName, clearStoredIdentifier, showToast } from './state.js';
+import { state, FEATURES, getStoredIdentifier, getStoredPin, esc, firstName, clearStoredIdentifier, showToast } from './state.js';
 import { fetchNairobiYardConditions } from './weather.js';
 
 export function updateTopNavUser(clientData) {
@@ -41,6 +41,13 @@ export function renderPersonalizedState(data) {
   // of the marketing funnel (marketing sections are hidden via CSS).
   document.body.classList.add('hub-authenticated');
 
+  // Identify the most relevant work order: live > confirmed/scheduled > awaiting confirmation
+  const ACTIVE_ORDER_STATUSES = ['in_progress', 'dispatched', 'scheduled', 'confirmed', 'incoming', 'pending_confirmation'];
+  const activeOrder = ACTIVE_ORDER_STATUSES.map(s => workOrders.find(w => w.status === s)).find(Boolean) || workOrders[0];
+  const orderAwaitingConfirmation = Boolean(activeOrder && activeOrder.status === 'pending_confirmation');
+  const orderLive = Boolean(activeOrder && (activeOrder.status === 'in_progress' || activeOrder.status === 'dispatched'));
+  const visitLabel = orderLive ? 'Live Crew Status' : orderAwaitingConfirmation ? 'Request Status' : activeOrder ? 'Next Visit' : 'Book a Visit';
+
   // Swap Hero to Personalized Welcome
   const heroContent = document.querySelector('.hero-content');
   if (heroContent) {
@@ -50,7 +57,7 @@ export function renderPersonalizedState(data) {
     heroContent.innerHTML = `
       <div class="client-welcome-badge">
         <span class="pulse-dot"></span>
-        <span>Verified Client Hub • ${esc(client.service_plan || 'Active Care')}</span>
+        <span>My Lawn • ${esc(client.service_plan || 'Lawn care')}</span>
       </div>
       <h1 class="hero-title client-hero-greeting">Welcome back, <span class="highlight-client">${esc(client.name)}</span>!</h1>
       <p class="hero-subtitle client-hero-property">
@@ -61,9 +68,9 @@ export function renderPersonalizedState(data) {
         <span>${esc(client.grass_type)}</span>
       </p>
       <div class="hero-buttons client-quick-actions">
-        <a href="#active-service-section" class="btn btn-primary"><i class="fa-solid fa-route"></i> Live Crew Status</a>
-        <a href="#outstanding-bills-section" class="btn btn-secondary"><i class="fa-solid fa-file-invoice-dollar"></i> Billing & Invoices</a>
-        <button id="switch-account-btn" class="btn btn-outline-light"><i class="fa-solid fa-arrow-right-from-bracket"></i> Switch Account</button>
+        <a href="${activeOrder ? '#active-service-section' : '#quick-addons-section'}" class="btn btn-primary"><i class="fa-solid ${orderLive ? 'fa-route' : 'fa-calendar-check'}"></i> ${visitLabel}</a>
+        <a href="#outstanding-bills-section" class="btn btn-secondary"><i class="fa-solid fa-file-invoice-dollar"></i> Bills &amp; Payments</a>
+        <button id="switch-account-btn" class="btn btn-outline-light"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sign out</button>
       </div>
     `;
 
@@ -90,10 +97,6 @@ export function renderPersonalizedState(data) {
     }
   }
 
-  // Identify the most relevant work order: live > confirmed/scheduled > awaiting confirmation
-  const ACTIVE_ORDER_STATUSES = ['in_progress', 'dispatched', 'scheduled', 'confirmed', 'incoming', 'pending_confirmation'];
-  const activeOrder = ACTIVE_ORDER_STATUSES.map(s => workOrders.find(w => w.status === s)).find(Boolean) || workOrders[0];
-  const orderAwaitingConfirmation = Boolean(activeOrder && activeOrder.status === 'pending_confirmation');
   // Payable = confirmed by a supervisor; an 'estimate' is shown but cannot be paid yet
   const unpaidInvoice = invoices.find(i => (i.status === 'unpaid' || i.status === 'partially_paid') && Number(i.balance_due) > 0);
   const estimateInvoice = !unpaidInvoice ? invoices.find(i => i.status === 'estimate') : null;
@@ -122,75 +125,25 @@ export function renderPersonalizedState(data) {
     'Diamond VIP': 'fa-star text-diamond'
   };
 
-  // --- Dashboard render helpers (SaaS-style, Kaggle-esque) ---
-  const onboarding = (typeof window.DashboardOnboarding !== 'undefined') ? window.DashboardOnboarding : null;
-
-  const onboardingMainHTML = (snap) => `
-    <section class="lc-onboard-card" aria-label="Account setup checklist">
-      <div class="lc-onboard-head">
-        <div>
-          <span class="lc-onboard-tag"><i class="fa-solid fa-wand-magic-sparkles"></i> Getting Started</span>
-          <h3 class="lc-onboard-title">Set up your Lawn Care hub</h3>
-          <p class="lc-onboard-sub">Three quick steps unlock live tracking, one-tap rebooking and loyalty rewards.</p>
-        </div>
-      </div>
-
-      <div class="lc-progress-row">
-        <div class="lc-progress-track" title="${snap.percentComplete}% complete">
-          <div class="lc-progress-bar" style="width:${snap.percentComplete}%"></div>
-        </div>
-        <span class="lc-progress-summary">${snap.doneCount} of ${snap.totalCount} • ${snap.percentComplete}%</span>
-      </div>
-
-      <ul class="lc-checklist">
-        ${snap.milestones.map(m => `
-          <li class="lc-checklist-item ${m.done ? 'is-done' : ''}" data-key="${m.key}" role="button" tabindex="0"
-              aria-label="${m.done ? 'Completed: ' : 'Complete: '}${m.label}">
-            <span class="lc-check">${m.done
-              ? '<i class="fa-solid fa-check" aria-hidden="true"></i>'
-              : `<i class="fa-solid ${m.icon}" aria-hidden="true"></i>`}</span>
-            <span class="lc-check-text">
-              <strong>${m.label}</strong>
-              <span>${m.description}</span>
-            </span>
-            <i class="fa-solid fa-chevron-right lc-chev" aria-hidden="true"></i>
-          </li>
-        `).join('')}
-      </ul>
-    </section>
-
-    <section aria-label="Getting started focus cards">
-      <div class="lc-focus-grid">
-        ${snap.milestones.map(m => `
-          <div class="lc-focus-card ${m.done ? 'is-done' : ''}" data-key="${m.key}" role="button" tabindex="0">
-            <span class="lc-focus-icon"><i class="fa-solid ${m.done ? 'fa-check' : m.icon}" aria-hidden="true"></i></span>
-            <h4>${m.label}</h4>
-            <p>${m.description}</p>
-            <span class="lc-focus-go">${m.done ? 'Done' : 'Get started'} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
-          </div>
-        `).join('')}
-      </div>
-    </section>
-  `;
-
+  // --- Dashboard main column ---
   const operationalMainHTML = () => `
     <div class="dash-widget">
-      <h3><i class="fa-solid fa-bolt"></i> Quick Actions <span class="dash-widget-sub">Book &amp; manage in one tap</span></h3>
+      <h3><i class="fa-solid fa-bolt"></i> Quick Actions <span class="dash-widget-sub">Everything in one tap</span></h3>
       <div class="dash-actions-grid">
         <a href="#quick-addons-section" class="dash-action"><i class="fa-solid fa-plus"></i> Request Extra Mow</a>
         ${activeOrder
-          ? `<a href="/tracker/${activeOrder.id}" class="dash-action"><i class="fa-solid fa-location-crosshairs"></i> Live Crew GPS</a>`
-          : `<span class="dash-action disabled"><i class="fa-solid fa-location-crosshairs"></i> Live Crew GPS</span>`}
+          ? `<a href="/tracker/${activeOrder.id}" class="dash-action"><i class="fa-solid fa-location-crosshairs"></i> ${orderLive ? 'Live Crew Status' : 'Track My Request'}</a>`
+          : `<span class="dash-action disabled"><i class="fa-solid fa-location-crosshairs"></i> Track My Request</span>`}
         ${unpaidInvoice
           ? `<button type="button" class="dash-action" id="dash-pay-btn" data-invoice-id="${unpaidInvoice.id}" data-amount="${unpaidInvoice.balance_due}"><i class="fa-solid fa-mobile-screen-button"></i> Pay With M-Pesa</button>`
           : `<span class="dash-action disabled"><i class="fa-solid fa-circle-check"></i> Balance Settled</span>`}
         <a href="#contact" class="dash-action"><i class="fa-solid fa-headset"></i> Contact Support</a>
       </div>
 
-      <h3 style="margin-top: 1.4rem;"><i class="fa-solid fa-clipboard-list"></i> Active Care Package</h3>
+      <h3 style="margin-top: 1.4rem;"><i class="fa-solid fa-clipboard-list"></i> Your Plan</h3>
       <div class="plan-card">
         <div>
-          <div class="plan-name">${esc(client.service_plan || 'Custom Care')} • ${esc(tier)} Member</div>
+          <div class="plan-name">${esc(client.service_plan || 'Lawn care')}</div>
           <div class="plan-detail">${activeOrder ? `Next visit: ${esc(activeOrder.scheduled_date)}` : 'No upcoming visit — book one below.'}</div>
         </div>
         <a href="#active-service-section" class="plan-btn">Manage</a>
@@ -211,92 +164,11 @@ export function renderPersonalizedState(data) {
     }
   };
 
-  const scrollToAnchor = (key) => {
-    if (!onboarding) return;
-    const milestone = onboarding.MILESTONES.find((m) => m.key === key);
-    if (milestone && milestone.anchor) {
-      const target = document.getElementById(milestone.anchor);
-      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  };
-
-  const syncMainColumn = (snap) => {
+  const renderMainColumn = () => {
     const mainEl = document.getElementById('lc-dash-main');
     if (!mainEl) return;
-
-    const bar = mainEl.querySelector('.lc-progress-bar');
-    const summary = mainEl.querySelector('.lc-progress-summary');
-    if (bar) bar.style.width = `${snap.percentComplete}%`;
-    if (summary) summary.textContent = `${snap.doneCount} of ${snap.totalCount} • ${snap.percentComplete}%`;
-
-    mainEl.querySelectorAll('.lc-checklist-item, .lc-focus-card').forEach((el) => {
-      const m = snap.milestones.find((mm) => mm.key === el.dataset.key);
-      if (m) {
-        el.classList.toggle('is-done', m.done);
-        const check = el.querySelector('.lc-check');
-        const icon = el.querySelector('.lc-focus-icon i');
-        if (check) check.innerHTML = m.done ? '<i class="fa-solid fa-check" aria-hidden="true"></i>' : `<i class="fa-solid ${m.icon}" aria-hidden="true"></i>`;
-        if (icon) icon.className = `fa-solid ${m.done ? 'fa-check' : m.icon}`;
-      }
-    });
-
-    const focusGo = mainEl.querySelectorAll('.lc-focus-go');
-    focusGo.forEach((el) => {
-      const key = el.closest('.lc-focus-card')?.dataset.key;
-      const m = snap.milestones.find((mm) => mm.key === key);
-      if (m) {
-        el.childNodes[0].textContent = m.done ? 'Done ' : 'Get started ';
-      }
-    });
-
-    if (snap.isComplete && !snap.isDismissed) {
-      onboarding.dismiss();
-    } else if (snap.isDismissed && snap.isComplete) {
-      if (state.onboardingUnsub) { state.onboardingUnsub(); state.onboardingUnsub = null; }
-      mainEl.innerHTML = operationalMainHTML();
-      wireDashPay();
-      showToast('Onboarding complete — full command center unlocked!', 'success');
-    }
-  };
-
-  const renderMainColumn = () => {
-    if (!onboarding) {
-      document.getElementById('lc-dash-main').innerHTML = operationalMainHTML();
-      wireDashPay();
-      return;
-    }
-    const snap = onboarding.get();
-    const mainEl = document.getElementById('lc-dash-main');
-    if (snap.isComplete || snap.isDismissed) {
-      mainEl.innerHTML = operationalMainHTML();
-      wireDashPay();
-      return;
-    }
-    mainEl.innerHTML = onboardingMainHTML(snap);
-
-    mainEl.querySelectorAll('.lc-checklist-item').forEach((item) => {
-      const activate = () => {
-        const key = item.dataset.key;
-        const current = onboarding.get().milestones.find((m) => m.key === key);
-        const doing = !current.done;
-        onboarding.toggle(key);
-        if (doing) scrollToAnchor(key);
-      };
-      item.addEventListener('click', activate);
-      item.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
-      });
-    });
-    mainEl.querySelectorAll('.lc-focus-card').forEach((card) => {
-      const activate = () => scrollToAnchor(card.dataset.key);
-      card.addEventListener('click', activate);
-      card.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
-      });
-    });
-
-    if (state.onboardingUnsub) state.onboardingUnsub();
-    state.onboardingUnsub = onboarding.subscribe(syncMainColumn);
+    mainEl.innerHTML = operationalMainHTML();
+    wireDashPay();
   };
 
   dashboardContainer.innerHTML = `
@@ -323,14 +195,14 @@ export function renderPersonalizedState(data) {
             <span class="lc-chip-label">Account Balance</span>
             <span class="lc-chip-value ${unpaidInvoice ? '' : 'lc-text-emerald'}">${unpaidInvoice ? 'KSh ' + Math.round(unpaidInvoice.balance_due).toLocaleString() : estimateInvoice ? 'Estimate pending' : 'All Paid'}</span>
           </div>
-          <div class="lc-chip">
+          ${FEATURES.loyalty ? `<div class="lc-chip">
             <span class="lc-chip-label">Reward Points</span>
             <span class="lc-chip-value lc-text-emerald">${loyalty.points_balance} pts</span>
-          </div>
+          </div>` : ''}
         </div>
       </div>
 
-      <!-- Main SaaS grid: 2/3 content + 1/3 side rail -->
+      <!-- Dashboard grid: 2/3 content + 1/3 side rail -->
       <div class="lc-dash-grid">
         <div class="lc-dash-main" id="lc-dash-main"></div>
 
@@ -367,7 +239,7 @@ export function renderPersonalizedState(data) {
         </div>
       </div>
 
-      <!-- Loyalty & Perks Bar -->
+      ${FEATURES.loyalty ? `      <!-- Loyalty & Perks Bar -->
       <div class="loyalty-perks-banner">
         <div class="loyalty-col loyalty-tier-col">
           <div class="loyalty-icon-box">
@@ -394,6 +266,8 @@ export function renderPersonalizedState(data) {
           </div>
         </div>
       </div>
+
+` : ''}
 
       <!-- Main Portal Action Grid -->
       <div class="client-portal-grid">
@@ -651,7 +525,7 @@ export function renderPersonalizedState(data) {
     });
   }
 
-  // Dashboard quick-action Pay button is wired inside renderMainColumn/syncMainColumn.
+  // Dashboard quick-action Pay button is wired inside renderMainColumn.
 
   // Wire 1-Click Add-on buttons
   const addonButtons = dashboardContainer.querySelectorAll('.btn-addon-book');
@@ -684,13 +558,10 @@ export function renderPersonalizedState(data) {
         if (json.success) {
           btn.innerHTML = `<i class="fa-solid fa-check"></i> Booked!`;
           btn.classList.add('booked-success');
-          if (typeof window.DashboardOnboarding !== 'undefined') {
-            window.DashboardOnboarding.setCompleted('set-preferences', true);
-          }
           const total = Math.round(Number(json.invoice?.total_amount || 0)).toLocaleString();
           showToast(json.booking_mode === 'confirm'
-            ? `${service} requested (estimate KSh ${total}). We will confirm the final price by SMS before any payment. +30 Loyalty points earned!`
-            : `${service} scheduled for KSh ${total}! Added to supervisor dispatch queue. +30 Loyalty points earned!`, 'success');
+            ? `${service} requested (estimate KSh ${total}). We will confirm the final price by SMS before any payment.`
+            : `${service} booked for KSh ${total}. We will be in touch to schedule it.`, 'success');
           setTimeout(() => {
             refreshCurrentClient();
           }, 1200);

@@ -179,7 +179,7 @@ export async function notifyOwnerNewOrder(order, invoice) {
 export async function notifyClientOrderBooked(order, { mode = 'confirm' } = {}) {
   if (!order.client_phone) return null;
   const message = mode === 'confirm'
-    ? `Lawn Craft: We received your request for "${order.service_type}" (estimate KSh ${Math.round(order.total_price || 0)}). We will confirm the final price by SMS before any payment. Track: ${siteUrl()}/tracker/${order.id}`
+    ? `Lawn Craft: Thanks, we have your request for "${order.service_type}" (estimate KSh ${Math.round(order.total_price || 0)}). We will confirm the final price and date by SMS; nothing to pay until then. Track: ${siteUrl()}/tracker/${order.id}`
     : `Lawn Craft: Your order "${order.service_type}" is queued for dispatch (est. 48 hrs). Track it at ${siteUrl()}/tracker/${order.id}`;
   return sendSms({ to: order.client_phone, message });
 }

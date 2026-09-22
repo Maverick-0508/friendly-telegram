@@ -342,8 +342,8 @@ test('PIN inputs use an HTML pattern that accepts digits', () => {
   const src = [path.resolve('public/portal.js'), ...fs.readdirSync(dir).map((f) => path.join(dir, f))]
     .map((f) => fs.readFileSync(f, 'utf8')).join('\n');
   assert.equal(/pattern="\\d/.test(src), false, 'portal sources still contain pattern="\\d..."');
-  const patterns = [...src.matchAll(/id="(?:client-pin-input|reg-pin|anon-pin)"[^>]*pattern="([^"]+)"/g)].map((m) => m[1]);
-  assert.equal(patterns.length, 3);
+  const patterns = [...src.matchAll(/id="(?:client-pin-input|reg-pin)"[^>]*pattern="([^"]+)"/g)].map((m) => m[1]);
+  assert.equal(patterns.length, 2);
   for (const p of patterns) assert.match('2468', new RegExp(`^(?:${p})$`), `pattern ${p} rejects 2468`);
 });
 

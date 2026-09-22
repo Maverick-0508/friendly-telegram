@@ -106,9 +106,6 @@ export function openMpesaModal(invoiceId, amount, defaultPhone, { onPaid } = {})
         const successStep = document.getElementById('mpesa-success-step');
         successStep.style.display = 'block';
         document.getElementById('mpesa-receipt-code').textContent = result.mpesa_receipt || '—';
-        if (typeof window.DashboardOnboarding !== 'undefined') {
-          window.DashboardOnboarding.setCompleted('add-payment', true);
-        }
         if (result.invoice_status === 'partially_paid') {
           showToast(`M-Pesa confirmed KSh ${Math.round(Number(result.amount_paid || 0)).toLocaleString()}. KSh ${Math.round(Number(result.invoice_balance_due || 0)).toLocaleString()} is still outstanding.`, 'error');
         } else {

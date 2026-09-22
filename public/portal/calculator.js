@@ -1,6 +1,7 @@
 // Instant pricing calculator and the booking-request modal for new visitors.
 import { fetchClientProfile } from './api.js';
 import { renderPersonalizedState, refreshCurrentClient } from './hub.js';
+import { openClientAccessModal } from './access.js';
 import { state, setStoredIdentifier, getStoredPin, setStoredPin, esc, showToast } from './state.js';
 
 export function initPricingCalculator() {
@@ -209,8 +210,8 @@ export function initPricingCalculator() {
             bookBtn.innerHTML = `<i class="fa-solid fa-check"></i> Request Sent!`;
             const serverTotal = Math.round(Number(json.invoice?.total_amount || total));
             showToast(json.booking_mode === 'confirm'
-              ? `Request received, ${client.name}. Estimate KSh ${serverTotal.toLocaleString()}; we will confirm the final price by SMS before any payment. +30 Loyalty points earned.`
-              : `Booking for ${client.name} queued for dispatch at KSh ${serverTotal.toLocaleString()}! +30 Loyalty points earned.`, 'success');
+              ? `Request received, ${client.name}. Estimate KSh ${serverTotal.toLocaleString()}; we will confirm the final price by SMS before any payment.`
+              : `Booking for ${client.name} received at KSh ${serverTotal.toLocaleString()}. We will SMS you the visit date.`, 'success');
             setTimeout(() => {
               refreshCurrentClient();
             }, 1200);
@@ -257,36 +258,42 @@ export function openAnonymousBookingModal({ size, grass, frequency, grassKey, fr
       <button class="portal-modal-close" id="close-anon-modal">&times;</button>
       <div class="client-modal-header">
         <div class="client-modal-icon"><i class="fa-solid fa-clipboard-check"></i></div>
-        <h3>Confirm Your Lawn Service</h3>
+        <h3>Request this service</h3>
         <p>${Number(size).toLocaleString()} sq ft • ${esc(grass)} • ${esc(frequency)}</p>
         <div class="anon-estimate-pill">Estimate: <strong>KSh ${Math.round(Number(price)).toLocaleString()}</strong></div>
         <p class="anon-estimate-note" style="font-size:0.82rem; color:#4b5563; margin:8px 0 0;">
-          <i class="fa-solid fa-circle-info"></i> This is an estimate. A supervisor confirms the final price by SMS before any payment is requested.
+          <i class="fa-solid fa-circle-info"></i> We confirm the final price and date with you by SMS. Nothing to pay until then.
         </p>
       </div>
 
       <form id="anon-booking-form">
         <div class="form-group">
-          <label for="anon-name">Full Name</label>
-          <input type="text" id="anon-name" class="form-control" placeholder="Enter your full name" required>
+          <label for="anon-name">Your name</label>
+          <input type="text" id="anon-name" class="form-control" placeholder="e.g. Jane Wanjiku" autocomplete="name" required>
         </div>
         <div class="form-group">
-          <label for="anon-phone">Phone Number (WhatsApp or Call)</label>
-          <input type="tel" id="anon-phone" class="form-control" placeholder="e.g. 0712 345 678" required>
+          <label for="anon-phone">Phone number (we confirm by SMS)</label>
+          <input type="tel" id="anon-phone" class="form-control" placeholder="e.g. 0712 345 678" autocomplete="tel" required>
         </div>
         <div class="form-group">
-          <label for="anon-address">Property Address / Estate</label>
-          <input type="text" id="anon-address" class="form-control" placeholder="e.g. Karen, Runda, Muthaiga, or Lavington" required>
-        </div>
-        <div class="form-group">
-          <label for="anon-pin">Create Access PIN (4-6 digits)</label>
-          <input type="password" id="anon-pin" class="form-control" inputmode="numeric" pattern="[0-9]{4,6}" minlength="4" maxlength="6" placeholder="e.g. 1234" required>
-          <p style="font-size:0.75rem; color:#6b7280; margin:4px 0 0;">You will use this PIN to open your hub and track your order.</p>
+          <label for="anon-address">Estate or address</label>
+          <input type="text" id="anon-address" class="form-control" placeholder="e.g. Karen, Runda, Muthaiga, Lavington" autocomplete="street-address" required>
         </div>
         <button type="submit" class="btn btn-primary btn-block" id="anon-submit-btn">
           <i class="fa-solid fa-paper-plane"></i> Send Booking Request
         </button>
       </form>
+
+      <div id="anon-success" style="display:none; text-align:center;">
+        <div class="client-modal-icon" style="margin:0 auto 10px;"><i class="fa-solid fa-check"></i></div>
+        <h3 style="margin:0 0 6px;">Request sent!</h3>
+        <p id="anon-success-text" style="color:#4b5563; font-size:0.92rem; margin:0 0 14px;"></p>
+        <a id="anon-track-link" href="#" class="btn btn-primary btn-block" style="margin-bottom:10px;"><i class="fa-solid fa-location-dot"></i> Track my request</a>
+        <button type="button" id="anon-create-pin" class="btn btn-secondary btn-block">
+          <i class="fa-solid fa-shield-halved"></i> Create a PIN to manage bookings online
+        </button>
+        <p style="font-size:0.75rem; color:#6b7280; margin:10px 0 0;">Optional. With a PIN you can see estimates, bookings and bills in My Lawn.</p>
+      </div>
     </div>
   `;
 
@@ -299,7 +306,6 @@ export function openAnonymousBookingModal({ size, grass, frequency, grassKey, fr
     const name = document.getElementById('anon-name').value.trim();
     const phone = document.getElementById('anon-phone').value.trim();
     const address = document.getElementById('anon-address').value.trim();
-    const pin = document.getElementById('anon-pin').value.trim();
 
     const btn = document.getElementById('anon-submit-btn');
     btn.disabled = true;
@@ -318,30 +324,32 @@ export function openAnonymousBookingModal({ size, grass, frequency, grassKey, fr
           frequency: frequencyKey,
           addons: addons || [],
           coupon_code: couponCode || '',
-          pin,
           notes: 'Website instant calculator order'
         })
       });
 
       const json = await res.json();
       if (json.success) {
-        // Cache verified phone so user is recognized this session!
+        // Remember the phone so a later PIN setup or sign-in is prefilled.
         setStoredIdentifier(phone);
-        setStoredPin(pin);
-        modal.classList.remove('active');
         const serverTotal = Math.round(Number(json.invoice?.total_amount || price));
-        showToast(json.booking_mode === 'confirm'
-          ? `Thank you ${name}! Your request (estimate KSh ${serverTotal.toLocaleString()}) is with our supervisor. We will confirm the final price by SMS before any payment.`
-          : `Thank you ${name}! Your KSh ${serverTotal.toLocaleString()} order is queued for supervisor dispatch. Welcome to Lawn Craft!`, 'success');
-        
-        // Switch to personalized client hub automatically and bring it into view.
-        setTimeout(async () => {
-          const profile = await fetchClientProfile(phone, pin);
-          if (profile) {
-            renderPersonalizedState(profile);
-            document.getElementById('personalized-dashboard')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }
-        }, 1000);
+        const orderId = json.data?.id;
+
+        // Success state inside the modal: track link now, PIN later (optional).
+        document.getElementById('anon-booking-form').style.display = 'none';
+        modal.querySelector('.client-modal-header').style.display = 'none';
+        const success = document.getElementById('anon-success');
+        document.getElementById('anon-success-text').textContent = json.booking_mode === 'confirm'
+          ? `Thanks ${name}. We will SMS ${phone} to confirm the final price and date. Your estimate is KSh ${serverTotal.toLocaleString()}; nothing to pay until we confirm.`
+          : `Thanks ${name}. Your KSh ${serverTotal.toLocaleString()} booking is in. We will SMS ${phone} with the visit date.`;
+        const track = document.getElementById('anon-track-link');
+        if (orderId) track.href = `/tracker/${encodeURIComponent(orderId)}`; else track.style.display = 'none';
+        success.style.display = 'block';
+
+        document.getElementById('anon-create-pin').addEventListener('click', () => {
+          modal.classList.remove('active');
+          openClientAccessModal({ register: true, prefill: { name, phone, address, property_size: size } });
+        });
       } else {
         throw new Error(json.error?.message || 'Submission failed');
       }

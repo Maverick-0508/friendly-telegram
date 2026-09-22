@@ -6,13 +6,20 @@
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui", "window-controls-overlay"],
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
   "background_color": "#ffffff",
   "theme_color": "#15803d",
   "orientation": "any",
   "dir": "ltr",
   "lang": "en",
-  "categories": ["lifestyle", "utilities", "business"],
+  "categories": [
+    "lifestyle",
+    "utilities",
+    "business"
+  ],
   "icons": [
     {
       "src": "/assets/icons/icon-192.png",
@@ -45,21 +52,36 @@
       "short_name": "Pricing",
       "description": "Calculate instant lawn mowing pricing",
       "url": "/calculator?source=shortcut",
-      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/assets/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
-      "name": "Client Hub",
-      "short_name": "Client Hub",
-      "description": "View your lawn care status, schedule, and invoices",
+      "name": "My Lawn",
+      "short_name": "My Lawn",
+      "description": "Your estimates, bookings and bills",
       "url": "/?client_portal=open&source=shortcut",
-      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/assets/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Book Consultation",
       "short_name": "Contact",
       "description": "Book a lawn inspection or service consultation",
       "url": "/contact?source=shortcut",
-      "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/assets/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ],
   "prefer_related_applications": false,

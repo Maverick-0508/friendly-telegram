@@ -833,6 +833,36 @@ function initAreaChips() {
     });
 }
 
+// Load Leaflet on demand, once, when `target` approaches the viewport.
+function lazyLoadLeaflet(target, onReady) {
+    if (target.dataset.leafletRequested) return;
+    const load = () => {
+        if (target.dataset.leafletRequested) return;
+        target.dataset.leafletRequested = '1';
+        if (!document.querySelector('link[href*="leaflet.css"]')) {
+            const css = document.createElement('link');
+            css.rel = 'stylesheet';
+            css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+            css.crossOrigin = '';
+            document.head.appendChild(css);
+        }
+        const js = document.createElement('script');
+        js.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        js.crossOrigin = '';
+        js.onload = () => onReady();
+        js.onerror = () => { target.dataset.leafletRequested = ''; };
+        document.head.appendChild(js);
+    };
+    if ('IntersectionObserver' in window) {
+        const io = new IntersectionObserver((entries) => {
+            if (entries.some((e) => e.isIntersecting)) { io.disconnect(); load(); }
+        }, { rootMargin: '600px 0px' });
+        io.observe(target);
+    } else {
+        load();
+    }
+}
+
 // Service Area Map and Geolocation Feature
 function initServiceAreaMap() {
     const mapElement = document.getElementById('service-area-map');
@@ -841,8 +871,13 @@ function initServiceAreaMap() {
     const zipInput = document.getElementById('zip-input');
     const statusElement = document.getElementById('service-area-status');
     
-    // Early return if map element or Leaflet is not available
-    if (!mapElement || typeof L === 'undefined') {
+    if (!mapElement) return;
+
+    // Leaflet and its CSS are only fetched when the map is about to scroll
+    // into view (the home page links them nowhere else), which keeps the
+    // first paint light on mobile data.
+    if (typeof L === 'undefined') {
+        lazyLoadLeaflet(mapElement, initServiceAreaMap);
         return;
     }
     
@@ -1130,10 +1165,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof window.refreshBottomOverlayLayout === 'function') window.refreshBottomOverlayLayout();
     });
 
-    // Cookie Consent Banner
+    // Privacy notice. The site sets no tracking cookies and analytics is
+    // first-party and anonymous, so this is a slim one-line notice with a
+    // single acknowledgement, and it never shows inside the installed app.
     (function () {
         const COOKIE_KEY = 'lawn-craft-cookies-accepted';
         if (localStorage.getItem(COOKIE_KEY) !== null) return;
+        if (document.documentElement.classList.contains('pwa')) return;
 
         function dismissCookieBanner(banner) {
             banner.classList.remove('visible');
@@ -1154,11 +1192,10 @@ document.addEventListener('DOMContentLoaded', () => {
             banner.setAttribute('aria-label', 'Privacy preference');
             banner.innerHTML = `
                 <div class="cookie-consent-text">
-                    <p>We use basic, anonymous analytics to improve our website and store your choice locally in your browser. We do not use tracking cookies. Read our <a href="/privacy-policy">Privacy Policy</a> for more information.</p>
+                    <p>No tracking cookies here, only anonymous first-party analytics. <a href="/privacy-policy">Privacy policy</a></p>
                 </div>
                 <div class="cookie-consent-actions">
-                    <button class="btn-cookie-accept" type="button">Accept</button>
-                    <button class="btn-cookie-decline" type="button">Decline</button>
+                    <button class="btn-cookie-accept" type="button">Got it</button>
                 </div>
             `;
             document.body.appendChild(banner);
@@ -1176,10 +1213,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 dismissCookieBanner(banner);
             });
 
-            banner.querySelector('.btn-cookie-decline').addEventListener('click', () => {
-                localStorage.setItem(COOKIE_KEY, 'declined');
+            // Auto-dismiss once the visitor has clearly moved on.
+            let autoDismissed = false;
+            const onScroll = () => {
+                if (autoDismissed || window.scrollY < 600) return;
+                autoDismissed = true;
+                localStorage.setItem(COOKIE_KEY, 'seen');
                 dismissCookieBanner(banner);
-            });
+                window.removeEventListener('scroll', onScroll);
+            };
+            window.addEventListener('scroll', onScroll, { passive: true });
         }
 
         if (document.readyState === 'loading') {
@@ -1373,6 +1416,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function showInstallBanner() {
             if (document.getElementById('install-banner') || isStandalone) return;
+            if (document.documentElement.classList.contains('pwa')) return;
 
             const banner = document.createElement('div');
             banner.id = 'install-banner';

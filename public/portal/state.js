@@ -2,6 +2,12 @@
 const STORAGE_KEY = 'lawncraft_client_identifier';
 const STORAGE_KEY_PIN = 'lawncraft_client_pin';
 
+// Feature switches for things the business has not launched yet. Keep them
+// off until the offer is real so the site never promises what it cannot do.
+export const FEATURES = {
+  loyalty: false, // points, tiers, cash value, referral perks
+};
+
 // Mutable state shared across the hub modules.
 export const state = {
   currentClientData: null,
