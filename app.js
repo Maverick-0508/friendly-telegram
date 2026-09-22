@@ -43,6 +43,9 @@ const cspDirectives = {
     'https://images.unsplash.com',
     'https://*.tile.openstreetmap.org',
     'https://tile.openstreetmap.org',
+    'https://*.basemaps.cartocdn.com',
+    'https://basemaps.cartocdn.com',
+    'https://server.arcgisonline.com',
     'https://unpkg.com', // Leaflet default marker icons
   ],
   connectSrc: ["'self'", 'https://api.open-meteo.com'],
