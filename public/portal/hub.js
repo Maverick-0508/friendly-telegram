@@ -46,7 +46,7 @@ export function renderPersonalizedState(data) {
   const activeOrder = ACTIVE_ORDER_STATUSES.map(s => workOrders.find(w => w.status === s)).find(Boolean) || workOrders[0];
   const orderAwaitingConfirmation = Boolean(activeOrder && activeOrder.status === 'pending_confirmation');
   const orderLive = Boolean(activeOrder && (activeOrder.status === 'in_progress' || activeOrder.status === 'dispatched'));
-  const visitLabel = orderLive ? 'Live Crew Status' : orderAwaitingConfirmation ? 'Request Status' : activeOrder ? 'Next Visit' : 'Book a Visit';
+  const visitLabel = orderLive ? 'View Request Status' : orderAwaitingConfirmation ? 'Request Status' : activeOrder ? 'Next Visit' : 'Book a Visit';
 
   // Swap Hero to Personalized Welcome
   const heroContent = document.querySelector('.hero-content');
@@ -252,7 +252,7 @@ export function renderPersonalizedState(data) {
         </div>
         <div class="loyalty-col loyalty-points-col">
           <div class="loyalty-stat-number">${loyalty.points_balance} <span class="pts-unit">pts</span></div>
-          <div class="loyalty-value-sub">Cash Value: <strong>KSh ${Math.round(loyalty.dollar_value || loyalty.cash_value || (loyalty.points_balance * 50)).toLocaleString()}</strong> (KSh 50/pt)</div>
+          <div class="loyalty-value-sub">Earn reward points on every service visit</div>
         </div>
         <div class="loyalty-col loyalty-referral-col">
           <div class="loyalty-label">YOUR REFERRAL PERK</div>

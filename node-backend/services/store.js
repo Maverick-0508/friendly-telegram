@@ -178,7 +178,8 @@ loadFromDisk();
 
 function hydrate(row) {
   if (row && row.data && typeof row.data === 'object' && !Array.isArray(row.data)) {
-    return row.data;
+    const { data, ...columns } = row;
+    return { ...data, ...columns };
   }
   return row;
 }

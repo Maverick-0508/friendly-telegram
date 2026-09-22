@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live GPS Crew Tracker | Lawn Craft</title>
-    <meta name="description" content="Track your assigned Lawn Craft maintenance crew in real-time as they service your property.">
+    <title>View Request Status | Lawn Craft</title>
+    <meta name="description" content="Track your Lawn Craft maintenance request and crew status in real-time.">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     
     <!-- Google Fonts & Font Awesome -->
@@ -319,7 +319,7 @@
     <header class="tracker-header">
         <a href="/" class="tracker-logo-link">
             <img src="/assets/images/logo-64.png" alt="Lawn Craft">
-            <span>Lawn Craft Live Tracker</span>
+            <span>View Request Status</span>
         </a>
         <a href="/" class="tracker-back-btn">
             <i class="fa-solid fa-arrow-left"></i> Return to Client Hub
@@ -354,7 +354,7 @@
                     </div>
                     <div class="crew-info-text">
                         <h3 id="crew-lead-name">Crew lead to be assigned</h3>
-                        <p id="crew-team-title">Pending Supervisor Dispatch</p>
+                        <p id="crew-team-title">Pending Dispatch</p>
                         <p id="crew-vehicle"></p>
                     </div>
                 </div>
@@ -415,10 +415,10 @@
 
             const $ = (id) => document.getElementById(id);
             const STATUS = {
-                pending_confirmation: { badge: 'Awaiting Confirmation', eta: 'Under Review', live: false, desc: 'A supervisor is reviewing your request and will confirm the final price and date by SMS. No payment is due until then.' },
+                pending_confirmation: { badge: 'Awaiting Confirmation', eta: 'Under Review', live: false, desc: 'Our team is reviewing your request and will confirm the final price and date by SMS. No payment is due until then.' },
                 confirmed:   { badge: 'Confirmed',           eta: 'Awaiting Dispatch',  live: false, desc: 'Your booking is confirmed. A crew lead will be assigned and you will be notified by SMS.' },
-                incoming:    { badge: 'Queued for Dispatch', eta: 'Awaiting Dispatch',  live: false, desc: 'Your booking is in the supervisor dispatch queue. A crew lead will be assigned and you will be notified by SMS.' },
-                pending:     { badge: 'Queued for Dispatch', eta: 'Awaiting Dispatch',  live: false, desc: 'Your booking is in the supervisor dispatch queue. A crew lead will be assigned and you will be notified by SMS.' },
+                incoming:    { badge: 'Scheduled for Dispatch', eta: 'Awaiting Dispatch',  live: false, desc: 'Your booking is received and scheduled for dispatch. A crew lead will be assigned and you will be notified by SMS.' },
+                pending:     { badge: 'Scheduled for Dispatch', eta: 'Awaiting Dispatch',  live: false, desc: 'Your booking is received and scheduled for dispatch. A crew lead will be assigned and you will be notified by SMS.' },
                 scheduled:   { badge: 'Scheduled',           eta: 'Crew Scheduled',     live: false, desc: 'A crew has been assigned and will be dispatched on the scheduled date.' },
                 dispatched:  { badge: 'Crew En Route',       eta: 'On The Way',         live: true,  desc: 'Your crew is on the way. Live location updates while they travel.' },
                 in_progress: { badge: 'Crew On-Site',        eta: 'Active On-Site',     live: true,  desc: 'The team is currently working on your lawn.' },
