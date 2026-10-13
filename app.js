@@ -261,6 +261,10 @@ export function createApp() {
     res.sendFile(path.join(PUBLIC_DIR, 'calculator.html'));
   });
 
+  app.get('/admin', (_req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
+  });
+
   const PRIVATE_PATH_PATTERN = /^\/(?:node-backend|node_modules|tests|scripts|data|\.github|\.vercel)(?:\/|$)/i;
 const PRIVATE_FILE_PATTERN = /^\/\.env/i;
 const BLOCKED_ROOT_FILES = /^\/(?:app|server|package|package-lock|README|AGENTS|LICENSE)(?:\.|$)/i;
