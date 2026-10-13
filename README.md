@@ -1,7 +1,6 @@
 # Lawn Craft - Professional Lawn Care Platform
 
-A modern lawn care website with an Express.js backend that stores leads, client
-hub profiles, work orders, coupons and M-Pesa payments in Supabase.
+Lawn Craft is a full-stack, PWA-enabled lawn care and property maintenance platform with a Node.js/Express backend, Supabase database persistence, and native Safaricom Daraja M-Pesa mobile payment integration
 
 ## Project Structure
 
