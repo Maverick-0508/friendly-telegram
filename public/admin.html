@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lawn Craft - Supervisor & Operations Hub</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" type="image/png" href="/assets/icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    :root {
+      --bg: #090e17;
+      --bg-card: #121c2c;
+      --bg-card-hover: #172439;
+      --bg-alt: #1a2940;
+      --border: #223550;
+      --border-focus: #38bdf8;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --primary-glow: rgba(16, 185, 129, 0.2);
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.2);
+      --warning: #f59e0b;
+      --warning-glow: rgba(245, 158, 11, 0.2);
+      --danger: #ef4444;
+      --danger-glow: rgba(239, 68, 68, 0.2);
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font); }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+
+    /* Layout */
+    .app-shell { display: flex; flex-direction: column; min-height: 100vh; }
+    .top-navbar {
+      background: rgba(18, 28, 44, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+      padding: 0.85rem 1.5rem;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+    }
+    .brand { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: #fff; }
+    .brand-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: linear-gradient(135deg, #10b981, #047857);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 1.1rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+    }
+    .brand-title { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 0.5rem; }
+    .brand-badge {
+      font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+      padding: 0.2rem 0.5rem; border-radius: 999px;
+      background: var(--primary-glow); color: var(--primary); border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .nav-actions { display: flex; align-items: center; gap: 0.75rem; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.45rem;
+      padding: 0.5rem 0.9rem; font-size: 0.85rem; font-weight: 600;
+      border-radius: 6px; border: 1px solid transparent; cursor: pointer;
+      transition: all 0.15s ease; text-decoration: none; line-height: 1.2;
+    }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary { background: var(--bg-alt); color: #cbd5e1; border-color: var(--border); }
+    .btn-secondary:hover { background: #223755; color: #fff; }
+    .btn-outline { background: transparent; color: var(--text-muted); border-color: var(--border); }
+    .btn-outline:hover { color: #fff; border-color: var(--text-muted); }
+    .btn-danger { background: var(--danger-glow); color: var(--danger); border-color: rgba(239, 68, 68, 0.4); }
+    .btn-danger:hover { background: var(--danger); color: #fff; }
+    .btn-sm { padding: 0.35rem 0.65rem; font-size: 0.78rem; border-radius: 4px; }
+
+    /* Main Container */
+    .main-content { max-width: 1400px; width: 100%; margin: 0 auto; padding: 1.75rem 1.5rem; flex: 1; }
+
+    /* KPI Grid */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.75rem; }
+    .kpi-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 1.15rem 1.25rem; position: relative; overflow: hidden;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .kpi-card:hover { transform: translateY(-2px); border-color: #334e74; }
+    .kpi-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+    .kpi-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+    .kpi-icon { width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; }
+    .kpi-value { font-size: 1.85rem; font-weight: 800; letter-spacing: -0.03em; color: #fff; line-height: 1.1; }
+    .kpi-sub { font-size: 0.75rem; color: var(--text-dim); margin-top: 0.35rem; }
+
+    .kpi-warn .kpi-icon { background: var(--warning-glow); color: var(--warning); }
+    .kpi-warn .kpi-value { color: var(--warning); }
+    .kpi-info .kpi-icon { background: var(--accent-glow); color: var(--accent); }
+    .kpi-info .kpi-value { color: var(--accent); }
+    .kpi-success .kpi-icon { background: var(--primary-glow); color: var(--primary); }
+    .kpi-success .kpi-value { color: var(--primary); }
+    .kpi-neutral .kpi-icon { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; }
+
+    /* Navigation Tabs */
+    .tab-bar {
+      display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border);
+      margin-bottom: 1.5rem; overflow-x: auto; scrollbar-width: none;
+    }
+    .tab-btn {
+      background: transparent; border: none; border-bottom: 2px solid transparent;
+      color: var(--text-muted); font-size: 0.9rem; font-weight: 600;
+      padding: 0.75rem 1.25rem; cursor: pointer; white-space: nowrap;
+      display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s ease;
+    }
+    .tab-btn:hover { color: #fff; }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .tab-pill {
+      font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.45rem;
+      border-radius: 999px; background: var(--bg-alt); color: var(--text-muted);
+    }
+    .tab-btn.active .tab-pill { background: var(--primary-glow); color: var(--primary); }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Cards & Containers */
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem; }
+    .card-title { font-size: 1.1rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 0.5rem; }
+
+    /* Filter Bar */
+    .filter-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.25rem; }
+    .filter-pills { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .filter-pill {
+      background: var(--bg-alt); border: 1px solid var(--border);
+      color: var(--text-muted); font-size: 0.78rem; font-weight: 600;
+      padding: 0.35rem 0.75rem; border-radius: 6px; cursor: pointer; transition: all 0.15s ease;
+    }
+    .filter-pill:hover { color: #fff; border-color: #3b577d; }
+    .filter-pill.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    .search-box {
+      display: flex; align-items: center; gap: 0.5rem;
+      background: #0d1522; border: 1px solid var(--border); border-radius: 6px;
+      padding: 0.4rem 0.75rem; width: 280px; max-width: 100%;
+    }
+    .search-box i { color: var(--text-dim); font-size: 0.85rem; }
+    .search-box input { background: transparent; border: none; color: #fff; font-size: 0.85rem; outline: none; width: 100%; }
+
+    /* Data Tables */
+    .table-responsive { width: 100%; overflow-x: auto; }
+    table.data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left; }
+    table.data-table th {
+      background: #0d1522; color: var(--text-muted); font-weight: 600;
+      padding: 0.75rem 1rem; border-bottom: 1px solid var(--border);
+      text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.04em;
+    }
+    table.data-table td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); color: #e2e8f0; vertical-align: middle; }
+    table.data-table tbody tr { transition: background 0.15s ease; }
+    table.data-table tbody tr:hover { background: var(--bg-card-hover); }
+
+    /* Badges */
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+      padding: 0.2rem 0.6rem; border-radius: 999px;
+    }
+    .status-pending { background: var(--warning-glow); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.4); }
+    .status-confirmed { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(56, 189, 248, 0.4); }
+    .status-dispatched { background: rgba(99, 102, 241, 0.2); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.4); }
+    .status-progress { background: rgba(236, 72, 153, 0.2); color: #f472b6; border: 1px solid rgba(236, 72, 153, 0.4); }
+    .status-completed { background: var(--primary-glow); color: var(--primary); border: 1px solid rgba(16, 185, 129, 0.4); }
+    .status-cancelled { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid var(--border); }
+    .status-paid { background: var(--primary-glow); color: var(--primary); border: 1px solid rgba(16, 185, 129, 0.4); }
+    .status-unpaid { background: var(--danger-glow); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.4); }
+    .status-estimate { background: var(--warning-glow); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.4); }
+
+    /* Modals */
+    .modal-backdrop {
+      display: none; position: fixed; inset: 0; background: rgba(5, 10, 18, 0.82);
+      backdrop-filter: blur(8px); z-index: 999;
+      align-items: center; justify-content: center; padding: 1.5rem;
+    }
+    .modal-backdrop.active { display: flex; }
+    .modal-box {
+      background: var(--bg-card); border: 1px solid #2e4769; border-radius: 12px;
+      max-width: 580px; width: 100%; max-height: 90vh; overflow-y: auto;
+      padding: 1.75rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7);
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
+    .modal-header h3 { font-size: 1.2rem; font-weight: 700; color: #fff; }
+    .modal-close { background: transparent; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer; }
+    .modal-close:hover { color: #fff; }
+
+    .form-group { margin-bottom: 1.1rem; }
+    .form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.35rem; }
+    .form-control {
+      width: 100%; background: #0b1320; border: 1px solid var(--border); border-radius: 6px;
+      padding: 0.6rem 0.85rem; color: #fff; font-size: 0.88rem; outline: none; transition: border-color 0.15s ease;
+    }
+    .form-control:focus { border-color: var(--accent); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+    /* Checklist in Modal */
+    .checklist-editor { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem; }
+    .check-item-row { display: flex; align-items: center; gap: 0.5rem; background: var(--bg-alt); padding: 0.5rem 0.75rem; border-radius: 6px; }
+    .check-item-row input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
+    .check-item-row span { font-size: 0.85rem; flex: 1; }
+
+    /* Diagnostic Grid */
+    .diag-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+    .diag-card { background: #0d1522; border: 1px solid var(--border); border-radius: 8px; padding: 1.15rem; }
+    .diag-title { font-size: 0.85rem; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+    .diag-badge { font-size: 0.72rem; padding: 0.15rem 0.45rem; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
+    .diag-ok { background: var(--primary-glow); color: var(--primary); }
+    .diag-warn { background: var(--warning-glow); color: var(--warning); }
+    .diag-err { background: var(--danger-glow); color: var(--danger); }
+    .diag-detail { font-size: 0.78rem; color: var(--text-muted); font-family: monospace; }
+
+    /* Toast */
+    #toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem; }
+    .toast {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+      padding: 0.75rem 1.15rem; color: #fff; font-size: 0.85rem;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4); display: flex; align-items: center; gap: 0.5rem;
+      animation: slideIn 0.2s ease;
+    }
+    @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    /* Empty State */
+    .empty-box { text-align: center; padding: 3rem 1rem; color: var(--text-dim); }
+    .empty-box i { font-size: 2.5rem; margin-bottom: 0.75rem; color: #334e74; }
+    .empty-box p { font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Navigation -->
+    <header class="top-navbar">
+      <div class="brand">
+        <div class="brand-icon"><i class="fa-solid fa-leaf"></i></div>
+        <div class="brand-title">
+          <span>Lawn Craft</span>
+          <span class="brand-badge">Supervisor Ops</span>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <button class="btn btn-outline btn-sm" id="btn-toggle-poll" title="Toggle 30s auto-refresh">
+          <i class="fa-solid fa-rotate"></i> Auto-Sync: <span id="poll-state">ON</span>
+        </button>
+        <button class="btn btn-secondary btn-sm" id="btn-manual-refresh">
+          <i class="fa-solid fa-arrows-rotate"></i> Refresh
+        </button>
+        <button class="btn btn-danger btn-sm" id="btn-lock-session" title="Lock session">
+          <i class="fa-solid fa-lock"></i> Lock
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-content">
+      <!-- KPI Metric Cards -->
+      <section class="kpi-grid">
+        <div class="kpi-card kpi-warn">
+          <div class="kpi-header">
+            <span class="kpi-label">Needs Approval</span>
+            <div class="kpi-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+          </div>
+          <div class="kpi-value" id="kpi-pending">—</div>
+          <div class="kpi-sub">Booking estimates awaiting pricing & date</div>
+        </div>
+        <div class="kpi-card kpi-info">
+          <div class="kpi-header">
+            <span class="kpi-label">Active Dispatches</span>
+            <div class="kpi-icon"><i class="fa-solid fa-truck-fast"></i></div>
+          </div>
+          <div class="kpi-value" id="kpi-active">—</div>
+          <div class="kpi-sub">Crews en route or currently on-site</div>
+        </div>
+        <div class="kpi-card kpi-success">
+          <div class="kpi-header">
+            <span class="kpi-label">M-Pesa Revenue</span>
+            <div class="kpi-icon"><i class="fa-solid fa-money-bill-wave"></i></div>
+          </div>
+          <div class="kpi-value" id="kpi-revenue">—</div>
+          <div class="kpi-sub">Total settled Daraja payments</div>
+        </div>
+        <div class="kpi-card kpi-neutral">
+          <div class="kpi-header">
+            <span class="kpi-label">Unpaid Balances</span>
+            <div class="kpi-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+          </div>
+          <div class="kpi-value" id="kpi-unpaid">—</div>
+          <div class="kpi-sub">Pending customer invoice receivables</div>
+        </div>
+      </section>
+
+      <!-- Navigation Tabs -->
+      <nav class="tab-bar">
+        <button class="tab-btn active" data-tab="orders">
+          <i class="fa-solid fa-list-check"></i> Work Orders & Dispatch
+          <span class="tab-pill" id="badge-orders-count">0</span>
+        </button>
+        <button class="tab-btn" data-tab="payments">
+          <i class="fa-solid fa-mobile-screen-button"></i> M-Pesa & Reconcile
+          <span class="tab-pill" id="badge-payments-count">0</span>
+        </button>
+        <button class="tab-btn" data-tab="invoices">
+          <i class="fa-solid fa-file-invoice"></i> Invoices
+          <span class="tab-pill" id="badge-invoices-count">0</span>
+        </button>
+        <button class="tab-btn" data-tab="leads">
+          <i class="fa-solid fa-inbox"></i> Quotes & Leads
+          <span class="tab-pill" id="badge-leads-count">0</span>
+        </button>
+        <button class="tab-btn" data-tab="system">
+          <i class="fa-solid fa-server"></i> System Health
+        </button>
+      </nav>
+
+      <!-- TAB 1: WORK ORDERS -->
+      <section class="tab-content active" id="tab-orders">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fa-solid fa-clipboard-list"></i> Field Work Orders & Dispatch Queue
+            </div>
+          </div>
+          <div class="filter-bar">
+            <div class="filter-pills" id="order-status-filters">
+              <button class="filter-pill active" data-filter="all">All</button>
+              <button class="filter-pill" data-filter="pending_confirmation">Needs Review</button>
+              <button class="filter-pill" data-filter="confirmed">Confirmed</button>
+              <button class="filter-pill" data-filter="dispatched">Dispatched</button>
+              <button class="filter-pill" data-filter="in_progress">On-Site</button>
+              <button class="filter-pill" data-filter="completed">Completed</button>
+            </div>
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="orders-search" placeholder="Search orders, clients, phones…">
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table" id="orders-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Client / Property</th>
+                  <th>Service</th>
+                  <th>Price</th>
+                  <th>Status</th>
+                  <th>Schedule / Crew</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="orders-tbody">
+                <tr><td colspan="7" class="empty-box"><i class="fa-solid fa-spinner fa-spin"></i><p>Loading work orders…</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: M-PESA PAYMENTS -->
+      <section class="tab-content" id="tab-payments">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <i class="fa-solid fa-money-check-dollar"></i> Safaricom M-Pesa Transactions
+            </div>
+            <button class="btn btn-primary btn-sm" id="btn-run-reconcile">
+              <i class="fa-solid fa-rotate-right"></i> Run Lost-Callback Reconcile
+            </button>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table" id="payments-table">
+              <thead>
+                <tr>
+                  <th>Payment ID</th>
+                  <th>Receipt / Checkout ID</th>
+                  <th>Phone</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Timestamp</th>
+                </tr>
+              </thead>
+              <tbody id="payments-tbody">
+                <tr><td colspan="6" class="empty-box"><i class="fa-solid fa-spinner fa-spin"></i><p>Loading transactions…</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: INVOICES -->
+      <section class="tab-content" id="tab-invoices">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fa-solid fa-receipt"></i> Customer Invoices</div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table" id="invoices-table">
+              <thead>
+                <tr>
+                  <th>Invoice ID</th>
+                  <th>Client / Phone</th>
+                  <th>Total Amount</th>
+                  <th>Balance Due</th>
+                  <th>Status</th>
+                  <th>Due Date</th>
+                  <th>Links</th>
+                </tr>
+              </thead>
+              <tbody id="invoices-tbody">
+                <tr><td colspan="7" class="empty-box"><i class="fa-solid fa-spinner fa-spin"></i><p>Loading invoices…</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: QUOTES & LEADS -->
+      <section class="tab-content" id="tab-leads">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fa-solid fa-envelope-open-text"></i> Contact Form Leads & Consultation Quotes</div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table" id="leads-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Contact</th>
+                  <th>Message / Request</th>
+                  <th>Source</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody id="leads-tbody">
+                <tr><td colspan="5" class="empty-box"><i class="fa-solid fa-spinner fa-spin"></i><p>Loading leads…</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: SYSTEM HEALTH -->
+      <section class="tab-content" id="tab-system">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><i class="fa-solid fa-heart-pulse"></i> Infrastructure & Connectivity Status</div>
+            <button class="btn btn-secondary btn-sm" id="btn-refresh-sys">
+              <i class="fa-solid fa-arrows-rotate"></i> Ping Providers
+            </button>
+          </div>
+          <div class="diag-grid" id="diag-grid">
+            <div class="diag-card"><div class="empty-box"><i class="fa-solid fa-spinner fa-spin"></i><p>Pinging services…</p></div></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- AUTHENTICATION MODAL -->
+  <div class="modal-backdrop" id="modal-auth">
+    <div class="modal-box" style="max-width: 440px;">
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <div class="brand-icon" style="margin: 0 auto 0.75rem; width: 48px; height: 48px; font-size: 1.4rem;">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <h3 style="color: #fff; font-size: 1.3rem;">Supervisor Access</h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.35rem;">Enter your operations passkey to manage dispatches and billing.</p>
+      </div>
+      <form id="form-auth">
+        <div class="form-group">
+          <label for="input-auth-token">Admin Token / Passkey</label>
+          <input type="password" id="input-auth-token" class="form-control" placeholder="Enter ADMIN_API_TOKEN" required autofocus>
+        </div>
+        <div style="display: flex; gap: 0.5rem; margin-top: 1.25rem;">
+          <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center;">
+            <i class="fa-solid fa-unlock-keyhole"></i> Unlock Portal
+          </button>
+        </div>
+        <div id="auth-err" style="display: none; margin-top: 1rem; color: var(--danger); font-size: 0.82rem; text-align: center;"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ORDER REVIEW & CONFIRM MODAL -->
+  <div class="modal-backdrop" id="modal-confirm">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="confirm-title">Review & Confirm Work Order</h3>
+        <button class="modal-close" data-close="modal-confirm">&times;</button>
+      </div>
+      <form id="form-confirm-order">
+        <input type="hidden" id="conf-order-id">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Customer Name</label>
+            <input type="text" id="conf-client-name" class="form-control" readonly>
+          </div>
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input type="text" id="conf-client-phone" class="form-control" readonly>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Service & Property Address</label>
+          <input type="text" id="conf-service-address" class="form-control" readonly>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Total Price (KES, VAT inclusive)</label>
+            <input type="number" id="conf-price" class="form-control" min="1" required>
+          </div>
+          <div class="form-group">
+            <label>Scheduled Visit Date / Slot</label>
+            <input type="text" id="conf-date" class="form-control" placeholder="e.g. Tomorrow 9:00 AM" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Assign Crew Lead</label>
+            <input type="text" id="conf-crew-lead" class="form-control" placeholder="e.g. Dennis Omari">
+          </div>
+          <div class="form-group">
+            <label>Crew Contact Phone</label>
+            <input type="text" id="conf-crew-phone" class="form-control" placeholder="e.g. 0712345678">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Supervisor Notes / Client Instructions</label>
+          <textarea id="conf-notes" class="form-control" rows="2" placeholder="Gates, access instructions, property specifics"></textarea>
+        </div>
+        <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem; justify-content: flex-end;">
+          <button type="button" class="btn btn-outline" data-close="modal-confirm">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-confirm">
+            <i class="fa-solid fa-paper-plane"></i> Confirm & Send SMS Pay Link
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DISPATCH & LIVE TRACKER MODAL -->
+  <div class="modal-backdrop" id="modal-dispatch">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="dispatch-title">Dispatch & Field Operations</h3>
+        <button class="modal-close" data-close="modal-dispatch">&times;</button>
+      </div>
+      <form id="form-dispatch">
+        <input type="hidden" id="disp-order-id">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Current Status</label>
+            <select id="disp-status" class="form-control">
+              <option value="confirmed">Confirmed (Queued)</option>
+              <option value="scheduled">Scheduled</option>
+              <option value="dispatched">Dispatched (En Route)</option>
+              <option value="in_progress">In Progress (On-Site)</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Assigned Vehicle</label>
+            <input type="text" id="disp-vehicle" class="form-control" placeholder="e.g. Toyota Hilux (KDD 456X)">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Crew Latitude (GPS)</label>
+            <input type="text" id="disp-lat" class="form-control" placeholder="-1.2921">
+          </div>
+          <div class="form-group">
+            <label>Crew Longitude (GPS)</label>
+            <input type="text" id="disp-lng" class="form-control" placeholder="36.8219">
+          </div>
+        </div>
+        <div style="margin-bottom: 1rem;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-use-gps">
+            <i class="fa-solid fa-location-crosshairs"></i> Set to Device GPS Location
+          </button>
+        </div>
+        <div class="form-group">
+          <label>On-Site Task Checklist</label>
+          <div class="checklist-editor" id="disp-checklist-box"></div>
+        </div>
+        <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem; justify-content: space-between; align-items: center;">
+          <a href="#" target="_blank" class="btn btn-outline btn-sm" id="btn-view-tracker">
+            <i class="fa-solid fa-eye"></i> View Customer Tracker
+          </a>
+          <div style="display: flex; gap: 0.5rem;">
+            <button type="button" class="btn btn-outline" data-close="modal-dispatch">Cancel</button>
+            <button type="submit" class="btn btn-primary">
+              <i class="fa-solid fa-floppy-disk"></i> Save Dispatch Update
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <script>
+    (function() {
+      const STORAGE_KEY = 'lawncraft_admin_token';
+      let currentToken = sessionStorage.getItem(STORAGE_KEY) || '';
+      let autoPollTimer = null;
+      let cachedOrders = [];
+      let currentFilter = 'all';
+
+      const $ = (id) => document.getElementById(id);
+
+      function showToast(message, type = 'info') {
+        const container = $('toast-container');
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-info';
+        toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${message}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => { toast.remove(); }, 4000);
+      }
+
+      function getAuthHeaders() {
+        return {
+          'Content-Type': 'application/json',
+          'x-admin-token': currentToken,
+          'Authorization': `Bearer ${currentToken}`
+        };
+      }
+
+      async function apiFetch(endpoint, options = {}) {
+        options.headers = { ...getAuthHeaders(), ...(options.headers || {}) };
+        const res = await fetch(endpoint, options);
+        if (res.status === 401 || res.status === 404) {
+          if (endpoint.includes('/admin/')) {
+            openAuthModal('Please enter your supervisor token.');
+          }
+        }
+        return res;
+      }
+
+      function openAuthModal(errText) {
+        $('modal-auth').classList.add('active');
+        if (errText) {
+          $('auth-err').textContent = errText;
+          $('auth-err').style.display = 'block';
+        } else {
+          $('auth-err').style.display = 'none';
+        }
+      }
+
+      function closeAuthModal() {
+        $('modal-auth').classList.remove('active');
+      }
+
+      // Check Authentication
+      async function initAuth() {
+        if (!currentToken) {
+          openAuthModal();
+          return;
+        }
+        try {
+          const res = await apiFetch('/api/admin/verify', { method: 'POST' });
+          if (!res.ok) {
+            sessionStorage.removeItem(STORAGE_KEY);
+            currentToken = '';
+            openAuthModal('Session expired. Please re-enter passkey.');
+          } else {
+            closeAuthModal();
+            loadAllData();
+          }
+        } catch {
+          openAuthModal();
+        }
+      }
+
+      $('form-auth').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const token = $('input-auth-token').value.trim();
+        if (!token) return;
+
+        try {
+          const res = await fetch('/api/admin/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+            body: JSON.stringify({ token })
+          });
+          if (res.ok) {
+            currentToken = token;
+            sessionStorage.setItem(STORAGE_KEY, token);
+            closeAuthModal();
+            showToast('Supervisor authenticated successfully.', 'success');
+            loadAllData();
+          } else {
+            $('auth-err').textContent = 'Invalid administrator passkey.';
+            $('auth-err').style.display = 'block';
+          }
+        } catch (err) {
+          $('auth-err').textContent = 'Verification error: ' + err.message;
+          $('auth-err').style.display = 'block';
+        }
+      });
+
+      $('btn-lock-session').addEventListener('click', () => {
+        sessionStorage.removeItem(STORAGE_KEY);
+        currentToken = '';
+        openAuthModal('Session locked.');
+      });
+
+      // Tab Navigation
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+          btn.classList.add('active');
+          const tabId = 'tab-' + btn.getAttribute('data-tab');
+          if ($(tabId)) $(tabId).classList.add('active');
+        });
+      });
+
+      // Filter Pills for Orders
+      $('order-status-filters').addEventListener('click', (e) => {
+        if (e.target.classList.contains('filter-pill')) {
+          document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+          e.target.classList.add('active');
+          currentFilter = e.target.getAttribute('data-filter');
+          renderOrdersTable();
+        }
+      });
+
+      $('orders-search').addEventListener('input', () => {
+        renderOrdersTable();
+      });
+
+      // Load Stats
+      async function loadStats() {
+        try {
+          const res = await apiFetch('/api/admin/stats');
+          if (!res.ok) return;
+          const json = await res.json();
+          const s = json.stats || {};
+          $('kpi-pending').textContent = s.pending_confirmation ?? '0';
+          $('kpi-active').textContent = s.active_dispatches ?? '0';
+          $('kpi-revenue').textContent = 'KES ' + Number(s.total_revenue_collected || 0).toLocaleString();
+          $('kpi-unpaid').textContent = 'KES ' + Number(s.outstanding_balance || 0).toLocaleString();
+          $('badge-orders-count').textContent = s.total_work_orders ?? '0';
+          $('badge-invoices-count').textContent = s.total_invoices ?? '0';
+          $('badge-leads-count').textContent = (s.total_quotes || 0) + (s.total_leads || 0);
+        } catch (err) {
+          console.warn('Failed to load stats', err);
+        }
+      }
+
+      // Load Work Orders
+      async function loadOrders() {
+        try {
+          const res = await apiFetch('/api/admin/work-orders?limit=150');
+          if (!res.ok) return;
+          const json = await res.json();
+          cachedOrders = json.orders || [];
+          renderOrdersTable();
+        } catch (err) {
+          console.warn('Failed to load orders', err);
+        }
+      }
+
+      function renderOrdersTable() {
+        const tbody = $('orders-tbody');
+        const search = $('orders-search').value.toLowerCase().trim();
+
+        let filtered = cachedOrders.filter(o => {
+          if (currentFilter !== 'all') {
+            if (currentFilter === 'pending_confirmation' && !(o.status === 'pending_confirmation' || o.status === 'incoming')) return false;
+            if (currentFilter !== 'pending_confirmation' && o.status !== currentFilter) return false;
+          }
+          if (search) {
+            const haystack = `${o.id} ${o.client_name || ''} ${o.phone || ''} ${o.service_type || ''} ${o.address || ''}`.toLowerCase();
+            return haystack.includes(search);
+          }
+          return true;
+        });
+
+        if (!filtered.length) {
+          tbody.innerHTML = `<tr><td colspan="7" class="empty-box"><i class="fa-solid fa-folder-open"></i><p>No work orders match this filter.</p></td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = filtered.map(o => {
+          const statusClass = 'status-' + (o.status || 'pending').replace('_', '');
+          const isPending = o.status === 'pending_confirmation' || o.status === 'incoming';
+          return `
+            <tr>
+              <td>
+                <strong>#${escapeHtml(o.id)}</strong>
+                <div style="font-size:0.75rem; color:var(--text-dim);">${o.created_at ? o.created_at.slice(0, 10) : ''}</div>
+              </td>
+              <td>
+                <div style="font-weight:600;">${escapeHtml(o.client_name || 'Valued Client')}</div>
+                <div style="font-size:0.75rem; color:var(--text-muted);">${escapeHtml(o.phone || '—')}</div>
+                <div style="font-size:0.72rem; color:var(--text-dim); max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(o.address || 'Nairobi')}</div>
+              </td>
+              <td>${escapeHtml(o.service_type || 'Lawn Care')}</td>
+              <td><strong>KES ${Number(o.total_price || o.total_amount || 0).toLocaleString()}</strong></td>
+              <td><span class="status-badge ${statusClass}">${escapeHtml((o.status || 'pending').replace('_', ' '))}</span></td>
+              <td>
+                <div><i class="fa-regular fa-calendar" style="color:var(--text-dim);"></i> ${escapeHtml(o.scheduled_date || 'Not Scheduled')}</div>
+                <div style="font-size:0.75rem; color:var(--text-muted);"><i class="fa-solid fa-user-shield" style="color:var(--text-dim);"></i> ${escapeHtml(o.crew_lead || o.crew_name || 'Unassigned')}</div>
+              </td>
+              <td>
+                <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+                  ${isPending ? `
+                    <button class="btn btn-primary btn-sm btn-action-confirm" data-id="${o.id}">
+                      <i class="fa-solid fa-circle-check"></i> Review & Approve
+                    </button>
+                  ` : `
+                    <button class="btn btn-secondary btn-sm btn-action-dispatch" data-id="${o.id}">
+                      <i class="fa-solid fa-sliders"></i> Dispatch Ops
+                    </button>
+                  `}
+                  <a href="/tracker/${o.id}" target="_blank" class="btn btn-outline btn-sm" title="Live Customer Tracking">
+                    <i class="fa-solid fa-location-arrow"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        // Attach action handlers
+        document.querySelectorAll('.btn-action-confirm').forEach(btn => {
+          btn.addEventListener('click', () => openConfirmModal(btn.getAttribute('data-id')));
+        });
+        document.querySelectorAll('.btn-action-dispatch').forEach(btn => {
+          btn.addEventListener('click', () => openDispatchModal(btn.getAttribute('data-id')));
+        });
+      }
+
+      // Open Confirm Modal
+      function openConfirmModal(orderId) {
+        const order = cachedOrders.find(o => o.id === orderId);
+        if (!order) return;
+
+        $('conf-order-id').value = order.id;
+        $('conf-client-name').value = order.client_name || '';
+        $('conf-client-phone').value = order.phone || '';
+        $('conf-service-address').value = `${order.service_type || 'Lawn Care'} • ${order.address || 'Client Property'}`;
+        $('conf-price').value = order.total_price || order.total_amount || 4500;
+        $('conf-date').value = order.scheduled_date || 'Tomorrow 9:00 AM';
+        $('conf-crew-lead').value = order.crew_lead || 'Dennis Omari';
+        $('conf-crew-phone').value = order.crew_phone || '0712345678';
+        $('conf-notes').value = order.supervisor_notes || '';
+
+        $('modal-confirm').classList.add('active');
+      }
+
+      $('form-confirm-order').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const orderId = $('conf-order-id').value;
+        const submitBtn = $('btn-submit-confirm');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Confirming…';
+
+        const payload = {
+          total_amount: Number($('conf-price').value),
+          scheduled_date: $('conf-date').value,
+          crew_lead: $('conf-crew-lead').value,
+          crew_phone: $('conf-crew-phone').value,
+          notes: $('conf-notes').value,
+          confirmed_by: 'Supervisor'
+        };
+
+        try {
+          const res = await apiFetch(`/api/admin/work-orders/${orderId}/confirm`, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+          });
+          const json = await res.json();
+          if (res.ok) {
+            showToast('Work order confirmed and payment SMS triggered!', 'success');
+            $('modal-confirm').classList.remove('active');
+            loadOrders();
+            loadStats();
+          } else {
+            showToast(json.error?.message || 'Failed to confirm order.', 'error');
+          }
+        } catch (err) {
+          showToast('Network error: ' + err.message, 'error');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Confirm & Send SMS Pay Link';
+        }
+      });
+
+      // Open Dispatch Modal
+      function openDispatchModal(orderId) {
+        const order = cachedOrders.find(o => o.id === orderId);
+        if (!order) return;
+
+        $('disp-order-id').value = order.id;
+        $('disp-status').value = order.status || 'confirmed';
+        $('disp-vehicle').value = order.crew_vehicle || '';
+        $('disp-lat').value = order.crew_lat || '';
+        $('disp-lng').value = order.crew_lng || '';
+        $('btn-view-tracker').href = `/tracker/${order.id}`;
+
+        // Render checklist editor
+        const checklist = Array.isArray(order.checklist) && order.checklist.length ? order.checklist : [
+          { task: 'Site survey & turf boundary assessment', status: 'completed' },
+          { task: 'Precision mower edging & height cut', status: 'in_progress' },
+          { task: 'Organic aeration & patch feed', status: 'pending' },
+          { task: 'Clippings sweeping & green debris haul', status: 'pending' }
+        ];
+
+        const checklistBox = $('disp-checklist-box');
+        checklistBox.innerHTML = checklist.map((item, idx) => `
+          <div class="check-item-row">
+            <input type="checkbox" id="chk-${idx}" ${item.status === 'completed' ? 'checked' : ''} data-idx="${idx}">
+            <span>${escapeHtml(item.task)}</span>
+          </div>
+        `).join('');
+
+        $('modal-dispatch').classList.add('active');
+      }
+
+      $('btn-use-gps').addEventListener('click', () => {
+        if (!navigator.geolocation) {
+          showToast('Geolocation is not supported by your browser.', 'error');
+          return;
+        }
+        navigator.geolocation.getCurrentPosition((pos) => {
+          $('disp-lat').value = pos.coords.latitude.toFixed(6);
+          $('disp-lng').value = pos.coords.longitude.toFixed(6);
+          showToast('GPS position updated to device coordinates.', 'success');
+        }, (err) => {
+          showToast('GPS access denied: ' + err.message, 'error');
+        });
+      });
+
+      $('form-dispatch').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const orderId = $('disp-order-id').value;
+
+        // Build checklist from checkboxes
+        const checkboxes = document.querySelectorAll('#disp-checklist-box input[type="checkbox"]');
+        const checklist = Array.from(checkboxes).map(cb => ({
+          task: cb.nextElementSibling.textContent.trim(),
+          status: cb.checked ? 'completed' : 'pending'
+        }));
+
+        const payload = {
+          status: $('disp-status').value,
+          crew_vehicle: $('disp-vehicle').value,
+          crew_lat: $('disp-lat').value ? Number($('disp-lat').value) : null,
+          crew_lng: $('disp-lng').value ? Number($('disp-lng').value) : null,
+          checklist
+        };
+
+        try {
+          const res = await apiFetch(`/api/admin/work-orders/${orderId}`, {
+            method: 'PATCH',
+            body: JSON.stringify(payload)
+          });
+          if (res.ok) {
+            showToast('Dispatch & live tracker updated successfully.', 'success');
+            $('modal-dispatch').classList.remove('active');
+            loadOrders();
+            loadStats();
+          } else {
+            showToast('Failed to update dispatch.', 'error');
+          }
+        } catch (err) {
+          showToast('Network error: ' + err.message, 'error');
+        }
+      });
+
+      // Load M-Pesa Payments
+      async function loadPayments() {
+        try {
+          const res = await apiFetch('/api/admin/payments');
+          if (!res.ok) return;
+          const json = await res.json();
+          const payments = json.payments || [];
+          $('badge-payments-count').textContent = payments.length;
+
+          const tbody = $('payments-tbody');
+          if (!payments.length) {
+            tbody.innerHTML = `<tr><td colspan="6" class="empty-box"><i class="fa-solid fa-receipt"></i><p>No transactions recorded yet.</p></td></tr>`;
+            return;
+          }
+          tbody.innerHTML = payments.map(p => `
+            <tr>
+              <td><strong>#${escapeHtml(p.id)}</strong></td>
+              <td>
+                <div><strong style="color:var(--primary);">${escapeHtml(p.mpesa_receipt || 'Pending Checkout')}</strong></div>
+                <div style="font-size:0.72rem; color:var(--text-dim);">${escapeHtml(p.checkout_request_id || '—')}</div>
+              </td>
+              <td>${escapeHtml(p.phone || '—')}</td>
+              <td><strong>KES ${Number(p.amount || 0).toLocaleString()}</strong></td>
+              <td><span class="status-badge ${p.status === 'completed' ? 'status-completed' : 'status-pending'}">${escapeHtml(p.status || 'pending')}</span></td>
+              <td>${p.created_at ? p.created_at.slice(0, 19).replace('T', ' ') : '—'}</td>
+            </tr>
+          `).join('');
+        } catch (err) {
+          console.warn('Failed to load payments', err);
+        }
+      }
+
+      // Run Reconcile
+      $('btn-run-reconcile').addEventListener('click', async () => {
+        const btn = $('btn-run-reconcile');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Reconciling…';
+
+        try {
+          const res = await apiFetch('/api/mpesa/reconcile', { method: 'POST' });
+          const json = await res.json();
+          if (res.ok) {
+            showToast(`Reconciliation complete. Processed: ${json.reconciled || 0}`, 'success');
+            loadPayments();
+            loadStats();
+          } else {
+            showToast(json.error?.message || 'Reconciliation failed.', 'error');
+          }
+        } catch (err) {
+          showToast('Error: ' + err.message, 'error');
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Run Lost-Callback Reconcile';
+        }
+      });
+
+      // Load Invoices
+      async function loadInvoices() {
+        try {
+          const res = await apiFetch('/api/admin/invoices');
+          if (!res.ok) return;
+          const json = await res.json();
+          const invoices = json.invoices || [];
+
+          const tbody = $('invoices-tbody');
+          if (!invoices.length) {
+            tbody.innerHTML = `<tr><td colspan="7" class="empty-box"><i class="fa-solid fa-file-invoice"></i><p>No invoices created yet.</p></td></tr>`;
+            return;
+          }
+          tbody.innerHTML = invoices.map(i => {
+            const statusClass = 'status-' + (i.status || 'estimate');
+            return `
+              <tr>
+                <td><strong>#${escapeHtml(i.id)}</strong></td>
+                <td>
+                  <div>${escapeHtml(i.client_name || 'Client')}</div>
+                  <div style="font-size:0.75rem; color:var(--text-muted);">${escapeHtml(i.phone || '—')}</div>
+                </td>
+                <td><strong>KES ${Number(i.total_amount || 0).toLocaleString()}</strong></td>
+                <td><strong style="color:${Number(i.balance_due) > 0 ? 'var(--warning)' : 'var(--primary)'};">KES ${Number(i.balance_due ?? i.total_amount ?? 0).toLocaleString()}</strong></td>
+                <td><span class="status-badge ${statusClass}">${escapeHtml(i.status || 'estimate')}</span></td>
+                <td>${escapeHtml(i.due_date || 'Upon Completion')}</td>
+                <td>
+                  <div style="display:flex; gap:0.4rem;">
+                    <a href="/pay/${i.id}" target="_blank" class="btn btn-outline btn-sm" title="Open Pay Portal"><i class="fa-solid fa-credit-card"></i> Pay</a>
+                    <a href="/receipt/${i.id}" target="_blank" class="btn btn-outline btn-sm" title="View Official Receipt"><i class="fa-solid fa-receipt"></i> Receipt</a>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        } catch (err) {
+          console.warn('Failed to load invoices', err);
+        }
+      }
+
+      // Load Leads & Quotes
+      async function loadLeads() {
+        try {
+          const [leadsRes, quotesRes] = await Promise.all([
+            apiFetch('/api/admin/leads'),
+            apiFetch('/api/admin/quotes')
+          ]);
+          const leads = leadsRes.ok ? (await leadsRes.json()).leads || [] : [];
+          const quotes = quotesRes.ok ? (await quotesRes.json()).quotes || [] : [];
+
+          const combined = [
+            ...leads.map(l => ({ ...l, type: 'Contact Form' })),
+            ...quotes.map(q => ({ name: q.client_name || q.full_name || 'Quote Request', email: q.email, phone: q.phone, message: `${q.service_type || 'Custom Service'} - Est: KES ${q.total_amount || 0}`, type: 'Online Quote', created_at: q.created_at }))
+          ].sort((a, b) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0));
+
+          const tbody = $('leads-tbody');
+          if (!combined.length) {
+            tbody.innerHTML = `<tr><td colspan="5" class="empty-box"><i class="fa-solid fa-inbox"></i><p>No leads or quotes received yet.</p></td></tr>`;
+            return;
+          }
+          tbody.innerHTML = combined.map(item => `
+            <tr>
+              <td><strong>${escapeHtml(item.name || 'Visitor')}</strong></td>
+              <td>
+                <div><a href="tel:${escapeHtml(item.phone || '')}" style="color:var(--accent); text-decoration:none;"><i class="fa-solid fa-phone"></i> ${escapeHtml(item.phone || '—')}</a></div>
+                <div style="font-size:0.75rem; color:var(--text-muted);"><i class="fa-solid fa-envelope"></i> ${escapeHtml(item.email || '—')}</div>
+              </td>
+              <td><span style="font-size:0.82rem;">${escapeHtml(item.message || '—')}</span></td>
+              <td><span class="status-badge status-confirmed">${escapeHtml(item.type)}</span></td>
+              <td>${item.created_at ? item.created_at.slice(0, 10) : '—'}</td>
+            </tr>
+          `).join('');
+        } catch (err) {
+          console.warn('Failed to load leads', err);
+        }
+      }
+
+      // Load System Diagnostics
+      async function loadSystemHealth() {
+        try {
+          const res = await apiFetch('/api/system/status');
+          if (!res.ok) return;
+          const json = await res.json();
+          const grid = $('diag-grid');
+
+          const db = json.database || {};
+          const feats = json.features || {};
+          const cfg = json.config || {};
+
+          grid.innerHTML = `
+            <div class="diag-card">
+              <div class="diag-title">
+                <span>Supabase Database</span>
+                <span class="diag-badge ${db.supabase?.connected ? 'diag-ok' : 'diag-warn'}">${db.supabase?.connected ? 'Connected' : 'Unconfigured'}</span>
+              </div>
+              <div class="diag-detail">Backend: ${escapeHtml(db.data_backend || 'memory')}</div>
+              <div class="diag-detail">Status: ${escapeHtml(db.active_primary || 'PostgreSQL')}</div>
+            </div>
+            <div class="diag-card">
+              <div class="diag-title">
+                <span>Safaricom Daraja M-Pesa</span>
+                <span class="diag-badge ${feats.mpesa_stk_push_and_receipts === 'Active' ? 'diag-ok' : 'diag-warn'}">${escapeHtml(feats.mpesa_stk_push_and_receipts || 'Off')}</span>
+              </div>
+              <div class="diag-detail">STK Push & Lost-Callback Recovery</div>
+            </div>
+            <div class="diag-card">
+              <div class="diag-title">
+                <span>Africa's Talking SMS</span>
+                <span class="diag-badge ${cfg.checks?.sms_configured ? 'diag-ok' : 'diag-warn'}">${cfg.checks?.sms_configured ? 'Active' : 'Unconfigured'}</span>
+              </div>
+              <div class="diag-detail">Client pay-link & confirmation alerts</div>
+            </div>
+            <div class="diag-card">
+              <div class="diag-title">
+                <span>Resend Transactional Email</span>
+                <span class="diag-badge ${cfg.checks?.email_configured ? 'diag-ok' : 'diag-warn'}">${cfg.checks?.email_configured ? 'Active' : 'Unconfigured'}</span>
+              </div>
+              <div class="diag-detail">Owner alerts & booking receipts</div>
+            </div>
+            <div class="diag-card">
+              <div class="diag-title">
+                <span>PWA & Service Worker</span>
+                <span class="diag-badge diag-ok">Active</span>
+              </div>
+              <div class="diag-detail">Offline cache & manifest verified</div>
+            </div>
+          `;
+        } catch (err) {
+          console.warn('Failed to load system diagnostics', err);
+        }
+      }
+
+      $('btn-refresh-sys').addEventListener('click', loadSystemHealth);
+
+      // Auto-Sync Toggle
+      let isPolling = true;
+      $('btn-toggle-poll').addEventListener('click', () => {
+        isPolling = !isPolling;
+        $('poll-state').textContent = isPolling ? 'ON' : 'OFF';
+        if (isPolling) {
+          startPolling();
+          showToast('Live 30s auto-sync enabled.', 'info');
+        } else {
+          stopPolling();
+          showToast('Auto-sync paused.', 'info');
+        }
+      });
+
+      function startPolling() {
+        stopPolling();
+        autoPollTimer = setInterval(() => {
+          if (currentToken) {
+            loadStats();
+            loadOrders();
+          }
+        }, 30000);
+      }
+
+      function stopPolling() {
+        if (autoPollTimer) clearInterval(autoPollTimer);
+      }
+
+      $('btn-manual-refresh').addEventListener('click', () => {
+        loadAllData();
+        showToast('Data refreshed.', 'info');
+      });
+
+      function loadAllData() {
+        loadStats();
+        loadOrders();
+        loadPayments();
+        loadInvoices();
+        loadLeads();
+        loadSystemHealth();
+      }
+
+      // Close modal bindings
+      document.querySelectorAll('[data-close]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-close');
+          if ($(id)) $(id).classList.remove('active');
+        });
+      });
+
+      function escapeHtml(str) {
+        return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+      }
+
+      // Boot
+      initAuth();
+      startPolling();
+    })();
+  </script>
+</body>
+</html>
