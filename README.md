@@ -35,6 +35,8 @@ dynamic SEO-friendly routes (`/tracker/:id`, `/pay/:id`, `/receipt/:id`,
 - `POST /api/analytics` — persists anonymized page-view tracking
 - `POST /api/contact` — stores a lead and notifies the owner
 - `POST /api/quotes` — stores a quote and notifies the owner
+- `GET /admin` — Supervisor & Operations Hub (manage queue, approve prices, dispatch, GPS tracking, M-Pesa reconcile)
+- `POST /api/admin/verify`, `GET /api/admin/stats`, `GET /api/admin/work-orders`, `GET|PATCH /api/admin/work-orders/:id`, `GET /api/admin/invoices`, `GET /api/admin/payments`, `GET /api/admin/quotes`, `GET /api/admin/leads` — supervisor operations endpoints (requires `ADMIN_API_TOKEN`)
 - `POST /api/portal/lookup` (identifier + `pin`; POST only so the PIN never
   appears in a URL), `POST /api/portal/clients`
 - `POST /api/work-orders` — the server prices the order from
