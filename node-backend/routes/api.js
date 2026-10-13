@@ -21,6 +21,17 @@ import { checkSupabaseReachability } from '../config/supabase.js';
 import { auditRuntimeConfig } from '../config/runtime.js';
 import { isMpesaConfigured } from '../services/mpesa.js';
 import { store } from '../services/store.js';
+import {
+  verifyAdminToken,
+  getAdminStats,
+  getAdminWorkOrders,
+  getAdminWorkOrder,
+  updateAdminWorkOrder,
+  getAdminInvoices,
+  getAdminPayments,
+  getAdminQuotes,
+  getAdminLeads,
+} from '../controllers/adminController.js';
 
 const ANALYTICS_MAX_BYTES = 4096;
 
@@ -62,9 +73,10 @@ function requireAdmin(req, res, next) {
     return next();
   }
 
-  const provided = req.headers['x-admin-token'] || '';
+  const bodyToken = req.body && typeof req.body === 'object' ? req.body.token : '';
+  const provided = req.headers['x-admin-token'] || bodyToken || '';
   const bearer = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-  if (tokenMatches(provided, adminToken) || tokenMatches(bearer, cronSecret)) {
+  if (tokenMatches(provided, adminToken) || tokenMatches(bearer, cronSecret) || tokenMatches(bearer, adminToken)) {
     return next();
   }
 
@@ -204,6 +216,17 @@ router.get('/work-orders/:orderId', getWorkOrder);
 // Supervisor confirmation of a booking request (x-admin-token). Body:
 // { total_amount?, scheduled_date?, crew_name?, crew_lead?, crew_phone?, due_date?, notes?, confirmed_by? }
 router.post('/admin/work-orders/:orderId/confirm', requireAdmin, confirmWorkOrder);
+
+// Supervisor & Admin Operations Portal Endpoints
+router.post('/admin/verify', requireAdmin, verifyAdminToken);
+router.get('/admin/stats', requireAdmin, getAdminStats);
+router.get('/admin/work-orders', requireAdmin, getAdminWorkOrders);
+router.get('/admin/work-orders/:orderId', requireAdmin, getAdminWorkOrder);
+router.patch('/admin/work-orders/:orderId', requireAdmin, updateAdminWorkOrder);
+router.get('/admin/invoices', requireAdmin, getAdminInvoices);
+router.get('/admin/payments', requireAdmin, getAdminPayments);
+router.get('/admin/quotes', requireAdmin, getAdminQuotes);
+router.get('/admin/leads', requireAdmin, getAdminLeads);
 
 // Payments & Invoices (real M-Pesa Daraja integration)
 router.post('/mpesa/stkpush', stkPushMpesa);
