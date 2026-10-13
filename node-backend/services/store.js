@@ -708,6 +708,158 @@ export const store = {
       unpaid_invoices: Array.from(invoices.values()).filter(i => i.status === 'unpaid').length,
     };
   },
+
+  async listAllWorkOrders({ limit = 100, status } = {}) {
+    assertStoreAvailable();
+    if (willUseSupabase()) {
+      let query = supabase.from('work_orders').select('*').order('created_at', { ascending: false }).limit(limit);
+      if (status && status !== 'all') {
+        query = query.eq('status', status);
+      }
+      const { data, error } = await query;
+      if (error) throw persistenceError(error.message);
+      return (data || []).map(hydrate);
+    }
+    let list = Array.from(workOrders.values());
+    if (status && status !== 'all') {
+      list = list.filter(w => w.status === status);
+    }
+    return list.sort((a, b) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0)).slice(0, limit);
+  },
+
+  async listAllInvoices({ limit = 100, status } = {}) {
+    assertStoreAvailable();
+    if (willUseSupabase()) {
+      let query = supabase.from('invoices').select('*').order('created_at', { ascending: false }).limit(limit);
+      if (status && status !== 'all') {
+        query = query.eq('status', status);
+      }
+      const { data, error } = await query;
+      if (error) throw persistenceError(error.message);
+      return (data || []).map(hydrate);
+    }
+    let list = Array.from(invoices.values());
+    if (status && status !== 'all') {
+      list = list.filter(i => i.status === status);
+    }
+    return list.sort((a, b) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0)).slice(0, limit);
+  },
+
+  async listAllPayments({ limit = 100 } = {}) {
+    assertStoreAvailable();
+    if (willUseSupabase()) {
+      const { data, error } = await supabase.from('payments').select('*').order('created_at', { ascending: false }).limit(limit);
+      if (error) throw persistenceError(error.message);
+      return (data || []).map(hydrate);
+    }
+    return Array.from(payments.values())
+      .sort((a, b) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0))
+      .slice(0, limit);
+  },
+
+  async listAllQuotes({ limit = 100 } = {}) {
+    assertStoreAvailable();
+    if (willUseSupabase()) {
+      const { data, error } = await supabase.from('quotes').select('*').order('created_at', { ascending: false }).limit(limit);
+      if (error) throw persistenceError(error.message);
+      return (data || []).map(hydrate);
+    }
+    return Array.from(quotes.values())
+      .sort((a, b) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0))
+      .slice(0, limit);
+  },
+
+  async listAllLeads({ limit = 100 } = {}) {
+    assertStoreAvailable();
+    if (willUseSupabase()) {
+      const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false }).limit(limit);
+      if (error) throw persistenceError(error.message);
+      return data || [];
+    }
+    return [...mockLeads].sort((a, b) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0)).slice(0, limit);
+  },
+
+  async adminDashboardStats() {
+    assertStoreAvailable();
+    if (willUseSupabase()) {
+      const [clientsRes, woRes, invRes, payRes, quotesRes, leadsRes] = await Promise.all([
+        supabase.from('clients').select('id', { count: 'exact', head: true }),
+        supabase.from('work_orders').select('status'),
+        supabase.from('invoices').select('status, data'),
+        supabase.from('payments').select('amount, status'),
+        supabase.from('quotes').select('id', { count: 'exact', head: true }),
+        supabase.from('leads').select('id', { count: 'exact', head: true }),
+      ]);
+      const orders = woRes.data || [];
+      const invoicesList = invRes.data || [];
+      const paymentsList = payRes.data || [];
+
+      const completedPayments = paymentsList.filter(p => p.status === 'success' || p.status === 'completed');
+      const totalRevenue = completedPayments.reduce((acc, p) => acc + (Number(p.amount_paid ?? p.amount) || 0), 0);
+
+      const pendingConfirmation = orders.filter(o => o.status === 'pending_confirmation' || o.status === 'incoming').length;
+      const activeDispatches = orders.filter(o => o.status === 'dispatched' || o.status === 'in_progress').length;
+      const scheduled = orders.filter(o => o.status === 'scheduled' || o.status === 'confirmed').length;
+      const completed = orders.filter(o => o.status === 'completed').length;
+
+      let outstandingBalance = 0;
+      for (const inv of invoicesList) {
+        if (inv.status === 'unpaid' || inv.status === 'partially_paid') {
+          const bal = Number(inv.data?.balance_due ?? inv.data?.total_amount) || 0;
+          outstandingBalance += bal;
+        }
+      }
+
+      return {
+        total_clients: clientsRes.count || 0,
+        total_work_orders: orders.length,
+        pending_confirmation: pendingConfirmation,
+        active_dispatches: activeDispatches,
+        scheduled: scheduled,
+        completed: completed,
+        total_invoices: invoicesList.length,
+        unpaid_invoices: invoicesList.filter(i => i.status === 'unpaid' || i.status === 'partially_paid').length,
+        outstanding_balance: Math.round(outstandingBalance * 100) / 100,
+        total_revenue_collected: Math.round(totalRevenue * 100) / 100,
+        total_quotes: quotesRes.count || 0,
+        total_leads: leadsRes.count || 0,
+      };
+    }
+
+    const orders = Array.from(workOrders.values());
+    const invoicesList = Array.from(invoices.values());
+    const paymentsList = Array.from(payments.values());
+
+    const completedPayments = paymentsList.filter(p => p.status === 'success' || p.status === 'completed');
+    const totalRevenue = completedPayments.reduce((acc, p) => acc + (Number(p.amount_paid ?? p.amount) || 0), 0);
+    const pendingConfirmation = orders.filter(o => o.status === 'pending_confirmation' || o.status === 'incoming').length;
+    const activeDispatches = orders.filter(o => o.status === 'dispatched' || o.status === 'in_progress').length;
+    const scheduled = orders.filter(o => o.status === 'scheduled' || o.status === 'confirmed').length;
+    const completed = orders.filter(o => o.status === 'completed').length;
+
+    let outstandingBalance = 0;
+    for (const inv of invoicesList) {
+      if (inv.status === 'unpaid' || inv.status === 'partially_paid') {
+        const bal = Number(inv.balance_due ?? inv.total_amount) || 0;
+        outstandingBalance += bal;
+      }
+    }
+
+    return {
+      total_clients: clients.size,
+      total_work_orders: orders.length,
+      pending_confirmation: pendingConfirmation,
+      active_dispatches: activeDispatches,
+      scheduled: scheduled,
+      completed: completed,
+      total_invoices: invoicesList.length,
+      unpaid_invoices: invoicesList.filter(i => i.status === 'unpaid' || i.status === 'partially_paid').length,
+      outstanding_balance: Math.round(outstandingBalance * 100) / 100,
+      total_revenue_collected: Math.round(totalRevenue * 100) / 100,
+      total_quotes: quotes.size,
+      total_leads: mockLeads.length,
+    };
+  },
 };
 
 export { normalizeIdentifier };
