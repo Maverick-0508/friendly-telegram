@@ -58,32 +58,52 @@ export async function sendEmail({ to, subject, html, text }) {
   }
   if (!to) return null;
 
-  try {
-    const res = await fetchWithTimeout('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${env('RESEND_API_KEY')}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: env('NOTIFY_FROM_EMAIL'),
-        to: [to],
-        subject,
-        html,
-        text,
-      }),
-    });
+  const maxRetries = 3;
+  let attempt = 0;
+  let lastError = null;
 
-    if (!res.ok) {
-      const detail = await res.text().catch(() => '');
-      console.error(`[notify:email] Resend returned ${res.status}: ${detail.slice(0, 400)}`);
-      return null;
+  while (attempt < maxRetries) {
+    attempt++;
+    try {
+      const res = await fetchWithTimeout('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${env('RESEND_API_KEY')}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: env('NOTIFY_FROM_EMAIL'),
+          to: [to],
+          subject,
+          html,
+          text,
+        }),
+      });
+
+      if (!res.ok) {
+        const detail = await res.text().catch(() => '');
+        const errMessage = `Resend returned ${res.status}: ${detail.slice(0, 400)}`;
+        console.error(`[notify:email] Attempt ${attempt} failed: ${errMessage}`);
+        lastError = new Error(errMessage);
+        if (res.status >= 400 && res.status < 500 && res.status !== 429) {
+          // Do not retry client errors except rate limit
+          break;
+        }
+      } else {
+        return await res.json().catch(() => ({}));
+      }
+    } catch (err) {
+      console.error(`[notify:email] Attempt ${attempt} exception:`, err.message);
+      lastError = err;
     }
-    return await res.json().catch(() => ({}));
-  } catch (err) {
-    console.error('[notify:email] Send failed:', err.message);
-    return null;
+    // Exponential backoff
+    if (attempt < maxRetries) {
+      await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+    }
   }
+
+  console.error('[notify:email] All retries failed for email to:', to);
+  return null;
 }
 
 /** Send an SMS through Africa's Talking. Resolves without throwing when unconfigured. */
@@ -103,27 +123,45 @@ export async function sendSms({ to, message }) {
   const senderId = env('AFRICAS_TALKING_SENDER');
   if (senderId) payload.set('from', senderId);
 
-  try {
-    const res = await fetchWithTimeout('https://api.africastalking.com/version1/messaging', {
-      method: 'POST',
-      headers: {
-        apiKey: env('AFRICAS_TALKING_API_KEY'),
-        Accept: 'application/json',
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: payload.toString(),
-    });
+  const maxRetries = 3;
+  let attempt = 0;
+  let lastError = null;
 
-    if (!res.ok) {
-      const detail = await res.text().catch(() => '');
-      console.error(`[notify:sms] Africa's Talking returned ${res.status}: ${detail.slice(0, 400)}`);
-      return null;
+  while (attempt < maxRetries) {
+    attempt++;
+    try {
+      const res = await fetchWithTimeout('https://api.africastalking.com/version1/messaging', {
+        method: 'POST',
+        headers: {
+          apiKey: env('AFRICAS_TALKING_API_KEY'),
+          Accept: 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: payload.toString(),
+      });
+
+      if (!res.ok) {
+        const detail = await res.text().catch(() => '');
+        const errMessage = `Africa's Talking returned ${res.status}: ${detail.slice(0, 400)}`;
+        console.error(`[notify:sms] Attempt ${attempt} failed: ${errMessage}`);
+        lastError = new Error(errMessage);
+        if (res.status >= 400 && res.status < 500 && res.status !== 429) {
+          break;
+        }
+      } else {
+        return await res.json().catch(() => ({}));
+      }
+    } catch (err) {
+      console.error(`[notify:sms] Attempt ${attempt} exception:`, err.message);
+      lastError = err;
     }
-    return await res.json().catch(() => ({}));
-  } catch (err) {
-    console.error('[notify:sms] Send failed:', err.message);
-    return null;
+    if (attempt < maxRetries) {
+      await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+    }
   }
+
+  console.error('[notify:sms] All retries failed for SMS to:', msisdn);
+  return null;
 }
 
 // ---------------- Composed helpers ----------------
