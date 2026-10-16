@@ -1,5 +1,4 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
   "builds": [
     { "src": "server.js", "use": "@vercel/node" }
   ],
@@ -9,7 +8,7 @@
   "crons": [
     {
       "path": "/api/mpesa/reconcile",
-      "schedule": "0 2 * * *"
+      "schedule": "*/30 * * * *"
     }
   ]
 }
