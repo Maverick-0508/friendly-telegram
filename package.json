@@ -21,13 +21,16 @@
     "build:pages": "node scripts/build-pages.mjs",
     "build:pages:check": "node scripts/build-pages.mjs --check"
   },
-  "dependencies": {
+    "dependencies": {
+    "@sentry/node": "^9.3.0",
     "@supabase/supabase-js": "^2.49.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express-rate-limit": "^8.3.0",
     "express": "^4.21.2",
     "helmet": "^8.3.0",
-    "pg": "^8.13.3"
+    "pg": "^8.13.3",
+    "rate-limit-redis": "^4.2.0",
+    "redis": "^4.7.0"
   }
 }
