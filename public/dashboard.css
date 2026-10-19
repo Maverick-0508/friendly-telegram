@@ -468,3 +468,157 @@
   text-transform: none;
   letter-spacing: 0;
 }
+
+/* ---------------- Service progress timeline ---------------- */
+
+#personalized-dashboard .lc-timeline {
+  list-style: none;
+  display: flex;
+  margin: 1.25rem 0 0.25rem;
+  padding: 0;
+}
+
+#personalized-dashboard .lc-timeline-step {
+  position: relative;
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  min-width: 0;
+}
+
+#personalized-dashboard .lc-timeline-step::before {
+  content: '';
+  position: absolute;
+  top: 13px;
+  left: -50%;
+  width: 100%;
+  height: 2px;
+  background: var(--slate-border);
+  z-index: 0;
+}
+
+#personalized-dashboard .lc-timeline-step:first-child::before {
+  display: none;
+}
+
+#personalized-dashboard .lc-timeline-step.is-done::before,
+#personalized-dashboard .lc-timeline-step.is-current::before {
+  background: var(--brand);
+}
+
+#personalized-dashboard .lc-timeline-dot {
+  position: relative;
+  z-index: 1;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: var(--surface-3);
+  color: var(--slate-muted);
+  border: 2px solid var(--slate-border);
+}
+
+#personalized-dashboard .lc-timeline-step.is-done .lc-timeline-dot {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #ffffff;
+}
+
+#personalized-dashboard .lc-timeline-step.is-current .lc-timeline-dot {
+  background: #ffffff;
+  border-color: var(--brand);
+  color: var(--brand);
+  box-shadow: 0 0 0 4px var(--brand-soft);
+}
+
+#personalized-dashboard .lc-timeline-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--slate-muted);
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+#personalized-dashboard .lc-timeline-step.is-current .lc-timeline-label {
+  color: var(--brand);
+}
+
+#personalized-dashboard .lc-timeline-step.is-done .lc-timeline-label {
+  color: var(--slate-strong);
+}
+
+@media (max-width: 640px) {
+  #personalized-dashboard .lc-timeline-label {
+    font-size: 0.6rem;
+  }
+  #personalized-dashboard .lc-timeline-dot {
+    width: 22px;
+    height: 22px;
+    font-size: 0.65rem;
+  }
+  #personalized-dashboard .lc-timeline-step::before {
+    top: 11px;
+  }
+}
+
+/* ---------------- Reusable loading / empty / error states ---------------- */
+
+#personalized-dashboard .lc-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-3);
+  border-radius: 8px;
+  color: transparent !important;
+}
+
+#personalized-dashboard .lc-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+  animation: lc-shimmer 1.4s infinite;
+}
+
+@keyframes lc-shimmer {
+  100% { transform: translateX(100%); }
+}
+
+#personalized-dashboard .lc-empty-state {
+  text-align: center;
+  padding: 1.75rem 1rem;
+  color: var(--slate-muted);
+  font-size: 0.9rem;
+}
+
+#personalized-dashboard .lc-empty-state i {
+  display: block;
+  font-size: 1.6rem;
+  color: var(--slate-faint);
+  margin-bottom: 0.5rem;
+}
+
+#personalized-dashboard .lc-error-state {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: var(--danger-strong);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  font-size: 0.88rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #personalized-dashboard .lc-skeleton::after {
+    animation: none;
+  }
+}
