@@ -62,11 +62,13 @@ export function initPricingCalculator() {
     const discountRow = document.getElementById('calc-discount-row');
     const discountAmountEl = document.getElementById('calc-discount-amount');
     const totalEl = document.getElementById('calc-total');
+    const mobileTotalEl = document.getElementById('calc-mobile-total');
     const sizeValEl = document.getElementById('calc-size-val');
 
     if (sizeValEl) sizeValEl.textContent = `${currentSize.toLocaleString()} sq ft`;
     if (subtotalEl) subtotalEl.textContent = `KSh ${subtotal.toLocaleString()}`;
     if (totalEl) totalEl.textContent = `KSh ${total.toLocaleString()}`;
+    if (mobileTotalEl) mobileTotalEl.textContent = `KSh ${total.toLocaleString()}`;
 
     if (discountRow) {
       if (discount > 0) {
@@ -175,6 +177,10 @@ export function initPricingCalculator() {
 
   // Instant Booking / Dispatch Submission
   const bookBtn = document.getElementById('calc-book-btn');
+  const mobileBookBtn = document.getElementById('calc-mobile-book');
+  if (mobileBookBtn && bookBtn) {
+    mobileBookBtn.addEventListener('click', () => bookBtn.click());
+  }
   if (bookBtn) {
     bookBtn.addEventListener('click', async () => {
       const { total } = calculateTotal();

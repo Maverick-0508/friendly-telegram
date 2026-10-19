@@ -57,6 +57,30 @@ function substitute(text, config) {
   return text.replace(/\{\{(\w+)\}\}/g, (_, key) => (key in config ? String(config[key]) : ''));
 }
 
+// Opt-in: when USE_HASHED_CSS=1 and a dist manifest exists, point the page at
+// the content-hashed bundles produced by scripts/build-css.mjs. Off by default
+// so local dev and the committed pages keep using the readable source files.
+function loadCssManifest() {
+  if (!process.env.USE_HASHED_CSS) return null;
+  const manifestPath = path.join(OUT_DIR, 'dist', 'manifest.json');
+  if (!fs.existsSync(manifestPath)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+function applyHashedCss(html, manifest) {
+  if (!manifest) return html;
+  let out = html;
+  if (manifest.styles) out = out.replace(/(href=")\/styles\.css(")/g, `$1${manifest.styles.output}$2`);
+  if (manifest.dashboard) out = out.replace(/(href=")\/dashboard\.css(")/g, `$1${manifest.dashboard.output}$2`);
+  return out;
+}
+
+const cssManifest = loadCssManifest();
+
 function markActive(text, nav) {
   // Add class="active" to any element carrying data-nav="<nav>", then drop
   // the data-nav markers from the output.
@@ -81,6 +105,7 @@ export function renderPage(name, source) {
   html = markActive(html, config.nav);
   const banner = `<!-- Generated from src/pages/${name}.html by scripts/build-pages.mjs. Do not edit directly: edit the source and run \`npm run build:pages\`. -->\n`;
   html = html.replace(/^(<!DOCTYPE html>\s*\n)/i, `$1${banner}`);
+  html = applyHashedCss(html, cssManifest);
   return html;
 }
 

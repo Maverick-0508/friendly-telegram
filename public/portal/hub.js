@@ -125,6 +125,43 @@ export function renderPersonalizedState(data) {
     'Diamond VIP': 'fa-star text-diamond'
   };
 
+  // --- Service progress timeline (mirrors the status contract in README) ---
+  const STATUS_STEPS = [
+    { label: 'Requested' },
+    { label: 'Confirmed' },
+    { label: 'Scheduled' },
+    { label: 'En Route' },
+    { label: 'On-Site' },
+    { label: 'Completed' }
+  ];
+  const statusStepIndex = (s) => {
+    switch (s) {
+      case 'pending_confirmation': return 0;
+      case 'incoming':
+      case 'confirmed': return 1;
+      case 'scheduled': return 2;
+      case 'dispatched': return 3;
+      case 'in_progress': return 4;
+      case 'completed':
+      case 'done': return 5;
+      default: return 0;
+    }
+  };
+  const serviceTimelineHTML = (status) => {
+    const idx = statusStepIndex(status);
+    return `
+      <ol class="lc-timeline" aria-label="Service progress">
+        ${STATUS_STEPS.map((step, i) => {
+          const cls = i < idx ? 'is-done' : i === idx ? 'is-current' : 'is-upcoming';
+          return `<li class="lc-timeline-step ${cls}">
+            <span class="lc-timeline-dot">${i < idx ? '<i class="fa-solid fa-check"></i>' : i + 1}</span>
+            <span class="lc-timeline-label">${step.label}</span>
+          </li>`;
+        }).join('')}
+      </ol>
+    `;
+  };
+
   // --- Dashboard main column ---
   const operationalMainHTML = () => `
     <div class="dash-widget">
@@ -314,6 +351,8 @@ export function renderPersonalizedState(data) {
                   <span class="meta-value text-accent">KSh ${Math.round(activeOrder.total_price || 0).toLocaleString()}</span>
                 </div>
               </div>
+
+              ${activeOrder ? serviceTimelineHTML(activeOrder.status) : ''}
 
               ${activeOrder.status === 'in_progress' ? `
                 <div class="crew-tracker-teaser">
