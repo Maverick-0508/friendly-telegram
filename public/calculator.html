@@ -296,6 +296,11 @@
                                 </div>
 
                                 <!-- Booking Action -->
+                                <ol class="calc-next-steps">
+                                    <li><span class="step-dot">1</span><span><strong>You estimate</strong> — pick your specs and get a price instantly.</span></li>
+                                    <li><span class="step-dot">2</span><span><strong>We confirm</strong> — a supervisor texts you the final price and date.</span></li>
+                                    <li><span class="step-dot">3</span><span><strong>You pay with M-Pesa</strong> — only after the work is done.</span></li>
+                                </ol>
                                 <button type="button" id="calc-book-btn" class="btn btn-primary btn-block btn-calc-action">
                                     <i class="fa-solid fa-calendar-check"></i> Request This Service
                                 </button>
@@ -314,6 +319,17 @@
             </div>
         </section>
     </main>
+
+    <!-- Mobile sticky estimate bar -->
+    <div class="calc-mobile-bar" id="calc-mobile-bar">
+        <div class="calc-mobile-bar-total">
+            <span>Your estimate</span>
+            <strong id="calc-mobile-total">KSh 3,500</strong>
+        </div>
+        <button type="button" class="btn btn-primary" id="calc-mobile-book">
+            <i class="fa-solid fa-calendar-check"></i> Request
+        </button>
+    </div>
 
     <footer class="footer" id="main-footer">
         <div class="container">
