@@ -1,6 +1,8 @@
 node_modules
 node-backend/node_modules
-node-backend/.env
+**/.env
+**/.env.*
+.vercel
 data
 .git
 .github
