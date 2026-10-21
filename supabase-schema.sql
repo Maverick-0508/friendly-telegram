@@ -123,6 +123,7 @@ create table if not exists public.payments (
   account_reference text,
   data jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
   completed_at timestamptz
 );
 
@@ -139,6 +140,7 @@ alter table public.payments add column if not exists merchant_request_id text;
 alter table public.payments add column if not exists account_reference text;
 alter table public.payments add column if not exists data jsonb not null default '{}'::jsonb;
 alter table public.payments add column if not exists created_at timestamptz not null default now();
+alter table public.payments add column if not exists updated_at timestamptz not null default now();
 alter table public.payments add column if not exists completed_at timestamptz;
 
 create index if not exists payments_checkout_request_idx on public.payments (checkout_request_id);
