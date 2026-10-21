@@ -25,6 +25,10 @@ const MPESA_MAX_AMOUNT = Number(process.env.MPESA_MAX_AMOUNT || 250_000);
 // How old a pending payment must be before the status endpoint asks Daraja
 // directly (covers lost callbacks without waiting for the reconciliation cron).
 const STATUS_QUERY_AFTER_MS = Number(process.env.MPESA_STATUS_QUERY_AFTER_MS || 20 * 1000);
+// Per-profile PIN lockout. Stored on the client record so it survives restarts
+// and holds across serverless instances (an in-memory limiter would not).
+const PIN_MAX_ATTEMPTS = Math.max(1, Number(process.env.PIN_MAX_ATTEMPTS || 5));
+const PIN_LOCKOUT_MS = Math.max(60_000, Number(process.env.PIN_LOCKOUT_MS || 15 * 60 * 1000));
 
 let lastReachabilityCheck = 0;
 let reachabilityCached = null;
@@ -108,7 +112,7 @@ function newId(prefix) {
 /** Strip secrets (PIN hash + salt) before a client record leaves the server. */
 function publicClient(client) {
   if (!client) return client;
-  const { access_pin_hash, access_pin_salt, ...safe } = client;
+  const { access_pin_hash, access_pin_salt, pin_failed_attempts, pin_locked_until, ...safe } = client;
   return safe;
 }
 
@@ -117,13 +121,59 @@ function fail(res, status, code, message, extra = {}) {
   return { rejected: true };
 }
 
+function pinLockoutRemainingMs(client) {
+  const until = Date.parse(client?.pin_locked_until || '');
+  return Number.isFinite(until) ? Math.max(0, until - Date.now()) : 0;
+}
+
+function sendPinLocked(res, remainingMs) {
+  const seconds = Math.max(1, Math.ceil(remainingMs / 1000));
+  const minutes = Math.max(1, Math.ceil(remainingMs / 60_000));
+  res.set('Retry-After', String(seconds));
+  return fail(res, 429, 'PIN_LOCKED',
+    `Too many incorrect PIN attempts. Try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`,
+    { retry_after_seconds: seconds });
+}
+
+async function persistPinState(client) {
+  try {
+    await store.upsertClient(client);
+  } catch (err) {
+    console.warn('[portal] Could not persist PIN attempt state:', err.message);
+  }
+}
+
+async function recordPinFailure(client) {
+  const lockExpired = Boolean(client.pin_locked_until) && pinLockoutRemainingMs(client) === 0;
+  const attempts = (lockExpired ? 0 : Number(client.pin_failed_attempts) || 0) + 1;
+  client.pin_failed_attempts = attempts;
+  delete client.pin_locked_until;
+  if (attempts >= PIN_MAX_ATTEMPTS) {
+    client.pin_locked_until = new Date(Date.now() + PIN_LOCKOUT_MS).toISOString();
+  }
+  await persistPinState(client);
+  return {
+    locked: pinLockoutRemainingMs(client) > 0,
+    remaining: Math.max(0, PIN_MAX_ATTEMPTS - attempts),
+  };
+}
+
+async function clearPinFailures(client) {
+  if (!client.pin_failed_attempts && !client.pin_locked_until) return;
+  delete client.pin_failed_attempts;
+  delete client.pin_locked_until;
+  await persistPinState(client);
+}
+
 /**
  * Authorize a request that wants to act on an existing client record.
  *
- * - Profiles with a PIN: the correct PIN is mandatory.
+ * - Profiles with a PIN: the correct PIN is mandatory, and repeated failures
+ *   temporarily lock the profile.
  * - Profiles without a PIN (quote-only / legacy): a PIN may be *claimed*, but
- *   only if the request also matches the email on file (when one exists).
- *   Knowing a phone number alone never grants access to someone's data.
+ *   only if the request also matches the email on file. Profiles with no email
+ *   on file cannot be claimed with a phone number alone and must go through
+ *   support.
  *
  * mode 'strict' rejects when the caller cannot be verified. mode 'order'
  * (bookings) allows an unverified caller to create an order linked to the
@@ -131,20 +181,28 @@ function fail(res, status, code, message, extra = {}) {
  *
  * Returns { rejected: true } after sending a response, or { claimed } on success.
  */
-function authorizeExistingClient(res, client, pin, { email = '', mode = 'strict' } = {}) {
+async function authorizeExistingClient(res, client, pin, { email = '', mode = 'strict' } = {}) {
   if (client.access_pin_hash) {
     if (!pin) {
       return fail(res, 403, 'ACCESS_PIN_REQUIRED', 'This phone number or email is already registered. Enter your access PIN to continue.');
     }
+    const lockMs = pinLockoutRemainingMs(client);
+    if (lockMs > 0) return sendPinLocked(res, lockMs);
     if (!verifyPin(pin, client.access_pin_hash, client.access_pin_salt)) {
-      return fail(res, 403, 'INVALID_PIN', 'Incorrect account PIN. If you forgot it, contact Lawn Craft support.');
+      const state = await recordPinFailure(client);
+      if (state.locked) return sendPinLocked(res, pinLockoutRemainingMs(client));
+      return fail(res, 403, 'INVALID_PIN',
+        `Incorrect account PIN. ${state.remaining} attempt${state.remaining === 1 ? '' : 's'} remaining before this profile is temporarily locked.`);
     }
+    await clearPinFailures(client);
     return { claimed: true };
   }
 
   const emailOnFile = String(client.email || '').trim().toLowerCase();
   const emailGiven = String(email || '').trim().toLowerCase();
-  const emailMatches = !emailOnFile || (emailGiven && emailGiven === emailOnFile);
+  // A phone number is not a secret: claiming a profile requires the email that
+  // is already on file. If none is stored, the profile cannot be claimed here.
+  const emailMatches = Boolean(emailOnFile) && Boolean(emailGiven) && emailGiven === emailOnFile;
 
   if (!pin || !emailMatches) {
     if (mode === 'order') return { claimed: false };
@@ -153,6 +211,10 @@ function authorizeExistingClient(res, client, pin, { email = '', mode = 'strict'
         'This profile has no access PIN yet. Choose a PIN (and use the email on file) to activate your hub.',
         { pin_required: true });
     }
+    if (!emailOnFile) {
+      return fail(res, 403, 'CLAIM_NOT_AVAILABLE',
+        'This profile has no email on file, so it cannot be activated with a phone number alone. Contact Lawn Craft support to activate your hub.');
+    }
     return fail(res, 403, 'CLAIM_EMAIL_MISMATCH',
       'To activate this profile, register with the same email address that was used for your quote.');
   }
@@ -160,6 +222,8 @@ function authorizeExistingClient(res, client, pin, { email = '', mode = 'strict'
   const { hash, salt } = hashPin(pin);
   client.access_pin_hash = hash;
   client.access_pin_salt = salt;
+  delete client.pin_failed_attempts;
+  delete client.pin_locked_until;
   return { claimed: true };
 }
 
@@ -209,7 +273,7 @@ export async function createClientProfile(req, res) {
 
     const existing = await store.findClientByPhoneOrEmail(phone, email);
     if (existing) {
-      const auth = authorizeExistingClient(res, existing, pin, { email, mode: 'strict' });
+      const auth = await authorizeExistingClient(res, existing, pin, { email, mode: 'strict' });
       if (auth.rejected) return;
 
       if (address) existing.address = address;
@@ -298,9 +362,17 @@ export async function lookupClient(req, res) {
         { pin_required: true });
     }
 
+    const lockMs = pinLockoutRemainingMs(client);
+    if (lockMs > 0) return sendPinLocked(res, lockMs);
+
     if (!verifyPin(pin, client.access_pin_hash, client.access_pin_salt)) {
-      return fail(res, 403, 'INVALID_PIN', 'Incorrect account PIN. Please try again.');
+      const state = await recordPinFailure(client);
+      if (state.locked) return sendPinLocked(res, pinLockoutRemainingMs(client));
+      return fail(res, 403, 'INVALID_PIN',
+        `Incorrect account PIN. ${state.remaining} attempt${state.remaining === 1 ? '' : 's'} remaining before this profile is temporarily locked.`);
     }
+
+    await clearPinFailures(client);
 
     const match = { id: client.id, phone: client.phone, email: client.email };
 
@@ -389,7 +461,7 @@ export async function createWorkOrder(req, res) {
     const matchedClient = await store.findClientByPhoneOrEmail(clientPhone, clientEmail);
 
     if (matchedClient) {
-      const auth = authorizeExistingClient(res, matchedClient, pin, { email: clientEmail, mode: 'order' });
+      const auth = await authorizeExistingClient(res, matchedClient, pin, { email: clientEmail, mode: 'order' });
       if (auth.rejected) return;
 
       clientId = matchedClient.id;
