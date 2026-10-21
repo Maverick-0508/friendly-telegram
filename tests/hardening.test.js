@@ -304,6 +304,46 @@ test('quote-only profiles without an email can be claimed with a PIN via a booki
   assert.equal(opened.body.work_orders.length, 2);
 });
 
+test('a profile with no email on file cannot be claimed with a phone number', async () => {
+  const created = await post('/api/portal/clients', {
+    name: 'No Email', phone: '+254700900012', address: 'Real Address',
+  });
+  assert.equal(created.response.status, 201);
+
+  // Supplying a fresh email does not prove ownership, so the claim is refused.
+  const claim = await post('/api/portal/clients', {
+    name: 'No Email', phone: '+254700900012', email: 'attacker@example.com', pin: '7777',
+  });
+  assert.equal(claim.response.status, 403);
+  assert.equal(claim.body.error.code, 'CLAIM_NOT_AVAILABLE');
+
+  const lookup = await post('/api/portal/lookup', { identifier: '+254700900012', pin: '7777' });
+  assert.equal(lookup.response.status, 403);
+  assert.equal(lookup.body.pin_required, true);
+});
+
+test('repeated wrong PINs temporarily lock the profile', async () => {
+  const created = await post('/api/portal/clients', {
+    name: 'Locked', phone: '+254700900013', email: 'locked@example.com', pin: '2468',
+  });
+  assert.equal(created.response.status, 201);
+
+  for (let attempt = 1; attempt <= 4; attempt += 1) {
+    const wrong = await post('/api/portal/lookup', { identifier: '+254700900013', pin: '0000' });
+    assert.equal(wrong.response.status, 403);
+    assert.equal(wrong.body.error.code, 'INVALID_PIN');
+  }
+
+  const finalWrong = await post('/api/portal/lookup', { identifier: '+254700900013', pin: '0000' });
+  assert.equal(finalWrong.response.status, 429);
+  assert.equal(finalWrong.body.error.code, 'PIN_LOCKED');
+
+  // Even the correct PIN is rejected until the lockout expires.
+  const correct = await post('/api/portal/lookup', { identifier: '+254700900013', pin: '2468' });
+  assert.equal(correct.response.status, 429);
+  assert.equal(correct.body.error.code, 'PIN_LOCKED');
+});
+
 // ---------------- Persistence ----------------
 
 test('PostgREST filter values are quoted so identifiers cannot inject conditions', () => {
