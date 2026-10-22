@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friendly Lawn & Garden Services - Book Your Service</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🌿 Friendly Lawn & Garden Services</h1>
+            <p class="tagline">Exceptional Service for Your Outdoor Space</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <h2>Transform Your Outdoor Space</h2>
+            <p>We provide professional lawn care and gardening services tailored to your needs. Book your service today and experience the difference!</p>
+        </section>
+
+        <section class="services">
+            <h2>Our Services</h2>
+            <div class="service-grid">
+                <div class="service-card">
+                    <h3>🏡 Lawn Mowing</h3>
+                    <p>Professional lawn mowing with precision cutting and edging for a pristine look.</p>
+                </div>
+                <div class="service-card">
+                    <h3>🌱 Garden Maintenance</h3>
+                    <p>Complete garden care including weeding, pruning, and plant health management.</p>
+                </div>
+                <div class="service-card">
+                    <h3>🌳 Tree & Shrub Care</h3>
+                    <p>Expert trimming and maintenance for trees and shrubs to keep them healthy and beautiful.</p>
+                </div>
+                <div class="service-card">
+                    <h3>🌻 Seasonal Planting</h3>
+                    <p>Professional planting services for flowers, vegetables, and seasonal decorations.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="booking-form">
+            <h2>Book Your Service</h2>
+            <form id="bookingForm">
+                <div class="form-group">
+                    <label for="name">Full Name *</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address *</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Phone Number *</label>
+                    <input type="tel" id="phone" name="phone" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="address">Service Address *</label>
+                    <textarea id="address" name="address" rows="3" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="service">Service Type *</label>
+                    <select id="service" name="service" required>
+                        <option value="">Select a service...</option>
+                        <option value="lawn-mowing">Lawn Mowing</option>
+                        <option value="garden-maintenance">Garden Maintenance</option>
+                        <option value="tree-shrub-care">Tree & Shrub Care</option>
+                        <option value="seasonal-planting">Seasonal Planting</option>
+                        <option value="full-package">Full Package (All Services)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="date">Preferred Date *</label>
+                    <input type="date" id="date" name="date" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="time">Preferred Time</label>
+                    <select id="time" name="time">
+                        <option value="">Select a time...</option>
+                        <option value="morning">Morning (8:00 AM - 12:00 PM)</option>
+                        <option value="afternoon">Afternoon (12:00 PM - 4:00 PM)</option>
+                        <option value="evening">Evening (4:00 PM - 6:00 PM)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">Additional Notes</label>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Please provide any specific requirements or details..."></textarea>
+                </div>
+
+                <button type="submit" class="submit-btn">Submit Booking Request</button>
+            </form>
+
+            <div id="confirmationMessage" class="confirmation-message" style="display: none;">
+                <h3>Thank You for Your Booking!</h3>
+                <p>We've received your booking request and will contact you shortly to confirm your appointment.</p>
+            </div>
+        </section>
+
+        <section class="contact-info">
+            <h2>Contact Us</h2>
+            <div class="contact-details">
+                <p><strong>📞 Phone:</strong> (555) 123-4567</p>
+                <p><strong>📧 Email:</strong> info@friendlylawn.com</p>
+                <p><strong>📍 Service Area:</strong> Local metropolitan area and surrounding suburbs</p>
+                <p><strong>⏰ Hours:</strong> Monday - Saturday, 8:00 AM - 6:00 PM</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Friendly Lawn & Garden Services. All rights reserved.</p>
+            <p>Providing exceptional lawn and gardening services to our community.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
