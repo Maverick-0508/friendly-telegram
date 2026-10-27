@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { checkSupabaseReachability } from '../config/supabase.js';
 import { store, normalizeIdentifier } from '../services/store.js';
 import {
@@ -106,7 +107,7 @@ function text(value, max = 200) {
 }
 
 function newId(prefix) {
-  return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+  return `${prefix}_${Date.now().toString(36)}_${crypto.randomBytes(12).toString('hex')}`;
 }
 
 /** Strip secrets (PIN hash + salt) before a client record leaves the server. */

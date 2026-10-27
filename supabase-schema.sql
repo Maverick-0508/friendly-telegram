@@ -237,3 +237,14 @@ begin
     end;
   end loop;
 end $$;
+
+-- Enable Row Level Security (RLS) on all application tables.
+-- The backend connects with the service-role key, which bypasses RLS.
+-- This prevents unauthorized direct access via the public anon key / PostgREST.
+alter table public.clients enable row level security;
+alter table public.work_orders enable row level security;
+alter table public.invoices enable row level security;
+alter table public.quotes enable row level security;
+alter table public.leads enable row level security;
+alter table public.payments enable row level security;
+alter table public.analytics enable row level security;
