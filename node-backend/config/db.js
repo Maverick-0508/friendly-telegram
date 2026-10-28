@@ -11,9 +11,11 @@ let usePg = Boolean(DATABASE_URL);
 
 if (usePg) {
   try {
+    const pgSsl = isProduction ? { rejectUnauthorized: process.env.PGSSL_REJECT_UNAUTHORIZED !== 'false' } : false;
+
     pool = new Pool({
       connectionString: DATABASE_URL,
-      ssl: isProduction ? { rejectUnauthorized: false } : false,
+      ssl: pgSsl,
     });
 
     pool.on('error', (err) => {
