@@ -124,6 +124,65 @@ test('Admin can list, inspect, and update work orders', async () => {
   assert.equal(patchJson.order.checklist.length, 2);
 });
 
+test('Patch updates order and invoice state for dispatch flow', async () => {
+  const orderId = 'wo_adm_patch_' + Date.now();
+  const invoiceId = 'inv_adm_patch_' + Date.now();
+
+  await store.upsertWorkOrder({
+    id: orderId,
+    client_name: 'Dispatch Client',
+    client_phone: '0710000000',
+    client_email: 'dispatch@example.com',
+    service_type: 'Lawn Mowing',
+    status: 'pending_confirmation',
+    total_price: 4500,
+    invoice_id: invoiceId,
+    created_at: new Date().toISOString(),
+  });
+  await store.upsertInvoice({
+    id: invoiceId,
+    client_id: 'cl_dispatch',
+    client_name: 'Dispatch Client',
+    client_phone: '0710000000',
+    client_email: 'dispatch@example.com',
+    service_title: 'Lawn Mowing',
+    total_amount: 4500,
+    balance_due: 4500,
+    status: 'estimate',
+    estimated_total: 4500,
+    items: [{ description: 'Lawn Mowing', quantity: 1, unit_price: 4500, amount: 4500 }],
+    created_at: new Date().toISOString(),
+  });
+
+  const patchRes = await fetch(`${baseUrl}/api/admin/work-orders/${orderId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-admin-token': ADMIN_TOKEN,
+    },
+    body: JSON.stringify({
+      status: 'scheduled',
+      total_amount: 5000,
+      crew_name: 'Red Team',
+      crew_lead: 'Leslie',
+      crew_phone: '0712349999',
+      notes: 'Gate code 1234',
+    }),
+  });
+
+  assert.equal(patchRes.status, 200);
+  const patchJson = await patchRes.json();
+  assert.equal(patchJson.order.status, 'scheduled');
+  assert.equal(patchJson.order.total_price, 5000);
+  assert.equal(patchJson.order.crew_lead, 'Leslie');
+  assert.equal(patchJson.invoice.status, 'unpaid');
+  assert.equal(patchJson.invoice.balance_due, 5000);
+
+  const readInvoice = await store.invoiceById(invoiceId);
+  assert.equal(readInvoice.status, 'unpaid');
+  assert.equal(readInvoice.balance_due, 5000);
+});
+
 test('Admin can retrieve invoices, payments, quotes and leads', async () => {
   const headers = { 'x-admin-token': ADMIN_TOKEN };
   const [inv, pay, quotes, leads] = await Promise.all([
