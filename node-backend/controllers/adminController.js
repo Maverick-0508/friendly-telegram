@@ -106,10 +106,15 @@ export async function updateAdminWorkOrder(req, res, next) {
     }
 
     const body = req.body || {};
+    let invoice = null;
+    if (order.invoice_id) {
+      invoice = await store.invoiceById(order.invoice_id);
+    }
 
+    let newStatus = null;
     // Status transition
     if (body.status !== undefined && body.status !== null) {
-      const newStatus = String(body.status).trim().toLowerCase();
+      newStatus = String(body.status).trim().toLowerCase();
       if (!VALID_ORDER_STATUSES.has(newStatus)) {
         return res.status(400).json({
           success: false,
@@ -122,6 +127,32 @@ export async function updateAdminWorkOrder(req, res, next) {
       order.status = newStatus;
       if (newStatus === 'completed' && !order.completed_at) {
         order.completed_at = new Date().toISOString();
+      }
+    }
+
+    if (body.total_amount !== undefined && body.total_amount !== null && body.total_amount !== '') {
+      const totalAmount = Number(body.total_amount);
+      if (!Number.isFinite(totalAmount) || totalAmount < 0) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'total_amount must be a valid positive number.', code: 'INVALID_TOTAL_AMOUNT' },
+        });
+      }
+      const normalizedTotal = Math.round(totalAmount * 100) / 100;
+      order.total_price = normalizedTotal;
+      if (invoice) {
+        const paidSoFar = Math.max(0, Number(invoice.total_amount || 0) - Number(invoice.balance_due ?? invoice.total_amount ?? 0));
+        invoice.total_amount = normalizedTotal;
+        invoice.balance_due = Math.max(0, Math.round((normalizedTotal - paidSoFar) * 100) / 100);
+        invoice.subtotal = Math.round((normalizedTotal / 1.16) * 100) / 100;
+        invoice.tax_vat = Math.round((normalizedTotal - invoice.subtotal) * 100) / 100;
+      }
+    }
+
+    if (invoice && (newStatus === 'confirmed' || newStatus === 'incoming' || newStatus === 'scheduled' || newStatus === 'dispatched' || newStatus === 'in_progress')) {
+      invoice.status = 'unpaid';
+      if ((invoice.balance_due == null || Number(invoice.balance_due) === 0) && Number(invoice.total_amount || order.total_price || 0) > 0) {
+        invoice.balance_due = Number(invoice.total_amount || order.total_price || 0);
       }
     }
 
@@ -155,12 +186,17 @@ export async function updateAdminWorkOrder(req, res, next) {
     }
 
     order.updated_at = new Date().toISOString();
+    if (invoice) {
+      invoice.updated_at = new Date().toISOString();
+      await store.upsertInvoice(invoice);
+    }
     await store.upsertWorkOrder(order);
 
     return res.status(200).json({
       success: true,
       message: 'Work order updated successfully.',
       order,
+      invoice,
     });
   } catch (err) {
     return next(err);
