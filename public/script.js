@@ -3,11 +3,14 @@ const navMenu = document.querySelector('.nav-menu');
 
 // PWA standalone detection — force mobile layout when installed as app
 (function () {
-    var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    var isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone === true ||
+        /[?&]source=pwa\b/.test(window.location.search) ||
+        sessionStorage.getItem('lc_pwa') === '1' ||
+        document.documentElement.classList.contains('pwa');
 
-    // Fallback: if standalone detection fails but screen is phone-sized, also force mobile
-    if (!isStandalone && window.matchMedia('(display-mode: standalone)').media !== 'not all') {
-        // matchMedia is supported but didn't match — check if we're in a TWA or other wrapper
+    // Fallback: check if we're in a TWA or other Android wrapper
+    if (!isStandalone) {
         try {
             if (document.referrer && document.referrer.indexOf('android-app://') === 0) {
                 isStandalone = true;
@@ -16,8 +19,15 @@ const navMenu = document.querySelector('.nav-menu');
     }
 
     if (isStandalone) {
-        document.documentElement.classList.add('pwa-standalone');
-        document.body.classList.add('pwa-standalone');
+        document.documentElement.classList.add('pwa', 'pwa-standalone');
+        if (document.body) {
+            document.body.classList.add('pwa', 'pwa-standalone');
+        } else {
+            document.addEventListener('DOMContentLoaded', function () {
+                if (document.body) document.body.classList.add('pwa', 'pwa-standalone');
+            });
+        }
+        try { sessionStorage.setItem('lc_pwa', '1'); } catch (e) {}
 
         // Maintain standard responsive viewport
         var viewport = document.querySelector('meta[name="viewport"]');
@@ -28,8 +38,10 @@ const navMenu = document.querySelector('.nav-menu');
         // Constrain body width to prevent desktop layout bleed
         document.documentElement.style.maxWidth = '100vw';
         document.documentElement.style.overflowX = 'hidden';
-        document.body.style.maxWidth = '100vw';
-        document.body.style.overflowX = 'hidden';
+        if (document.body) {
+            document.body.style.maxWidth = '100vw';
+            document.body.style.overflowX = 'hidden';
+        }
     }
 })();
 

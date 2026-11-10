@@ -9,7 +9,16 @@ const SUPPORT_PHONE = '+254758827319';
 const SUPPORT_WHATSAPP = 'https://wa.me/254758827319?text=' + encodeURIComponent('Hi Lawn Craft, I would like some help with my lawn.');
 
 export function isPwaMode() {
-  return document.documentElement.classList.contains('pwa');
+  const pwa = document.documentElement.classList.contains('pwa') ||
+    sessionStorage.getItem('lc_pwa') === '1' ||
+    /[?&]source=pwa\b/.test(window.location.search) ||
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true;
+  if (pwa) {
+    document.documentElement.classList.add('pwa', 'pwa-standalone');
+    if (document.body) document.body.classList.add('pwa', 'pwa-standalone');
+  }
+  return pwa;
 }
 
 /** Replace the marketing hero with an app home for visitors who are not signed in. */

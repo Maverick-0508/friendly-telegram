@@ -74,19 +74,20 @@ try {
   await page.evaluate(() => document.getElementById('instant-calculator')?.scrollIntoView());
   await page.waitForSelector('#calc-book-btn', { timeout: 10000 });
   const totalBefore = await page.$eval('#calc-total', (el) => el.textContent.trim());
-  await page.click('.calc-chip[data-grass="buffalo"]').catch(() => {});
-  await page.click('.calc-chip[data-freq="onetime"]').catch(() => {});
+  await page.$eval('.calc-chip[data-grass="buffalo"]', (el) => { el.scrollIntoView({ block: 'center' }); el.click(); });
+  await page.$eval('.calc-chip[data-freq="onetime"]', (el) => { el.scrollIntoView({ block: 'center' }); el.click(); });
   const totalAfter = await page.$eval('#calc-total', (el) => el.textContent.trim());
   rec('calculator updates total when options change', totalBefore !== totalAfter, `${totalBefore} -> ${totalAfter}`);
   // coupon
+  await page.$eval('#calc-coupon-input', (el) => el.scrollIntoView({ block: 'center' }));
   await page.type('#calc-coupon-input', 'SPRING20');
-  await page.click('#calc-coupon-btn');
+  await page.$eval('#calc-coupon-btn', (el) => el.click());
   await page.waitForFunction(() => (document.getElementById('calc-coupon-msg')?.textContent || '').length > 0, { timeout: 30000 });
   const couponMsg = await page.$eval('#calc-coupon-msg', (el) => el.textContent.trim());
   rec('coupon applies from the UI', /applied|success/i.test(couponMsg), couponMsg.slice(0, 80));
   shots.push(await shot(page, 'calculator'));
 
-  await page.click('#calc-book-btn');
+  await page.$eval('#calc-book-btn', (el) => { el.scrollIntoView({ block: 'center' }); el.click(); });
   await page.waitForSelector('#anon-book-modal.active', { timeout: 10000 });
   rec('booking opens confirmation modal for new visitor', true);
   const estimate = await page.$eval('.anon-estimate-pill', (el) => el.textContent.trim());
@@ -95,7 +96,9 @@ try {
   await page.type('#anon-name', 'UX Test Visitor');
   await page.type('#anon-phone', phone);
   await page.type('#anon-address', 'Runda, Nairobi');
-  rec('booking form asks for three fields only (no PIN up front)', (await page.$('#anon-pin')) === null);
+  const uxEmail = `ux${Date.now()}@example.com`;
+  await page.type('#anon-email', uxEmail);
+  rec('booking form asks for details (no PIN up front)', (await page.$('#anon-pin')) === null);
   await page.click('#anon-submit-btn');
   await page.waitForSelector('#anon-success', { visible: true, timeout: 20000 })
     .then(() => rec('booking request sent and success panel shown', true))

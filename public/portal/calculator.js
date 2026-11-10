@@ -285,6 +285,10 @@ export function openAnonymousBookingModal({ size, grass, frequency, grassKey, fr
           <label for="anon-address">Estate or address</label>
           <input type="text" id="anon-address" class="form-control" placeholder="e.g. Karen, Runda, Muthaiga, Lavington" autocomplete="street-address" required>
         </div>
+        <div class="form-group">
+          <label for="anon-email">Email address <span style="font-weight:400; color:#6b7280;">(optional, for bills &amp; portal)</span></label>
+          <input type="email" id="anon-email" class="form-control" placeholder="e.g. jane@example.com" autocomplete="email">
+        </div>
         <button type="submit" class="btn btn-primary btn-block" id="anon-submit-btn">
           <i class="fa-solid fa-paper-plane"></i> Send Booking Request
         </button>
@@ -312,6 +316,7 @@ export function openAnonymousBookingModal({ size, grass, frequency, grassKey, fr
     const name = document.getElementById('anon-name').value.trim();
     const phone = document.getElementById('anon-phone').value.trim();
     const address = document.getElementById('anon-address').value.trim();
+    const email = (document.getElementById('anon-email')?.value || '').trim();
 
     const btn = document.getElementById('anon-submit-btn');
     btn.disabled = true;
@@ -324,6 +329,7 @@ export function openAnonymousBookingModal({ size, grass, frequency, grassKey, fr
         body: JSON.stringify({
           client_name: name,
           phone: phone,
+          client_email: email,
           address: address,
           property_size: size,
           grass: grassKey,
@@ -354,7 +360,7 @@ export function openAnonymousBookingModal({ size, grass, frequency, grassKey, fr
 
         document.getElementById('anon-create-pin').addEventListener('click', () => {
           modal.classList.remove('active');
-          openClientAccessModal({ register: true, prefill: { name, phone, address, property_size: size } });
+          openClientAccessModal({ register: true, prefill: { name, phone, email, address, property_size: size } });
         });
       } else {
         throw new Error(json.error?.message || 'Submission failed');
