@@ -2049,10 +2049,11 @@ section {
         display: none;
     }
 
+    /* 44px keeps the hub/install/menu icons comfortable to tap one-handed. */
     .header-portal-action>.btn-pwa-install,
     .header-portal-action>.client-access-trigger {
-        width: 38px;
-        height: 38px;
+        width: 44px;
+        height: 44px;
         padding: 0;
         justify-content: center;
         border-radius: 50%;
@@ -2895,30 +2896,14 @@ section {
     color: #fff;
 }
 
-/* Cookie Consent Banner */
+/* Cookie Consent Banner (positioning lives in the "Slim privacy notice"
+   section below — keep one definition so the two don't fight). */
 .cookie-consent {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%) translateY(120%);
-    z-index: 9999;
-    background: #1a1a1a;
-    color: #fff;
-    border-radius: 12px;
-    padding: 1rem 1.5rem;
     display: flex;
     align-items: center;
-    gap: 1.25rem;
-    max-width: 720px;
-    width: calc(100% - 32px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-    opacity: 0;
+    z-index: 9999;
+    color: #fff;
     transition: transform 0.4s ease, opacity 0.4s ease;
-}
-
-.cookie-consent.visible {
-    transform: translateX(-50%) translateY(0);
-    opacity: 1;
 }
 
 .cookie-consent-text {
@@ -2944,7 +2929,9 @@ section {
 }
 
 .btn-cookie-accept {
-    background: var(--accent-green, #6b8e6f);
+    /* Brand green (not the muted #6b8e6f legacy tone): white text needs this
+       darker shade to clear WCAG AA contrast on a phone. */
+    background: var(--brand);
     color: #fff;
     border: none;
     padding: 0.5rem 1rem;
@@ -2957,7 +2944,7 @@ section {
 }
 
 .btn-cookie-accept:hover {
-    background: #5a7a5e;
+    background: var(--brand-dark);
 }
 
 .btn-cookie-decline {
@@ -2979,19 +2966,8 @@ section {
 }
 
 @media (max-width: 600px) {
-    .cookie-consent {
-        flex-direction: column;
-        text-align: center;
-        padding: 1rem;
-    }
-
-    .cookie-consent-actions {
-        width: 100%;
-    }
-
     .btn-cookie-accept,
     .btn-cookie-decline {
-        flex: 1;
         padding: 0.6rem;
     }
 }
@@ -4447,8 +4423,10 @@ body.pwa-standalone .trust-grid {
 }
 
 @media (max-width: 900px) {
+    /* minmax(0, 1fr): a plain 1fr track refuses to shrink below the panels'
+       min-content width, which pushed the grid past 320px-wide phones. */
     .calc-layout-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 
@@ -4537,7 +4515,8 @@ body.pwa-standalone .trust-grid {
     display: flex;
     justify-content: space-between;
     font-size: 0.75rem;
-    color: var(--slate-faint);
+    /* --slate-faint (#94a3b8) is only 2.6:1 on white; muted clears AA. */
+    color: var(--slate-muted);
     margin-top: 8px;
 }
 
@@ -4732,6 +4711,7 @@ body.pwa-standalone .trust-grid {
 
 .coupon-hints code {
     background: var(--slate-border);
+    color: #334155;
     padding: 2px 4px;
     border-radius: 4px;
     font-family: monospace;
@@ -5840,12 +5820,14 @@ body.hub-authenticated .hero-scroll-indicator {
    Slim privacy notice (first-party, anonymous analytics only)
    ========================================================= */
 .cookie-consent {
+    position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     width: 100%;
     max-width: none;
     transform: translateY(120%);
+    opacity: 0;
     border-radius: 0;
     padding: 0.55rem 1rem;
     gap: 0.75rem;
@@ -5857,6 +5839,7 @@ body.hub-authenticated .hero-scroll-indicator {
 
 .cookie-consent.visible {
     transform: translateY(0);
+    opacity: 1;
 }
 
 .cookie-consent .cookie-consent-text p {
@@ -5883,6 +5866,11 @@ body.hub-authenticated .hero-scroll-indicator {
 
     .cookie-consent .cookie-consent-text p {
         font-size: 0.75rem;
+    }
+
+    /* Keep the single action sized to its label; the text gets the rest. */
+    .cookie-consent .btn-cookie-accept {
+        flex: 0 0 auto;
     }
 }
 

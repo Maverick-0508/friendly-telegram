@@ -1,4 +1,4 @@
-const CACHE = 'lawncraft-v18';
+const CACHE = 'lawncraft-v19';
 
 const PRECACHE_URLS = [
   '/',
@@ -118,6 +118,8 @@ async function cacheFirst(request) {
 async function networkFirst(request) {
   try {
     const response = await fetch(request);
+    // Never cache error pages: a cached 404/500 would be served offline (and
+    // re-served by the cache-first path) long after the page comes back.
     if (response.ok && request.method === 'GET') {
       const cache = await caches.open(CACHE);
       cache.put(request, response.clone());
@@ -127,7 +129,7 @@ async function networkFirst(request) {
     const cached = await caches.match(request);
     if (cached) return cached;
     if (request.mode === 'navigate') {
-      return caches.match('/offline.html');
+      return (await caches.match('/offline.html')) || new Response('Offline', { status: 503 });
     }
     return new Response('Offline', { status: 503 });
   }

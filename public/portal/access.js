@@ -33,7 +33,7 @@ export function openClientAccessModal(options = {}) {
           <label for="client-identifier-input">Phone Number or Email</label>
           <div class="input-with-icon">
             <i class="fa-solid fa-user-tag"></i>
-            <input type="text" id="client-identifier-input" class="form-control" placeholder="e.g. 0712 345 678 or your@email.com" required>
+            <input type="text" id="client-identifier-input" class="form-control" placeholder="0712 345 678 or email" required>
           </div>
         </div>
         <div class="form-group">

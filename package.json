@@ -24,7 +24,7 @@
     "build:css:check": "node scripts/build-css.mjs --check",
     "demo:seed": "node scripts/seed-demo.mjs"
   },
-    "dependencies": {
+  "dependencies": {
     "@sentry/node": "^9.3.0",
     "@supabase/supabase-js": "^2.49.1",
     "cors": "^2.8.5",
