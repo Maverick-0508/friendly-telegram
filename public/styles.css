@@ -3127,14 +3127,17 @@ body.install-banner-visible .floating-cta {
     text-align: center;
     padding: 0.6rem 1rem;
 }
-}
+
 
 /* ── PWA Standalone Mode — Force Mobile Layout ── */
+html.pwa,
+html.pwa body,
 body.pwa-standalone {
     overflow-x: hidden !important;
     max-width: 100vw !important;
 }
 
+html.pwa .nav-menu,
 body.pwa-standalone .nav-menu {
     position: absolute !important;
     top: 80px !important;
@@ -3150,10 +3153,12 @@ body.pwa-standalone .nav-menu {
     z-index: 1002 !important;
 }
 
+html.pwa .nav-menu.active,
 body.pwa-standalone .nav-menu.active {
     display: flex !important;
 }
 
+html.pwa .nav-links,
 body.pwa-standalone .nav-links {
     width: 100% !important;
     flex-direction: column !important;
@@ -3161,15 +3166,18 @@ body.pwa-standalone .nav-links {
     gap: 0 !important;
 }
 
+html.pwa .nav-links li,
 body.pwa-standalone .nav-links li {
     width: 100% !important;
     border-bottom: 1px solid var(--border-light) !important;
 }
 
+html.pwa .nav-links li:last-child,
 body.pwa-standalone .nav-links li:last-child {
     border-bottom: none !important;
 }
 
+html.pwa .nav-links a,
 body.pwa-standalone .nav-links a {
     display: block !important;
     width: 100% !important;
@@ -3177,46 +3185,59 @@ body.pwa-standalone .nav-links a {
     padding: 0.85rem 0 !important;
 }
 
+html.pwa .nav-links a::after,
 body.pwa-standalone .nav-links a::after {
     display: none !important;
 }
 
+html.pwa .socials,
 body.pwa-standalone .socials {
     display: none !important;
 }
 
+html.pwa .directory-panel,
 body.pwa-standalone .directory-panel {
     right: 16px !important;
     width: calc(100% - 32px) !important;
 }
 
+html.pwa .container,
 body.pwa-standalone .container {
     padding: 0 20px !important;
 }
 
+html.pwa .hero,
 body.pwa-standalone .hero {
     height: auto !important;
     min-height: calc(100vh - 80px) !important;
     padding: 50px 0 110px !important;
 }
 
+html.pwa .hero .container,
 body.pwa-standalone .hero .container {
     padding: 0 24px !important;
 }
 
+html.pwa .hero-content,
 body.pwa-standalone .hero-content {
     max-width: 100% !important;
 }
 
+html.pwa .hero-title,
 body.pwa-standalone .hero-title {
     font-size: clamp(2rem, 9vw, 2.8rem) !important;
 }
 
+html.pwa .hero-subtitle,
 body.pwa-standalone .hero-subtitle {
     font-size: 1rem !important;
     margin-bottom: 1.8rem !important;
 }
 
+html.pwa .featured-grid,
+html.pwa .insights-grid,
+html.pwa .testimonials-grid,
+html.pwa .services-grid,
 body.pwa-standalone .featured-grid,
 body.pwa-standalone .insights-grid,
 body.pwa-standalone .testimonials-grid,
@@ -3224,111 +3245,138 @@ body.pwa-standalone .services-grid {
     grid-template-columns: 1fr !important;
 }
 
+html.pwa .gallery-grid,
 body.pwa-standalone .gallery-grid {
     grid-template-columns: 1fr !important;
 }
 
+html.pwa .stats-grid,
 body.pwa-standalone .stats-grid {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 2rem !important;
 }
 
+html.pwa .about-content,
+html.pwa .contact-wrapper,
 body.pwa-standalone .about-content,
 body.pwa-standalone .contact-wrapper {
     grid-template-columns: 1fr !important;
 }
 
+html.pwa .about-values,
 body.pwa-standalone .about-values {
     grid-template-columns: 1fr !important;
 }
 
+html.pwa .footer-content,
 body.pwa-standalone .footer-content {
     grid-template-columns: 1fr !important;
     gap: 2rem !important;
 }
 
+html.pwa .footer-bottom,
 body.pwa-standalone .footer-bottom {
     flex-direction: column !important;
     gap: 0.75rem !important;
     text-align: center !important;
 }
 
+html.pwa .section-title,
 body.pwa-standalone .section-title {
     font-size: 2rem !important;
 }
 
+html.pwa .featured-content,
+html.pwa .service-card,
+html.pwa .testimonial-card,
 body.pwa-standalone .featured-content,
 body.pwa-standalone .service-card,
 body.pwa-standalone .testimonial-card {
     padding: 1.6rem !important;
 }
 
+html.pwa .footer,
 body.pwa-standalone .footer {
     padding: 2.6rem 0 1.5rem !important;
 }
 
+html.pwa section,
 body.pwa-standalone section {
     padding: 4rem 0 !important;
 }
 
+html.pwa .page-main,
 body.pwa-standalone .page-main {
     margin-top: 80px !important;
 }
 
+html.pwa .header-container,
 body.pwa-standalone .header-container {
     gap: 0.6rem !important;
     padding: 0 12px !important;
 }
 
+html.pwa .logo-image,
 body.pwa-standalone .logo-image {
     height: 40px !important;
 }
 
+html.pwa .logo-text,
 body.pwa-standalone .logo-text {
     font-size: 1rem !important;
 }
 
+html.pwa .form-row,
 body.pwa-standalone .form-row {
     grid-template-columns: 1fr !important;
 }
 
+html.pwa .btn-download-guide,
 body.pwa-standalone .btn-download-guide {
     width: 100% !important;
     justify-content: center !important;
 }
 
+html.pwa .hero-buttons,
 body.pwa-standalone .hero-buttons {
     flex-direction: column !important;
     width: 100% !important;
 }
 
+html.pwa .hero-buttons .btn,
 body.pwa-standalone .hero-buttons .btn {
     width: 100% !important;
     text-align: center !important;
 }
 
+html.pwa .service-area-layout,
 body.pwa-standalone .service-area-layout {
     grid-template-columns: 1fr !important;
     gap: 2rem !important;
 }
 
+html.pwa .zip-input-group,
 body.pwa-standalone .zip-input-group {
     flex-direction: column !important;
 }
 
+html.pwa .zip-input-group .btn,
 body.pwa-standalone .zip-input-group .btn {
     width: 100% !important;
 }
 
+html.pwa .floating-cta span,
 body.pwa-standalone .floating-cta span {
     display: none !important;
 }
 
+html.pwa .floating-cta,
 body.pwa-standalone .floating-cta {
     padding: 1rem !important;
     border-radius: 50% !important;
 }
 
+html.pwa .trust-grid,
 body.pwa-standalone .trust-grid {
     grid-template-columns: repeat(2, 1fr) !important;
 }
@@ -5842,16 +5890,23 @@ body.hub-authenticated .hero-scroll-indicator {
    Installed app (PWA) shell: compact header, app home, bottom tabs
    ========================================================= */
 html.pwa .socials,
+body.pwa-standalone .socials,
 html.pwa .btn-quote-cta,
+body.pwa-standalone .btn-quote-cta,
 html.pwa .header-portal-action>.btn-pwa-install,
+body.pwa-standalone .header-portal-action>.btn-pwa-install,
 html.pwa .directory-mobile-nav .btn-pwa-install,
+body.pwa-standalone .directory-mobile-nav .btn-pwa-install,
 html.pwa .install-banner,
-html.pwa .cookie-consent {
+body.pwa-standalone .install-banner,
+html.pwa .cookie-consent,
+body.pwa-standalone .cookie-consent {
     display: none !important;
 }
 
-html.pwa body {
-    padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px));
+html.pwa body,
+body.pwa-standalone {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
 }
 
 html.pwa .hero {
@@ -6025,21 +6080,79 @@ html.pwa .form-control {
 }
 
 /* PWA App Responsive Layout (Kenya Power MyPower App style native feel) */
-@media (display-mode: standalone),
-html.pwa {
+@media (display-mode: standalone) {
     body {
         -webkit-user-select: none;
         user-select: none;
         background-color: var(--brand-surface);
     }
 
-    .header-actions-group .socials {
+    .header-actions-group .socials,
+    .socials {
         display: none !important;
     }
 
     .container {
-        padding-left: 16px;
-        padding-right: 16px;
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+    }
+}
+
+html.pwa body,
+body.pwa-standalone {
+    -webkit-user-select: none;
+    user-select: none;
+    background-color: var(--brand-surface);
+}
+
+html.pwa .header-actions-group .socials,
+body.pwa-standalone .header-actions-group .socials,
+html.pwa .socials,
+body.pwa-standalone .socials {
+    display: none !important;
+}
+
+html.pwa .container,
+body.pwa-standalone .container {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+}
+
+/* Constrain wide screens when running in PWA app mode to feel like an authentic mobile app */
+@media (min-width: 768px) {
+    html.pwa body,
+    body.pwa-standalone {
+        max-width: 540px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        min-height: 100vh !important;
+        box-shadow: 0 0 50px rgba(0, 0, 0, 0.18) !important;
+        position: relative !important;
+    }
+
+    html.pwa #main-header,
+    body.pwa-standalone #main-header {
+        max-width: 540px !important;
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%) !important;
+    }
+
+    html.pwa .app-tabbar,
+    body.pwa-standalone .app-tabbar {
+        max-width: 540px !important;
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%) !important;
+        border-radius: 16px 16px 0 0 !important;
+    }
+
+    html.pwa .calc-mobile-bar,
+    body.pwa-standalone .calc-mobile-bar {
+        max-width: 540px !important;
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%) !important;
     }
 }
 
@@ -6317,8 +6430,14 @@ html.pwa {
         padding-bottom: 90px;
     }
 
-    html.pwa .calc-mobile-bar {
-        display: none;
+    html.pwa .calc-mobile-bar,
+    body.pwa-standalone .calc-mobile-bar {
+        bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+    }
+
+    html.pwa .calculator-page-section,
+    body.pwa-standalone .calculator-page-section {
+        padding-bottom: 150px;
     }
 }
 
