@@ -33,8 +33,9 @@ test('GET /admin serves the supervisor portal page', async () => {
   const res = await fetch(`${baseUrl}/admin`);
   assert.equal(res.status, 200);
   const html = await res.text();
-  assert.match(html, /Supervisor & Operations Hub/);
-  assert.match(html, /Field Work Orders & Dispatch Queue/);
+  assert.match(html, /Supervisor Dashboard/);
+  assert.match(html, /Incoming Queue/);
+  assert.match(html, /supervisor-dashboard\.js/);
 });
 
 test('POST /api/admin/verify rejects invalid token and accepts valid token', async () => {
