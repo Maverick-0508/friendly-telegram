@@ -1,4 +1,4 @@
-const CACHE = 'lawncraft-v19';
+const CACHE = 'lawncraft-v20';
 
 const PRECACHE_URLS = [
   '/',
