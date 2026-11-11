@@ -262,7 +262,7 @@ export function createApp() {
   });
 
   app.get('/admin', (_req, res) => {
-    res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
+    res.sendFile(path.join(PUBLIC_DIR, 'supervisor-dashboard.html'));
   });
 
   const PRIVATE_PATH_PATTERN = /^\/(?:node-backend|node_modules|tests|scripts|data|\.github|\.vercel)(?:\/|$)/i;
