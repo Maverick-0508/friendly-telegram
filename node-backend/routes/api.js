@@ -29,6 +29,7 @@ import {
   updateAdminWorkOrder,
   getAdminInvoices,
   getAdminPayments,
+  recordAdminPayment,
   getAdminQuotes,
   getAdminLeads,
 } from '../controllers/adminController.js';
@@ -224,6 +225,7 @@ router.get('/admin/work-orders', requireAdmin, getAdminWorkOrders);
 router.get('/admin/work-orders/:orderId', requireAdmin, getAdminWorkOrder);
 router.patch('/admin/work-orders/:orderId', requireAdmin, updateAdminWorkOrder);
 router.get('/admin/invoices', requireAdmin, getAdminInvoices);
+router.post('/admin/invoices/:invoiceId/payments', requireAdmin, recordAdminPayment);
 router.get('/admin/payments', requireAdmin, getAdminPayments);
 router.get('/admin/quotes', requireAdmin, getAdminQuotes);
 router.get('/admin/leads', requireAdmin, getAdminLeads);
