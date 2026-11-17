@@ -311,7 +311,10 @@ export async function recordAdminPayment(req, res, next) {
     };
 
     invoice.balance_due = Math.round((balance - amount) * 100) / 100;
+    invoice.status = invoice.balance_due === 0 ? 'paid' : 'partially_paid';
     invoice.payment_status = invoice.balance_due === 0 ? 'paid' : 'partial';
+    invoice.payment_method = cleanText(body.method, 60) || 'Manual payment';
+    if (invoice.balance_due === 0) invoice.paid_at = now;
     invoice.updated_at = now;
     await store.upsertPayment(payment);
     await store.upsertInvoice(invoice);

@@ -1130,6 +1130,30 @@ export async function getInvoice(req, res) {
       return fail(res, 404, 'INVOICE_NOT_FOUND', 'Invoice not found.');
     }
 
+    // Repair stale invoice status when a settled payment exists but the
+    // invoice row was not updated by an earlier callback or manual entry.
+    const payments = await store.listAllPayments({ limit: 200 });
+    const settledPayments = payments.filter((payment) =>
+      payment.invoice_id === inv.id && (payment.status === 'success' || payment.status === 'completed'));
+    if (settledPayments.length) {
+      const totalPaid = settledPayments.reduce((sum, payment) => (
+        sum + (Number(payment.amount_paid ?? payment.amount) || 0)
+      ), 0);
+      const total = Number(inv.total_amount) || 0;
+      const balance = Math.max(0, Math.round((total - totalPaid) * 100) / 100);
+      const nextStatus = balance === 0 ? 'paid' : 'partially_paid';
+      if (inv.status !== nextStatus || Number(inv.balance_due) !== balance) {
+        inv.status = nextStatus;
+        inv.balance_due = balance;
+        inv.payment_status = balance === 0 ? 'paid' : 'partial';
+        const latest = settledPayments[0];
+        inv.payment_method = latest.payment_method || inv.payment_method;
+        inv.mpesa_receipt = latest.mpesa_receipt || inv.mpesa_receipt;
+        if (balance === 0 && !inv.paid_at) inv.paid_at = latest.completed_at || new Date().toISOString();
+        await store.upsertInvoice(inv);
+      }
+    }
+
     return res.status(200).json({
       success: true,
       data: inv,
