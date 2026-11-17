@@ -154,6 +154,43 @@ function renderInvoices(items) {
   </tr>`).join('') : '<tr class="empty-row"><td colspan="7">No invoices found.</td></tr>';
 }
 
+function openPayment(invoiceId) {
+  const invoice = state.invoices.find((item) => item.id === invoiceId);
+  if (!invoice) {
+    toast('Invoice details could not be found. Refresh and try again.', 'error');
+    return;
+  }
+  $('payment-inv-id').value = invoice.id;
+  $('payment-amount').value = Number(invoice.balance_due || 0);
+  $('payment-invoice-summary').textContent = `${invoice.invoice_number || invoice.id} · ${invoice.client_name || 'Customer'} · Balance due ${money(invoice.balance_due)}`;
+  $('payment-modal').classList.add('open');
+}
+
+async function recordPayment(event) {
+  event.preventDefault();
+  const invoiceId = $('payment-inv-id').value;
+  const submitButton = $('payment-save-btn');
+  submitButton.disabled = true;
+  try {
+    await api(`/admin/invoices/${encodeURIComponent(invoiceId)}/payments`, {
+      method: 'POST',
+      body: JSON.stringify({
+        amount: Number($('payment-amount').value),
+        method: $('payment-method').value,
+        reference: $('payment-reference').value.trim(),
+        notes: $('payment-notes').value.trim(),
+      }),
+    });
+    closeModals();
+    toast('Payment recorded and invoice balance updated.');
+    await loadInvoices();
+  } catch (error) {
+    toast(error.message, 'error');
+  } finally {
+    submitButton.disabled = false;
+  }
+}
+
 function renderPayments(items) {
   const target = $('mpesa-txns-tbody');
   if (!target) return;
@@ -276,6 +313,7 @@ document.addEventListener('click', (event) => {
   if (action) {
     const id = action.getAttribute('data-order-id');
     if (action.dataset.action === 'review') openOrder(id).catch((error) => toast(error.message, 'error'));
+    if (action.dataset.action === 'payment') openPayment(action.getAttribute('data-invoice-id'));
     return;
   }
   const orderTarget = event.target.closest('[data-order-id]');
@@ -288,9 +326,12 @@ $('refresh-btn')?.addEventListener('click', () => navigate(state.view));
 $('btn-lock-session')?.addEventListener('click', logout);
 $('theme-toggle-btn')?.addEventListener('click', () => document.body.classList.toggle('theme-dark'));
 $('form-confirm-order')?.addEventListener('submit', (event) => confirmOrder(event).catch((error) => toast(error.message, 'error')));
+$('payment-form')?.addEventListener('submit', (event) => recordPayment(event));
 $('widget-embed-code')?.addEventListener('click', (event) => event.currentTarget.select());
 $('close-timesheet-panel')?.addEventListener('click', () => { $('timesheet-clockin-panel').style.display = 'none'; });
 document.querySelectorAll('[data-close="modal-confirm"]').forEach((button) => button.addEventListener('click', closeModals));
+$('payment-modal-close-btn')?.addEventListener('click', closeModals);
+$('payment-cancel-btn')?.addEventListener('click', closeModals);
 
 if (state.token) {
   api('/admin/verify').then(() => { showApp(); localizeKenyanLabels(); return navigate(location.hash.slice(1) || 'overview'); }).catch(() => { sessionStorage.removeItem(TOKEN_KEY); state.token = ''; showLogin(); });
