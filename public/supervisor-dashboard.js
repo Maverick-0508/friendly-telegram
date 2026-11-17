@@ -220,7 +220,7 @@ function openConfirm(order) {
   $('conf-crew-lead').value = order.crew_lead || '';
   $('conf-crew-phone').value = order.crew_phone || '';
   $('conf-notes').value = order.supervisor_notes || '';
-  $('modal-confirm').classList.add('visible');
+  $('modal-confirm').classList.add('open');
 }
 
 async function confirmOrder(event) {
