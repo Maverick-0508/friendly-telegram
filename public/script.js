@@ -903,11 +903,12 @@ function initServiceAreaMap() {
     // Initialize map
     const map = L.map('service-area-map').setView([HOME_LAT, HOME_LNG], 11);
     
-    // Use the standard OpenStreetMap raster tiles without a provider API key.
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        subdomains: 'abc',
-        maxZoom: 19
+    // Use Carto's public basemap so the site does not overload OpenStreetMap's
+    // community tile servers.
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        subdomains: 'abcd',
+        maxZoom: 20
     }).addTo(map);
     
     // Add home location marker
