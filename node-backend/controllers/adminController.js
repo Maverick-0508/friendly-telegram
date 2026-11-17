@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { store } from '../services/store.js';
 import * as notify from '../services/notify.js';
 
@@ -227,6 +228,60 @@ export async function getAdminPayments(req, res, next) {
       success: true,
       count: payments.length,
       payments,
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+export async function recordAdminPayment(req, res, next) {
+  try {
+    const invoiceId = cleanText(req.params.invoiceId, 64);
+    const invoice = await store.invoiceById(invoiceId);
+    if (!invoice) {
+      return res.status(404).json({
+        success: false,
+        error: { message: 'Invoice not found.', code: 'INVOICE_NOT_FOUND' },
+      });
+    }
+
+    const body = req.body || {};
+    const amount = Math.round(Number(body.amount) * 100) / 100;
+    const balance = Math.max(0, Number(invoice.balance_due ?? invoice.total_amount) || 0);
+    if (!Number.isFinite(amount) || amount <= 0 || amount > balance) {
+      return res.status(400).json({
+        success: false,
+        error: { message: `Payment amount must be greater than zero and no more than the balance due (${balance}).`, code: 'INVALID_PAYMENT_AMOUNT' },
+      });
+    }
+
+    const now = new Date().toISOString();
+    const payment = {
+      id: `pay_manual_${Date.now().toString(36)}_${crypto.randomBytes(6).toString('hex')}`,
+      invoice_id: invoice.id,
+      client_id: invoice.client_id || null,
+      amount,
+      amount_paid: amount,
+      status: 'success',
+      payment_method: cleanText(body.method, 60) || 'Manual payment',
+      reference: cleanText(body.reference, 120) || null,
+      notes: cleanText(body.notes, 500) || null,
+      completed_at: now,
+      created_at: now,
+      updated_at: now,
+    };
+
+    invoice.balance_due = Math.round((balance - amount) * 100) / 100;
+    invoice.payment_status = invoice.balance_due === 0 ? 'paid' : 'partial';
+    invoice.updated_at = now;
+    await store.upsertPayment(payment);
+    await store.upsertInvoice(invoice);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Payment recorded successfully.',
+      payment,
+      invoice,
     });
   } catch (err) {
     return next(err);
