@@ -28,6 +28,8 @@ import {
   getAdminWorkOrder,
   updateAdminWorkOrder,
   getAdminInvoices,
+  getAdminLoyalty,
+  getAdminReceipts,
   getAdminPayments,
   recordAdminPayment,
   getAdminQuotes,
@@ -225,6 +227,8 @@ router.get('/admin/work-orders', requireAdmin, getAdminWorkOrders);
 router.get('/admin/work-orders/:orderId', requireAdmin, getAdminWorkOrder);
 router.patch('/admin/work-orders/:orderId', requireAdmin, updateAdminWorkOrder);
 router.get('/admin/invoices', requireAdmin, getAdminInvoices);
+router.get('/admin/loyalty', requireAdmin, getAdminLoyalty);
+router.get('/admin/receipts', requireAdmin, getAdminReceipts);
 router.post('/admin/invoices/:invoiceId/payments', requireAdmin, recordAdminPayment);
 router.get('/admin/payments', requireAdmin, getAdminPayments);
 router.get('/admin/quotes', requireAdmin, getAdminQuotes);
