@@ -329,7 +329,6 @@ async function upsertPaymentSupabase(payment) {
     phone: payment.phone || null,
     amount: payment.amount ?? null,
     status: payment.status || null,
-    updated_at: new Date().toISOString(),
     data: payment,
   }, { onConflict: 'id' });
 
