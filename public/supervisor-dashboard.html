@@ -1916,6 +1916,75 @@
   </div>
 
   <!-- ======================================================
+       WORK ORDER REVIEW & CONFIRM MODAL
+       ====================================================== -->
+  <div class="modal-overlay" id="modal-confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-hidden="true">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h2 id="confirm-title">Review &amp; Confirm Work Order</h2>
+        <button class="modal-close" data-close="modal-confirm" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="form-confirm-order" novalidate>
+          <input type="hidden" id="conf-order-id">
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="conf-client-name">Customer Name</label>
+              <input type="text" id="conf-client-name" readonly>
+            </div>
+            <div class="form-group">
+              <label for="conf-client-phone">Phone Number</label>
+              <input type="text" id="conf-client-phone" readonly>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="conf-service-address">Service &amp; Property Address</label>
+            <input type="text" id="conf-service-address" readonly>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="conf-price">Total Price (KSh, VAT inclusive)</label>
+              <input type="number" id="conf-price" min="1" required>
+            </div>
+            <div class="form-group">
+              <label for="conf-date">Scheduled Visit Date / Slot</label>
+              <input type="text" id="conf-date" placeholder="e.g. Tomorrow 9:00 AM" required>
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="conf-crew-lead">Assign Crew Lead</label>
+              <input type="text" id="conf-crew-lead" placeholder="e.g. Dennis Omari">
+            </div>
+            <div class="form-group">
+              <label for="conf-crew-phone">Crew Contact Phone</label>
+              <input type="text" id="conf-crew-phone" placeholder="e.g. 0712345678">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="conf-notes">Supervisor Notes / Client Instructions</label>
+            <textarea id="conf-notes" rows="2" placeholder="Gates, access instructions, property specifics"></textarea>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn-secondary" data-close="modal-confirm">Cancel</button>
+            <button type="submit" class="btn-primary">
+              <i class="fa-solid fa-paper-plane"></i> Confirm &amp; Send SMS Pay Link
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================
        PRINTABLE / PDF INVOICE VIEW MODAL
        ====================================================== -->
   <div class="modal-overlay" id="invoice-view-modal" role="dialog" aria-modal="true" aria-labelledby="invoice-view-modal-title" aria-hidden="true">
