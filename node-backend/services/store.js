@@ -726,6 +726,19 @@ export const store = {
     return list.sort((a, b) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0)).slice(0, limit);
   },
 
+  async listAllClients({ limit = 200 } = {}) {
+    assertStoreAvailable();
+    if (willUseSupabase()) {
+      const { data, error } = await supabase.from('clients').select('*').order('created_at', { ascending: false }).limit(limit);
+      if (error) throw persistenceError(error.message);
+      return (data || []).map(hydrate);
+    }
+    return Array.from(clients.values())
+      .filter((client) => client && client.id)
+      .sort((a, b) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0))
+      .slice(0, limit);
+  },
+
   async listAllInvoices({ limit = 100, status } = {}) {
     assertStoreAvailable();
     if (willUseSupabase()) {
