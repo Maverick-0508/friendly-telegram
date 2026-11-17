@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { store } from '../services/store.js';
 import * as notify from '../services/notify.js';
+import { getCoupons } from '../config/coupons.js';
 
 const VALID_ORDER_STATUSES = new Set([
   'pending_confirmation',
@@ -38,7 +39,6 @@ export async function getAdminStats(_req, res, next) {
     return next(err);
   }
 }
-
 export async function getAdminWorkOrders(req, res, next) {
   try {
     const status = req.query.status ? String(req.query.status).trim() : 'all';
@@ -217,6 +217,45 @@ export async function getAdminInvoices(req, res, next) {
     });
   } catch (err) {
     return next(err);
+  }
+}
+
+export async function getAdminLoyalty(req, res, next) {
+    try {
+      const clients = await store.listAllClients({ limit: 200 });
+      const accounts = clients.filter((client) => client.loyalty).map((client) => ({
+        id: client.id,
+        name: client.name || 'Customer',
+        phone: client.phone || '',
+        email: client.email || '',
+        loyalty: client.loyalty,
+      }));
+      return res.status(200).json({ success: true, accounts, coupons: getCoupons() });
+    } catch (err) {
+      return next(err);
+    }
+  }
+
+export async function getAdminReceipts(req, res, next) {
+    try {
+      const [payments, invoices] = await Promise.all([
+        store.listAllPayments({ limit: 200 }),
+        store.listAllInvoices({ limit: 200 }),
+      ]);
+      const invoicesById = new Map(invoices.map((invoice) => [invoice.id, invoice]));
+      const receipts = payments
+        .filter((payment) => payment.status === 'success' || payment.status === 'completed')
+        .map((payment) => {
+          const invoice = invoicesById.get(payment.invoice_id);
+          return {
+            ...payment,
+            invoice_number: invoice?.invoice_number || payment.invoice_id || '—',
+            client_name: invoice?.client_name || 'Customer',
+          };
+        });
+      return res.status(200).json({ success: true, receipts });
+    } catch (err) {
+      return next(err);
   }
 }
 
