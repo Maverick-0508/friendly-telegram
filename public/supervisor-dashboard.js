@@ -1,6 +1,6 @@
 const TOKEN_KEY = 'lawncraft_admin_token';
 const state = { token: sessionStorage.getItem(TOKEN_KEY) || '', orders: [], invoices: [], view: 'overview' };
-const unsupportedViews = new Set(['loyalty', 'receipts', 'dunning', 'inventory', 'purchasing', 'payroll', 'timesheets', 'fleet', 'automation', 'quotes', 'contracts', 'clients', 'territory', 'widget', 'exceptions', 'report', 'property', 'control', 'permissions', 'audit', 'settings', 'monitoring', 'financial']);
+const unsupportedViews = new Set(['dunning', 'inventory', 'purchasing', 'payroll', 'timesheets', 'fleet', 'automation', 'quotes', 'contracts', 'clients', 'territory', 'widget', 'exceptions', 'report', 'property', 'control', 'permissions', 'audit', 'settings', 'monitoring', 'financial']);
 const titles = {
   overview: 'Overview', queue: 'Incoming Queue', planning: 'Planning Board', active: 'Active Jobs',
   workorders: 'All Work Orders', invoices: 'Client Invoices & Billing', mpesa: 'M-Pesa & Payments',
@@ -206,6 +206,37 @@ function renderPayments(items) {
   </tr>`).join('') : '<tr><td colspan="8">No M-Pesa payments recorded yet.</td></tr>';
 }
 
+function renderLoyalty(data) {
+  const accounts = data.accounts || [];
+  const points = accounts.reduce((sum, account) => sum + (Number(account.loyalty?.points_balance) || 0), 0);
+  $('loyalty-kpi-members').textContent = accounts.length;
+  $('loyalty-kpi-points').textContent = `${points.toLocaleString()} pts`;
+  $('loyalty-kpi-liability').textContent = money(accounts.reduce((sum, account) => sum + (Number(account.loyalty?.cash_value ?? account.loyalty?.dollar_value) || 0), 0));
+  $('loyalty-kpi-coupons').textContent = Object.keys(data.coupons || {}).length;
+  $('loyalty-accounts-tbody').innerHTML = accounts.length ? accounts.map((account) => `<tr>
+    <td><strong>${esc(account.name)}</strong><div class="td-addr">${esc(account.email)}</div></td>
+    <td>${esc(account.phone)}</td><td>${esc(account.loyalty?.tier || 'Bronze')}</td>
+    <td>${Number(account.loyalty?.points_balance || 0).toLocaleString()}</td>
+    <td>${money(account.loyalty?.cash_value ?? account.loyalty?.dollar_value)}</td>
+    <td>—</td><td>${esc(account.loyalty?.referral_code || '—')}</td>
+    <td><button class="btn-secondary btn-sm" disabled>Adjust points</button></td>
+  </tr>`).join('') : '<tr><td colspan="8">No loyalty accounts found.</td></tr>';
+  const coupons = Object.entries(data.coupons || {});
+  $('coupons-tbody').innerHTML = coupons.length ? coupons.map(([code, coupon]) => `<tr>
+    <td><strong>${esc(code)}</strong></td><td>${esc(coupon.value)}${coupon.type === 'percent' ? '%' : ' KSh'}</td>
+    <td>${esc(coupon.type || 'fixed')}</td><td>${money(coupon.minAmount || 0)}</td><td>—</td><td>—</td><td>—</td><td>Active</td>
+  </tr>`).join('') : '<tr><td colspan="8">No promotional coupons configured.</td></tr>';
+}
+
+function renderReceipts(receipts) {
+  $('receipts-directory-tbody').innerHTML = receipts.length ? receipts.map((receipt) => `<tr>
+    <td>${esc(receipt.mpesa_receipt || receipt.reference || receipt.id)}</td><td>${esc(receipt.invoice_number)}</td>
+    <td>${esc(receipt.client_name)}</td><td>${money(receipt.amount_paid ?? receipt.amount)}</td>
+    <td>${esc(receipt.payment_method || receipt.channel || 'M-Pesa')}</td><td>${date(receipt.completed_at || receipt.created_at)}</td>
+    <td><a class="btn-secondary btn-sm" href="/receipt/${encodeURIComponent(receipt.invoice_id)}" target="_blank">View receipt</a></td>
+  </tr>`).join('') : '<tr><td colspan="7">No settled receipts found.</td></tr>';
+}
+
 async function loadOrders() {
   const response = await api('/admin/work-orders?limit=200');
   state.orders = response.orders || [];
@@ -240,6 +271,8 @@ async function navigate(view) {
     else if (['queue', 'planning', 'active', 'workorders'].includes(view)) await loadOrders();
     else if (view === 'invoices') await loadInvoices();
     else if (view === 'mpesa') await loadPayments();
+    else if (view === 'loyalty') renderLoyalty((await api('/admin/loyalty')));
+    else if (view === 'receipts') renderReceipts((await api('/admin/receipts')).receipts || []);
     else renderUnsupported(view);
     if ($('last-updated')) $('last-updated').textContent = `Synced ${new Date().toLocaleTimeString('en-KE')}`;
   } catch (error) {
