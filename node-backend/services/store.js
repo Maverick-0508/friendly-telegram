@@ -133,6 +133,7 @@ function persistToDisk() {
       invoices: uniqueInvoices,
       quotes: uniqueQuotes,
       payments: Array.from(payments.values()).filter(p => p && p.id),
+      claims: Array.from(claimsById.values()),
     }, null, 2));
   } catch (err) {
     console.error('[portalStore] Error persisting data store:', err.message);
@@ -175,6 +176,13 @@ function loadFromDisk() {
         if (!p || !p.id) continue;
         payments.set(p.id, p);
         if (p.checkout_request_id) paymentsByCheckout.set(p.checkout_request_id, p.id);
+      }
+    }
+    if (Array.isArray(parsed.claims)) {
+      for (const claim of parsed.claims) {
+        if (!claim || !claim.id || !claim.job || !claim.entity_id || !claim.stage) continue;
+        claims.set(claimKey(claim.job, claim.entity_id, claim.stage), claim);
+        claimsById.set(claim.id, claim);
       }
     }
   } catch (err) {
@@ -402,6 +410,100 @@ async function trackAnalyticsSupabase(event) {
     payload: event,
   });
   if (error) throw persistenceError(error.message);
+}
+
+async function claimStageSupabase({ job, entityId, stage, channel = null, dryRun = false, payload = {} }) {
+  const claim = {
+    id: newClaimId(),
+    job,
+    entity_id: entityId,
+    stage,
+    status: 'claimed',
+    channel,
+    provider_ref: null,
+    dry_run: Boolean(dryRun),
+    payload,
+  };
+
+  const { data, error } = await supabase
+    .from('automation_claims')
+    .insert(claim)
+    .select('*')
+    .single();
+
+  if (error) {
+    // 23505 = unique_violation on (job, entity_id, stage): another run owns it.
+    if (error.code === '23505' || error.status === 409) {
+      return { claimed: false, claim: null };
+    }
+    throw persistenceError(error.message);
+  }
+
+  return { claimed: true, claim: data ? { ...data } : claim };
+}
+
+async function completeClaimSupabase(id, { status = 'sent', providerRef = null } = {}) {
+  if (!id) return;
+  const { error } = await supabase
+    .from('automation_claims')
+    .update({ status, provider_ref: providerRef })
+    .eq('id', id);
+  if (error) throw persistenceError(error.message);
+}
+
+async function listClaimsSupabase({ job, limit = 500 } = {}) {
+  let query = supabase.from('automation_claims').select('*').order('created_at', { ascending: false }).limit(limit);
+  if (job && job !== 'all') query = query.eq('job', job);
+  const { data, error } = await query;
+  if (error) throw persistenceError(error.message);
+  return data || [];
+}
+
+async function listQuotesPendingReviewSinceSupabase(cutoffIso, limit) {
+  // Quote status lives only in `data`; widen the fetch so post-filtering does
+  // not starve the batch when newer converted quotes dominate the page.
+  const { data, error } = await supabase
+    .from('quotes')
+    .select('*')
+    .gte('created_at', cutoffIso)
+    .order('created_at', { ascending: false })
+    .limit(Math.min(limit * 4, 1000));
+  if (error) throw persistenceError(error.message);
+  return (data || []).map(hydrate).filter((q) => q && q.status === 'pending_review').slice(0, limit);
+}
+
+async function listInvoicesDueOnOrBeforeSupabase(day, { statuses, limit }) {
+  const { data, error } = await supabase
+    .from('invoices')
+    .select('*')
+    .in('status', statuses)
+    .order('created_at', { ascending: false })
+    .limit(Math.min(limit * 4, 1000));
+  if (error) throw persistenceError(error.message);
+  return (data || []).map(hydrate).filter((inv) => inv && inv.due_date && inv.due_date <= day).slice(0, limit);
+}
+
+async function listWorkOrdersCompletedBeforeSupabase(cutoffIso, limit) {
+  const { data, error } = await supabase
+    .from('work_orders')
+    .select('*')
+    .eq('status', 'completed')
+    .order('created_at', { ascending: false })
+    .limit(Math.min(limit * 2, 1000));
+  if (error) throw persistenceError(error.message);
+  const cut = Date.parse(cutoffIso);
+  return (data || []).map(hydrate).filter((wo) => wo && Date.parse(wo.completed_at || 0) < cut).slice(0, limit);
+}
+
+async function listSettledPaymentsSupabase({ statuses, limit }) {
+  const { data, error } = await supabase
+    .from('payments')
+    .select('*')
+    .in('status', statuses)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw persistenceError(error.message);
+  return (data || []).map(hydrate);
 }
 
 // ---------------- Unified store API ----------------
@@ -799,6 +901,109 @@ export const store = {
       return data || [];
     }
     return [...mockLeads].sort((a, b) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0)).slice(0, limit);
+  },
+
+  // ---------------- Automation claim ledger ----------------
+  // One claim per (job, entity, stage). Claiming before sending makes every
+  // scheduled job at-most-once per stage even when cron runs overlap.
+
+  async claimStage({ job, entityId, stage, channel = null, dryRun = false, payload = {} }) {
+    assertStoreAvailable();
+    if (willUseSupabase()) return claimStageSupabase({ job, entityId, stage, channel, dryRun, payload });
+    const key = claimKey(job, entityId, stage);
+    const existing = claims.get(key);
+    if (existing) return { claimed: false, claim: existing };
+    const claim = {
+      id: newClaimId(),
+      job,
+      entity_id: entityId,
+      stage,
+      status: 'claimed',
+      channel,
+      provider_ref: null,
+      dry_run: Boolean(dryRun),
+      payload,
+      created_at: new Date().toISOString(),
+    };
+    claims.set(key, claim);
+    claimsById.set(claim.id, claim);
+    persistToDisk();
+    return { claimed: true, claim };
+  },
+
+  async completeClaim(id, { status = 'sent', providerRef = null } = {}) {
+    assertStoreAvailable();
+    if (willUseSupabase()) return completeClaimSupabase(id, { status, providerRef });
+    const claim = claimsById.get(id);
+    if (!claim) return;
+    claim.status = status;
+    claim.provider_ref = providerRef;
+    persistToDisk();
+  },
+
+  async listClaims({ job, limit = 500 } = {}) {
+    assertStoreAvailable();
+    if (willUseSupabase()) return listClaimsSupabase({ job, limit });
+    let list = Array.from(claimsById.values());
+    if (job && job !== 'all') list = list.filter((c) => c.job === job);
+    return list
+      .sort((a, b) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0))
+      .slice(0, limit);
+  },
+
+  async listQuotesPendingReviewSince(cutoffIso, limit = 200) {
+    assertStoreAvailable();
+    if (willUseSupabase()) return listQuotesPendingReviewSinceSupabase(cutoffIso, limit);
+    const cut = Date.parse(cutoffIso);
+    return Array.from(quotes.values())
+      .filter((q) => q && q.status === 'pending_review' && Date.parse(q.created_at || 0) >= cut)
+      .sort((a, b) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0))
+      .slice(0, limit);
+  },
+
+  async listInvoicesDueOnOrBefore(day, { statuses = ['unpaid', 'partially_paid'], limit = 200 } = {}) {
+    assertStoreAvailable();
+    if (willUseSupabase()) return listInvoicesDueOnOrBeforeSupabase(day, { statuses, limit });
+    return Array.from(invoices.values())
+      .filter((inv) => inv && statuses.includes(inv.status) && inv.due_date && inv.due_date <= day)
+      .sort((a, b) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0))
+      .slice(0, limit);
+  },
+
+  async listWorkOrdersCompletedBefore(cutoffIso, limit = 200) {
+    assertStoreAvailable();
+    if (willUseSupabase()) return listWorkOrdersCompletedBeforeSupabase(cutoffIso, limit);
+    const cut = Date.parse(cutoffIso);
+    return Array.from(workOrders.values())
+      .filter((wo) => wo && wo.status === 'completed' && Date.parse(wo.completed_at || 0) < cut)
+      .sort((a, b) => Date.parse(b.completed_at || 0) - Date.parse(a.completed_at || 0))
+      .slice(0, limit);
+  },
+
+  async listSettledPayments({ statuses = ['success', 'completed'], limit = 200 } = {}) {
+    assertStoreAvailable();
+    if (willUseSupabase()) return listSettledPaymentsSupabase({ statuses, limit });
+    return Array.from(payments.values())
+      .filter((p) => p && statuses.includes(p.status))
+      .sort((a, b) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0))
+      .slice(0, limit);
+  },
+
+  // Load-test helper: clears the in-memory backend between scenario runs.
+  __resetMemoryStore() {
+    if (willUseSupabase()) {
+      throw new Error('Refusing to reset the Supabase-backed store.');
+    }
+    clients.clear();
+    workOrders.clear();
+    invoices.clear();
+    quotes.clear();
+    payments.clear();
+    paymentsByCheckout.clear();
+    claims.clear();
+    claimsById.clear();
+    mockLeads.length = 0;
+    analyticsEvents.length = 0;
   },
 
   async adminDashboardStats() {

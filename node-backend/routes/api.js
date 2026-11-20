@@ -21,6 +21,7 @@ import { checkSupabaseReachability } from '../config/supabase.js';
 import { auditRuntimeConfig } from '../config/runtime.js';
 import { isMpesaConfigured } from '../services/mpesa.js';
 import { store } from '../services/store.js';
+import { automationsHandler } from '../services/automations.js';
 import {
   verifyAdminToken,
   getAdminStats,
@@ -242,6 +243,11 @@ router.get('/mpesa/status/:checkoutRequestId', mpesaStatus);
 // Vercel Cron invokes its target with GET; admins and local jobs may POST.
 router.get('/mpesa/reconcile', requireAdmin, reconcileHandler);
 router.post('/mpesa/reconcile', requireAdmin, reconcileHandler);
+
+// Scheduled business automations (quote follow-ups, dunning, loyalty, reviews).
+// GET is used by Vercel/GitHub cron; POST is for manual admin runs.
+router.get('/automations/run', requireAdmin, automationsHandler);
+router.post('/automations/run', requireAdmin, automationsHandler);
 router.get('/invoices/:invoiceId', getInvoice);
 
 // Promo Coupons

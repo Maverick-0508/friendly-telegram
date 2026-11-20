@@ -44,9 +44,21 @@ export function auditRuntimeConfig() {
   }
 
   if (!env('ADMIN_API_TOKEN') && !env('CRON_SECRET')) {
-    warnings.push('Neither ADMIN_API_TOKEN nor CRON_SECRET is set; /api/system/status and /api/mpesa/reconcile are disabled.');
+    warnings.push('Neither ADMIN_API_TOKEN nor CRON_SECRET is set; /api/system/status, /api/mpesa/reconcile and /api/automations/run are disabled in production.');
   } else if (!env('CRON_SECRET')) {
-    warnings.push('CRON_SECRET is not set; the Vercel cron cannot run payment reconciliation.');
+    warnings.push('CRON_SECRET is not set; the Vercel cron cannot run payment reconciliation or scheduled automations.');
+  }
+
+  const automationsEnabled = env('AUTOMATION_ENABLED').toLowerCase() === 'true';
+  const automationDryRun = env('AUTOMATION_DRY_RUN').toLowerCase() === 'true';
+  if (!isEmailConfigured() && !isSmsConfigured()) {
+    warnings.push('Business automations (quote follow-ups, dunning, reviews) will be skipped until an email or SMS provider is configured.');
+  }
+  if (automationsEnabled && isProduction && !env('CRON_SECRET')) {
+    warnings.push('AUTOMATION_ENABLED is true but CRON_SECRET is not set; the automations endpoint is hidden in production.');
+  }
+  if (automationDryRun) {
+    warnings.push('AUTOMATION_DRY_RUN=true; automation stages are claimed but no messages are sent.');
   }
 
   if (!isEmailConfigured() || !ownerEmail()) {
@@ -71,6 +83,9 @@ export function auditRuntimeConfig() {
     client_sms: isSmsConfigured(),
     admin_token_set: Boolean(env('ADMIN_API_TOKEN')),
     cron_secret_set: Boolean(env('CRON_SECRET')),
+    automations_enabled: automationsEnabled,
+    automation_dry_run: automationDryRun,
+    automation_gateway: Boolean(env('CRON_SECRET')),
     cors_origin_set: Boolean(env('CORS_ORIGIN')),
     kra_pin_set: Boolean(env('COMPANY_KRA_PIN')),
     public_site_url: publicSiteUrl(),

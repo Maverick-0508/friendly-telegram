@@ -40,6 +40,12 @@ function siteUrl() {
   return (env('PUBLIC_SITE_URL') || 'https://lawncraft.vercel.app').replace(/\/+$/, '');
 }
 
+// Tests and the load harness point these at a local mock server, mirroring
+// MPESA_BASE_URL for Daraja.
+function providerUrl(name, fallback) {
+  return (env(name) || fallback).replace(/\/+$/, '');
+}
+
 async function fetchWithTimeout(url, options, timeoutMs = DEFAULT_TIMEOUT_MS) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -65,7 +71,7 @@ export async function sendEmail({ to, subject, html, text }) {
   while (attempt < maxRetries) {
     attempt++;
     try {
-      const res = await fetchWithTimeout('https://api.resend.com/emails', {
+      const res = await fetchWithTimeout(`${providerUrl('RESEND_BASE_URL', 'https://api.resend.com')}/emails`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${env('RESEND_API_KEY')}`,
@@ -130,7 +136,7 @@ export async function sendSms({ to, message }) {
   while (attempt < maxRetries) {
     attempt++;
     try {
-      const res = await fetchWithTimeout('https://api.africastalking.com/version1/messaging', {
+      const res = await fetchWithTimeout(`${providerUrl('AFRICAS_TALKING_BASE_URL', 'https://api.africastalking.com')}/version1/messaging`, {
         method: 'POST',
         headers: {
           apiKey: env('AFRICAS_TALKING_API_KEY'),
