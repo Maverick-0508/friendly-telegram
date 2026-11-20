@@ -396,6 +396,19 @@ test('dry runs claim stages without sending anything', async () => {
     notify.reset();
     await runJob('quotes');
     assert.equal(notify.requests.length, 0, 'dry-run claims also prevent duplicates');
+
+    const payClient = await seedClient();
+    const payInvoice = await seedInvoice(payClient, { status: 'paid', dueDate: dayOffset(-1), balance: 0 });
+    const payment = await seedPayment(payClient, payInvoice, { amount: 12000 });
+    const loyaltyRun = await runJob('loyalty');
+    assert.equal(loyaltyRun.status, 200);
+    assert.equal(loyaltyRun.body.dry_run_count, 1);
+    assert.equal(notify.requests.length, 0);
+    const unchanged = await store.findClient(payClient.id);
+    assert.equal(unchanged.loyalty.points_balance, 100, 'dry run must not credit points');
+    const dryClaim = (await store.listClaims({ job: 'loyalty' })).find((c) => c.entity_id === payment.id);
+    assert.ok(dryClaim, 'loyalty dry run claims the payment');
+    assert.equal(dryClaim.status, 'dry_run');
   } finally {
     process.env.AUTOMATION_DRY_RUN = '';
   }

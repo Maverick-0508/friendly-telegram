@@ -45,12 +45,16 @@ the value). Everything marked required must exist before go-live.
 | `MPESA_SHORTCODE` / `MPESA_PASSKEY` | yes | PayBill/Till + Lipa Na M-Pesa passkey |
 | `MPESA_CALLBACK_URL` | yes | `https://<your-domain>/api/mpesa/callback` |
 | `MPESA_CALLBACK_TOKEN` | yes | random secret from step 2 |
-| `CRON_SECRET` | yes | random secret; Vercel sends it as `Authorization: Bearer` to the cron |
-| `ADMIN_API_TOKEN` | yes | random secret for `/api/system/status`, manual reconciliation and the supervisor confirm endpoint |
+| `CRON_SECRET` | yes | random secret; Vercel and GitHub Actions send it as `Authorization: Bearer` |
+| `ADMIN_API_TOKEN` | yes | random secret for `/api/system/status`, manual reconciliation, `/api/automations/run` and the supervisor confirm endpoint |
 | `BOOKING_MODE` | optional | `confirm` (default): bookings are requests a supervisor confirms before payment; `instant` to make estimates payable immediately |
 | `COMPANY_KRA_PIN` | yes | printed on tax receipts |
-| `RESEND_API_KEY`, `NOTIFY_FROM_EMAIL`, `OWNER_EMAIL` | recommended | owner email alerts for leads, quotes and orders |
-| `AFRICAS_TALKING_USERNAME`, `AFRICAS_TALKING_API_KEY`, `AFRICAS_TALKING_SENDER` | recommended | booking confirmations and receipts by SMS |
+| `RESEND_API_KEY`, `NOTIFY_FROM_EMAIL`, `OWNER_EMAIL` | recommended | owner email alerts and automation emails (quotes, dunning, escalation) |
+| `AFRICAS_TALKING_USERNAME`, `AFRICAS_TALKING_API_KEY`, `AFRICAS_TALKING_SENDER` | recommended | booking confirmations, receipts and automation SMS |
+| `AUTOMATION_DRY_RUN` | optional | `true` claims stages and logs messages without sending; use for the first rehearsal |
+| `AUTOMATION_BATCH_LIMIT`, `AUTOMATION_TIME_BUDGET_MS` | optional | new claims per job per run (200) and wall-clock budget per run (25000ms) |
+| `QUOTE_FOLLOWUP_1_HOURS`, `QUOTE_FOLLOWUP_2_HOURS`, `QUOTE_MAX_AGE_DAYS`, `DUNNING_DAYS_BEFORE_DUE`, `DUNNING_PLUS_3_DAYS`, `DUNNING_PLUS_7_DAYS`, `LOYALTY_KSH_PER_POINT`, `REVIEW_DELAY_HOURS`, `REVIEW_URL` | optional | automation stage windows and loyalty economics |
+| `AUTOMATION_ENABLED`, `AUTOMATION_INTERVAL_MS`, `AUTOMATION_INITIAL_DELAY_MS` | optional | in-process timer for Docker/VM hosts only; leave `false` on Vercel |
 | `PRICING_JSON`, `COUPONS_JSON` | optional | override the price catalogue / promo codes |
 
 `NODE_ENV=production` is set by Vercel automatically.
@@ -68,10 +72,15 @@ done
 ## 4. Vercel project settings
 
 - **Cron**: `vercel.json` schedules `GET /api/mpesa/reconcile` daily at 02:00 UTC
-  (the Hobby plan allows one run per day; on Pro you may tighten it, e.g.
-  `*/30 * * * *`). The status endpoint already queries Daraja for any payment
-  still pending after 20 seconds, so the cron is a safety net, not the primary
-  path.
+  and `GET /api/automations/run?job=all` daily at 03:00 UTC (the Hobby plan
+  allows two daily crons; on Pro you may tighten both, e.g. `*/30 * * * *`).
+  The payment status endpoint already queries Daraja for any payment still
+  pending after 20 seconds, so the reconcile cron is a safety net, not the
+  primary path.
+- **Business automations**: every run claims each (job, entity, stage) in the
+  `automation_claims` table before sending, so the Vercel cron, the GitHub
+  Actions workflow and manual runs can overlap without double-texting or
+  double-crediting loyalty points.
 - **Firewall → Rate limiting**: the in-process limiter cannot share counters
   between serverless instances. Add platform rules such as:
   - `/api/mpesa/stkpush`: 10 requests / minute / IP
@@ -82,6 +91,31 @@ done
 - **Domains**: add your custom domain, then update `CORS_ORIGIN`,
   `PUBLIC_SITE_URL`, `MPESA_CALLBACK_URL`, `public/robots.txt`,
   `public/sitemap.xml` and the canonical URLs in `public/*.html`.
+
+## 4b. GitHub Actions automations
+
+`.github/workflows/automations.yml` runs the automation endpoint at 05:00 and
+11:00 UTC (plus a manual dispatch). Configure it in the repository:
+
+- **Variable** `SITE_URL` = `https://<your-domain>` (Settings → Variables →
+  Actions).
+- **Secret** `CRON_SECRET` = the same random value used on Vercel (Settings →
+  Secrets → Actions).
+
+The workflow fails on any non-200 response, so a broken deployment is visible
+in the Actions tab. Runs are safe to overlap: the claim ledger makes each
+stage exactly-once.
+
+For a first rehearsal set `AUTOMATION_DRY_RUN=true` on Vercel, trigger the
+workflow manually, then inspect the `[automations]` line in the Vercel logs.
+Unset it when the output looks right.
+
+### Docker / VM hosts
+
+Vercel and GitHub Actions schedule the endpoint externally. On a host that
+keeps the process running, set `AUTOMATION_ENABLED=true` instead: the server
+runs an in-process timer (`AUTOMATION_INITIAL_DELAY_MS` then
+`AUTOMATION_INTERVAL_MS`, default daily) with an overlap guard.
 
 ## 5. Verify
 
@@ -97,6 +131,14 @@ feature that is still switched off. With `ADMIN_API_TOKEN`:
 curl -s -H "x-admin-token: $ADMIN_API_TOKEN" https://<your-domain>/api/system/status | jq .config
 ```
 
+Run the automations on demand (set `AUTOMATION_DRY_RUN=true` on Vercel first to
+claim stages and log messages without sending anything):
+
+```bash
+curl -s -H "Authorization: Bearer $CRON_SECRET" \
+  "https://<your-domain>/api/automations/run?job=all" | jq .
+```
+
 Then run one real KSh 1 payment end to end (STK prompt → receipt page) and
 confirm the invoice flips to `paid` and the SMS/email arrive.
 
@@ -108,4 +150,8 @@ confirm the invoice flips to `paid` and the SMS/email arrive.
   ever exposed; changing the callback token requires re-registering the callback
   URL with Safaricom.
 - Watch the Vercel function logs for lines prefixed `[config] PROBLEM` (printed
-  at cold start) and `[payments] Partial payment`.
+  at cold start), `[payments] Partial payment` and the daily `[automations]`
+  summary (`checked/claimed/sent/skipped/errors/skipped_for_time`).
+- `npm run test:load:ci` proves the claim ledger under racing runs in CI;
+  `npm run test:load` adds latency thresholds and should be run locally before
+  changing automation queries.

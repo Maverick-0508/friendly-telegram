@@ -53,6 +53,9 @@ dynamic SEO-friendly routes (`/tracker/:id`, `/pay/:id`, `/receipt/:id`,
 - `GET|POST /api/mpesa/reconcile` — batch lost-callback reconciliation;
   `ADMIN_API_TOKEN` or `CRON_SECRET` bearer required in production (Vercel
   Cron uses GET)
+- `GET|POST /api/automations/run?job=quotes|dunning|loyalty|review|all` —
+  scheduled business automations (follow-ups, dunning, loyalty, reviews);
+  same admin/cron guard as the reconcile endpoint
 - `GET /api/invoices/:invoiceId`
 - `POST /api/coupons/validate`
 - `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` —
@@ -88,6 +91,43 @@ job reconciles stale `pending` payments:
   never left waiting on the cron.
 - Reconciliation is idempotent; a replayed callback never settles or debits an
   invoice twice.
+
+### Business automations
+
+Four retention jobs run behind one protected endpoint
+(`/api/automations/run?job=all`), implemented in
+`node-backend/services/automations.js`:
+
+- **quotes** — 24h and 72h follow-ups for quotes still `pending_review`
+  (SMS, email fallback); at 72h the owner also gets an escalation email.
+  Quotes with a newer work order or payable invoice are treated as converted.
+- **dunning** — invoice reminders at due−3, due day, +3 and +7 days for
+  `unpaid`/`partially_paid` invoices with a positive balance (SMS plus an
+  email copy when an address is on file). The invoice is re-read right before
+  sending, so an invoice paid in the meantime is skipped.
+- **loyalty** — awards points for every settled payment
+  (`floor(amount / LOYALTY_KSH_PER_POINT)`, default 1 point per KSh 100) and
+  recomputes tier and cash value.
+- **review** — a review-request SMS 24h after a job is `completed` whose
+  invoice is `paid`.
+
+Exactly-once delivery comes from the `automation_claims` table: every
+(job, entity, stage) is claimed **before** a message is sent, so overlapping
+runs skip stages another run already owns. A crash between claim and send is
+at-most-once (never a duplicate); failures are counted in the response summary
+and in the `[automations]` log line.
+
+Scheduling options (they can run together; claims make them safe):
+
+- `vercel.json` adds a second daily cron, `GET /api/automations/run?job=all`
+  at 03:00 UTC (Vercel Hobby allows two daily crons).
+- `.github/workflows/automations.yml` runs the endpoint twice a day via
+  GitHub Actions (`workflow_dispatch` also available). Set the repository
+  variable `SITE_URL` and the secret `CRON_SECRET` for that workflow.
+- On Docker/VM hosts set `AUTOMATION_ENABLED=true` to run an in-process timer
+  (`AUTOMATION_INITIAL_DELAY_MS`, `AUTOMATION_INTERVAL_MS`) instead.
+- `AUTOMATION_DRY_RUN=true` claims stages and logs the planned message
+  without contacting any provider — useful for a first rehearsal.
 
 ### Booking flow and the supervisor dashboard contract
 
@@ -199,11 +239,20 @@ See `.env.example` for the full list. Key variables:
 - `PUBLIC_SITE_URL` — public site URL used in SMS links
 - `PRICING_JSON` — optional override of the server-side price catalogue
 - `ADMIN_API_TOKEN` — gates admin endpoints in production
-- `CRON_SECRET` — bearer token that authorizes the Vercel cron
-  (`/api/mpesa/reconcile`)
+- `CRON_SECRET` — bearer token that authorizes the Vercel crons
+  (`/api/mpesa/reconcile`, `/api/automations/run`)
 - `RECONCILE_GRACE_MS` (default 900000), `RECONCILE_INTERVAL_MS` (default
   900000), `RECONCILE_INITIAL_DELAY_MS` (default 60000) — lost-callback
   reconciliation timing
+- `AUTOMATION_ENABLED` (local/Docker timer; default false),
+  `AUTOMATION_DRY_RUN`, `AUTOMATION_BATCH_LIMIT` (default 200),
+  `AUTOMATION_TIME_BUDGET_MS` (default 25000),
+  `AUTOMATION_INTERVAL_MS`, `AUTOMATION_INITIAL_DELAY_MS` — business
+  automation scheduling and run limits
+- `QUOTE_FOLLOWUP_1_HOURS`, `QUOTE_FOLLOWUP_2_HOURS`, `QUOTE_MAX_AGE_DAYS`,
+  `DUNNING_DAYS_BEFORE_DUE`, `DUNNING_PLUS_3_DAYS`, `DUNNING_PLUS_7_DAYS`,
+  `LOYALTY_KSH_PER_POINT`, `REVIEW_DELAY_HOURS`, `REVIEW_URL` — automation
+  stage windows and loyalty economics
 - `RESEND_API_KEY`, `NOTIFY_FROM_EMAIL`, `OWNER_EMAIL` — transactional email
   notifications (owner alerts; skipped when unconfigured)
 - `AFRICAS_TALKING_USERNAME`, `AFRICAS_TALKING_API_KEY`,
@@ -225,8 +274,8 @@ Production recommendations:
 ## Database
 
 Run `supabase-schema.sql` once in the Supabase SQL Editor (idempotent). It creates
-`clients`, `work_orders`, `invoices`, `quotes`, `leads`, `payments` and
-`analytics`.
+`clients`, `work_orders`, `invoices`, `quotes`, `leads`, `payments`,
+`analytics` and the `automation_claims` ledger.
 
 ## CI / Verification
 
@@ -235,6 +284,8 @@ npm run lint
 npm test
 npm run test:smoke
 npm run test:pwa
+npm run test:load:ci   # 8s mixed traffic + racing automation runs
+npm run test:load      # full 20s run with latency thresholds
 ```
 
 Tests pin every runtime variable to empty before importing the app (see

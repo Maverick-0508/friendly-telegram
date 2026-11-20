@@ -33,7 +33,9 @@ function env(name) {
 }
 
 function num(name, fallback) {
-  const value = Number(env(name));
+  const raw = env(name);
+  if (!raw) return fallback;
+  const value = Number(raw);
   return Number.isFinite(value) && value >= 0 ? value : fallback;
 }
 
@@ -74,8 +76,12 @@ function dayDelta(dueDay, todayDay) {
 }
 
 function config() {
+  const batchLimit = num('AUTOMATION_BATCH_LIMIT', 200);
   return {
-    batchLimit: num('AUTOMATION_BATCH_LIMIT', 200),
+    batchLimit,
+    // Scan further than we send so stages claimed by an earlier run do not
+    // hide the rest of a backlog behind the batch window.
+    scanLimit: Math.min(Math.max(1, batchLimit) * 5, 2000),
     budgetMs: num('AUTOMATION_TIME_BUDGET_MS', 25000),
     quoteFollowup1H: num('QUOTE_FOLLOWUP_1_HOURS', 24),
     quoteFollowup2H: num('QUOTE_FOLLOWUP_2_HOURS', 72),
@@ -212,7 +218,7 @@ function quoteEmail(quote, stageNumber) {
 
 async function runQuotes({ now, cfg, summary, startedAt }) {
   const cutoff = new Date(now.getTime() - cfg.quoteMaxAgeDays * DAY_MS).toISOString();
-  const quotes = await store.listQuotesPendingReviewSince(cutoff, cfg.batchLimit);
+  const quotes = await store.listQuotesPendingReviewSince(cutoff, cfg.scanLimit);
   const dryRun = isDryRun();
 
   for (const quote of quotes) {
@@ -220,6 +226,7 @@ async function runQuotes({ now, cfg, summary, startedAt }) {
       summary.skipped_for_time += 1;
       break;
     }
+    if (summary.claimed >= cfg.batchLimit) break;
     summary.checked += 1;
     try {
       if (!quote || quote.status !== 'pending_review') {
@@ -348,7 +355,7 @@ async function runDunning({ now, cfg, summary, startedAt }) {
   const horizon = addDaysDay(now, cfg.daysBeforeDue);
   const invoices = await store.listInvoicesDueOnOrBefore(horizon, {
     statuses: PAYABLE_STATUSES,
-    limit: cfg.batchLimit,
+    limit: cfg.scanLimit,
   });
   const dryRun = isDryRun();
 
@@ -357,6 +364,7 @@ async function runDunning({ now, cfg, summary, startedAt }) {
       summary.skipped_for_time += 1;
       break;
     }
+    if (summary.claimed >= cfg.batchLimit) break;
     summary.checked += 1;
     try {
       if (!listed || !PAYABLE_STATUSES.includes(listed.status) || !listed.due_date) {
@@ -450,7 +458,7 @@ function recomputeLoyalty(loyalty, earnedPoints, now) {
 async function runLoyalty({ now, cfg, summary, startedAt }) {
   const payments = await store.listSettledPayments({
     statuses: ['success', 'completed'],
-    limit: cfg.batchLimit,
+    limit: cfg.scanLimit,
   });
 
   for (const payment of payments) {
@@ -458,6 +466,7 @@ async function runLoyalty({ now, cfg, summary, startedAt }) {
       summary.skipped_for_time += 1;
       break;
     }
+    if (summary.claimed >= cfg.batchLimit) break;
     summary.checked += 1;
     try {
       const amountPaid = Number(payment?.amount_paid ?? payment?.amount) || 0;
@@ -485,6 +494,13 @@ async function runLoyalty({ now, cfg, summary, startedAt }) {
       if (points <= 0) {
         await store.completeClaim(claim.id, { status: 'skipped' });
         summary.skipped += 1;
+        continue;
+      }
+
+      if (isDryRun()) {
+        console.log(`[automations:dry-run] loyalty/earn ${payment.id} -> +${points} points`);
+        await store.completeClaim(claim.id, { status: 'dry_run' });
+        summary.dry_run_count += 1;
         continue;
       }
 
@@ -521,7 +537,7 @@ function reviewSms(order, cfg) {
 
 async function runReviews({ now, cfg, summary, startedAt }) {
   const cutoff = new Date(now.getTime() - cfg.reviewDelayHours * HOUR_MS).toISOString();
-  const orders = await store.listWorkOrdersCompletedBefore(cutoff, cfg.batchLimit);
+  const orders = await store.listWorkOrdersCompletedBefore(cutoff, cfg.scanLimit);
   const dryRun = isDryRun();
 
   for (const order of orders) {
@@ -529,6 +545,7 @@ async function runReviews({ now, cfg, summary, startedAt }) {
       summary.skipped_for_time += 1;
       break;
     }
+    if (summary.claimed >= cfg.batchLimit) break;
     summary.checked += 1;
     try {
       if (!order || order.status !== 'completed' || !order.client_phone) {

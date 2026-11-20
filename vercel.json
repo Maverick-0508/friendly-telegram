@@ -9,6 +9,10 @@
     {
       "path": "/api/mpesa/reconcile",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/automations/run?job=all",
+      "schedule": "0 3 * * *"
     }
   ]
 }

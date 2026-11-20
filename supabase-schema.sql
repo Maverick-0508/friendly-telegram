@@ -161,6 +161,27 @@ create table if not exists public.analytics (
 
 create index if not exists analytics_created_at_idx on public.analytics (created_at);
 
+-- Automation claims (exactly-once ledger for scheduled follow-ups, dunning,
+-- loyalty accrual and review requests). The unique index is what makes
+-- overlapping cron runs safe: the second insert fails and that run skips.
+create table if not exists public.automation_claims (
+  id text primary key,
+  job text not null,
+  entity_id text not null,
+  stage text not null,
+  status text not null default 'claimed',   -- claimed | sent | dry_run | failed | skipped
+  channel text,
+  provider_ref text,
+  dry_run boolean not null default false,
+  payload jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create unique index if not exists automation_claims_unique_stage
+  on public.automation_claims (job, entity_id, stage);
+create index if not exists automation_claims_job_idx
+  on public.automation_claims (job, created_at desc);
+
 -- Clean up: pre-existing tables (from earlier iterations of this project) used
 -- bigint/serial identity ids and may be referenced by legacy foreign keys
 -- (e.g. contacts.client_id). Drop any FK pointing at our tables so we can
@@ -248,3 +269,4 @@ alter table public.quotes enable row level security;
 alter table public.leads enable row level security;
 alter table public.payments enable row level security;
 alter table public.analytics enable row level security;
+alter table public.automation_claims enable row level security;

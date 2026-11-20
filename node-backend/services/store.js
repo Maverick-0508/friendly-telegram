@@ -466,7 +466,7 @@ async function listQuotesPendingReviewSinceSupabase(cutoffIso, limit) {
     .from('quotes')
     .select('*')
     .gte('created_at', cutoffIso)
-    .order('created_at', { ascending: false })
+    .order('created_at', { ascending: true })
     .limit(Math.min(limit * 4, 1000));
   if (error) throw persistenceError(error.message);
   return (data || []).map(hydrate).filter((q) => q && q.status === 'pending_review').slice(0, limit);
@@ -477,7 +477,7 @@ async function listInvoicesDueOnOrBeforeSupabase(day, { statuses, limit }) {
     .from('invoices')
     .select('*')
     .in('status', statuses)
-    .order('created_at', { ascending: false })
+    .order('created_at', { ascending: true })
     .limit(Math.min(limit * 4, 1000));
   if (error) throw persistenceError(error.message);
   return (data || []).map(hydrate).filter((inv) => inv && inv.due_date && inv.due_date <= day).slice(0, limit);
@@ -488,7 +488,7 @@ async function listWorkOrdersCompletedBeforeSupabase(cutoffIso, limit) {
     .from('work_orders')
     .select('*')
     .eq('status', 'completed')
-    .order('created_at', { ascending: false })
+    .order('created_at', { ascending: true })
     .limit(Math.min(limit * 2, 1000));
   if (error) throw persistenceError(error.message);
   const cut = Date.parse(cutoffIso);
@@ -500,7 +500,7 @@ async function listSettledPaymentsSupabase({ statuses, limit }) {
     .from('payments')
     .select('*')
     .in('status', statuses)
-    .order('created_at', { ascending: false })
+    .order('created_at', { ascending: true })
     .limit(limit);
   if (error) throw persistenceError(error.message);
   return (data || []).map(hydrate);
@@ -955,9 +955,11 @@ export const store = {
     assertStoreAvailable();
     if (willUseSupabase()) return listQuotesPendingReviewSinceSupabase(cutoffIso, limit);
     const cut = Date.parse(cutoffIso);
+    // Oldest first: fresh backlog must never push eligible older quotes out of
+    // the batch window.
     return Array.from(quotes.values())
       .filter((q) => q && q.status === 'pending_review' && Date.parse(q.created_at || 0) >= cut)
-      .sort((a, b) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0))
+      .sort((a, b) => Date.parse(a.created_at || 0) - Date.parse(b.created_at || 0))
       .slice(0, limit);
   },
 
@@ -966,7 +968,7 @@ export const store = {
     if (willUseSupabase()) return listInvoicesDueOnOrBeforeSupabase(day, { statuses, limit });
     return Array.from(invoices.values())
       .filter((inv) => inv && statuses.includes(inv.status) && inv.due_date && inv.due_date <= day)
-      .sort((a, b) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0))
+      .sort((a, b) => Date.parse(a.created_at || 0) - Date.parse(b.created_at || 0))
       .slice(0, limit);
   },
 
@@ -976,7 +978,7 @@ export const store = {
     const cut = Date.parse(cutoffIso);
     return Array.from(workOrders.values())
       .filter((wo) => wo && wo.status === 'completed' && Date.parse(wo.completed_at || 0) < cut)
-      .sort((a, b) => Date.parse(b.completed_at || 0) - Date.parse(a.completed_at || 0))
+      .sort((a, b) => Date.parse(a.completed_at || 0) - Date.parse(b.completed_at || 0))
       .slice(0, limit);
   },
 
@@ -985,7 +987,7 @@ export const store = {
     if (willUseSupabase()) return listSettledPaymentsSupabase({ statuses, limit });
     return Array.from(payments.values())
       .filter((p) => p && statuses.includes(p.status))
-      .sort((a, b) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0))
+      .sort((a, b) => Date.parse(a.created_at || 0) - Date.parse(b.created_at || 0))
       .slice(0, limit);
   },
 
