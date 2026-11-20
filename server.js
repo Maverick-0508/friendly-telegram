@@ -1,6 +1,7 @@
 import { createApp } from './app.js';
 import { reconcilePendingPayments } from './node-backend/controllers/portalController.js';
 import { logRuntimeConfig } from './node-backend/config/runtime.js';
+import { startAutomationTimer } from './node-backend/services/automations.js';
 
 const app = createApp();
 
@@ -42,6 +43,11 @@ if (!process.env.VERCEL) {
     setInterval(runReconciliation, intervalMs).unref();
   }, initialDelay);
   timer.unref();
+
+  // Business automations (quote follow-ups, dunning, loyalty, reviews) run
+  // in-process only when explicitly enabled. Vercel uses the /api/automations
+  // cron and GitHub Actions instead.
+  startAutomationTimer();
 }
 
 export default app;

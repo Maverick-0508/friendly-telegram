@@ -64,6 +64,8 @@ const API_ENDPOINTS = [
   { method: 'GET',  path: '/api/work-orders/nonexistent',                   expect: 404 },
   { method: 'GET',  path: '/api/mpesa/reconcile',                           expect: 200 },
   { method: 'POST', path: '/api/mpesa/reconcile',                           expect: 200 },
+  { method: 'GET',  path: '/api/automations/run?job=all',                   expect: 200 },
+  { method: 'POST', path: '/api/automations/run?job=all',                   expect: 200 },
   { method: 'POST', path: '/api/mpesa/stkpush',
     body: { phone: '+254700000004' },                                       expect: 503 },
   { method: 'GET',  path: '/api/invoices/nonexistent',                      expect: 404 },
