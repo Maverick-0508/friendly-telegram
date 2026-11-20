@@ -39,8 +39,18 @@ const invoices = new Map();
 const quotes = new Map();
 const payments = new Map();
 const paymentsByCheckout = new Map();
+const claims = new Map(); // `${job}|${entity_id}|${stage}` -> claim
+const claimsById = new Map();
 const mockLeads = [];
 const analyticsEvents = [];
+
+function claimKey(job, entityId, stage) {
+  return `${job}|${entityId}|${stage}`;
+}
+
+function newClaimId() {
+  return `ac_${globalThis.crypto.randomUUID().replace(/-/g, '')}`;
+}
 
 function normalizeIdentifier(raw) {
   if (!raw) return '';
