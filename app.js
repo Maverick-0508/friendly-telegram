@@ -311,12 +311,23 @@ app.use((req, res, next) => {
   // deploy propagates within minutes while repeat visits are served from cache.
   const staticCacheControl = (filePath) => {
     if (/[\\/]sw\.js$/.test(filePath)) return 'no-cache, no-store, must-revalidate';
+    
+    // Fingerprinted assets (content-hashed filenames) can be cached forever
+    if (/[\\/]dist[\\/]/.test(filePath) || /\.[a-f0-9]{8,}\.(?:min\.)?(?:css|js|mjs)$/i.test(filePath)) {
+      return 'public, max-age=31536000, s-maxage=31536000, immutable';
+    }
+    
+    // Other static assets (icons, images, fonts) get long cache with revalidation
     if (/[\\/]assets[\\/]/.test(filePath) || /\.(?:png|jpe?g|gif|svg|ico|webp|avif|woff2?|ttf)$/i.test(filePath)) {
       return 'public, max-age=86400, s-maxage=2592000, stale-while-revalidate=86400';
     }
+    
+    // Non-fingerprinted CSS/JS get shorter cache
     if (/\.(?:css|js|mjs|json|webmanifest|xml|txt)$/i.test(filePath)) {
-      return 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400';
+      return 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400';
     }
+    
+    // HTML and everything else
     return 'public, max-age=0, s-maxage=300, stale-while-revalidate=600';
   };
 
