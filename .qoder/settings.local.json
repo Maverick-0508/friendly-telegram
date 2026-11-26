@@ -138,7 +138,21 @@
       "Bash(npm run test:load 2>&1 | tail -26)",
       "Bash(npm run lint >/dev/null 2>&1 && echo \"lint OK\" && npm test 2>&1 | tail -9)",
       "Bash(npm run test:load:ci 2>&1 | tail -3 && npm run test:load 2>&1 | tail -6)",
-      "Bash(git status --short | head -40)"
+      "Bash(git status --short | head -40)",
+      "Bash(git log --oneline -6 && git rev-parse --abbrev-ref HEAD && git status -sb | head -1)",
+      "Bash(git add .github/workflows/automations.yml && git diff HEAD -- .env.example .github/workflows/ci.yml .github/workflows/automations.yml DEPLOYMENT.md README.md node-backend/services/automations.js node-backend/services/store.js package.json supabase-schema.sql tests/automations.test.js vercel.json scripts/load-test.mjs | grep -E '^\\\\+' | grep -inE '\\(sk_|re_[A-Za-z0-9]{10}|api[_-]?key\\\\s*[:=]\\\\s*[\"'\"'\"'][A-Za-z0-9]{12,}|secret\\\\s*[:=]\\\\s*[\"'\"'\"'][A-Za-z0-9]{16,}|-----BEGIN\\)' || echo \"no credential-like strings found\")",
+      "Bash(git commit -m \"$\\(cat <<'EOF'\nfeat: schedule business automations and add load test proving exactly-once delivery\n\nAdds a GitHub Actions workflow and a second Vercel cron for the automations\nendpoint, the automation_claims schema, and a zero-dependency load test\n\\(npm run test:load / test:load:ci, now in CI\\) that races parallel automation\nruns against live user traffic and checks claims, sends and loyalty credits.\n\nFixes found under load: an unset AUTOMATION_BATCH_LIMIT no longer resolves to\n0, automation queries drain backlogs oldest-first with a per-run claim cap so\nquote follow-ups are not starved, and dry runs no longer credit loyalty points.\nEOF\n\\)\" -- .env.example .github/workflows/ci.yml .github/workflows/automations.yml DEPLOYMENT.md README.md node-backend/services/automations.js node-backend/services/store.js package.json supabase-schema.sql tests/automations.test.js vercel.json scripts/load-test.mjs)",
+      "Bash(git log --oneline -3; echo \"-----\"; git status --short; echo \"-----\"; ls -la .git/index* 2>&1)",
+      "Bash(git show --stat --format='%h %s' 8d68d12 | tail -15; echo \"----- working tree vs HEAD:\"; git diff HEAD --stat)",
+      "Bash(git reset -q -- .env.example .github/workflows/ci.yml DEPLOYMENT.md README.md package.json supabase-schema.sql tests/automations.test.js vercel.json && git status --short)",
+      "Bash(git push origin main 2>&1; echo \"-----\"; git status -sb | head -1)",
+      "Bash(node -e \"const p=require\\('./package.json'\\);console.log\\(JSON.stringify\\(p.scripts,null,2\\)\\);console.log\\('engines',JSON.stringify\\(p.engines\\)\\)\"; echo \"-----\"; grep -nE \"^\\\\s*\\(- name|run:|node-version|[a-z_-]+:$\\)\" .github/workflows/ci.yml)",
+      "Bash(gh run list --branch main --limit 6 2>&1)",
+      "Bash(npm ls --depth=0 2>&1 | tail -15; echo \"== lint ==\"; npm run lint >/dev/null 2>&1 && echo \"lint OK\" || npm run lint 2>&1 | tail -15; echo \"== build:pages:check ==\"; npm run build:pages:check 2>&1 | tail -6; echo \"exit=$?\"; echo \"== build:css:check ==\"; npm run build:css:check 2>&1 | tail -6)",
+      "Bash(npm test 2>&1 | tail -12)",
+      "Bash(npm ls --depth=0 2>&1 | grep -iE \"missing|invalid|UNMET|ERR\" || echo \"deps: none missing/invalid \\(extraneous = no-save puppeteer install\\)\"; echo \"== smoke ==\"; npm run test:smoke 2>&1 | grep -E \"^# \\(tests|pass|fail\\)\"; echo \"== pwa ==\"; npm run test:pwa 2>&1 | tail -6; echo \"pwa exit=${PIPESTATUS[0]}\")",
+      "Bash(npm run test:load:ci 2>&1 | tail -22; echo \"exit=${PIPESTATUS[0]}\")",
+      "Bash(npm run build && npm run build:css && git status --short && git diff HEAD --stat)"
     ]
   }
 }
