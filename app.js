@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import express from 'express';
+import compression from 'compression';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -151,6 +152,10 @@ export function createApp() {
   const app = express();
 
   app.set('trust proxy', 1);
+
+  // Enable gzip/deflate compression for all responses.
+  // Must come before static serving and routes so every response is compressed.
+  app.use(compression());
 
   if (enforceHttps) {
     app.use((req, res, next) => {
@@ -321,7 +326,15 @@ app.use((req, res, next) => {
       index: 'index.html',
       dotfiles: 'ignore',
       setHeaders(res, filePath) {
-        res.setHeader('Cache-Control', staticCacheControl(filePath));
+        const cc = staticCacheControl(filePath);
+        res.setHeader('Cache-Control', cc);
+        // Add Expires header for compatibility with proxies and tools that
+        // expect it alongside Cache-Control (e.g. Pingdom).
+        const maxAgeMatch = cc.match(/max-age=(\d+)/);
+        if (maxAgeMatch) {
+          const seconds = parseInt(maxAgeMatch[1], 10);
+          res.setHeader('Expires', new Date(Date.now() + seconds * 1000).toUTCString());
+        }
       },
     })
   );
