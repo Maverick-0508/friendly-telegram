@@ -5,6 +5,33 @@
   "routes": [
     { "src": "/(.*)", "dest": "server.js" }
   ],
+  "functions": {
+    "server.js": {
+      "maxDuration": 10
+    }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, s-maxage=300, stale-while-revalidate=600" }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400, s-maxage=2592000, stale-while-revalidate=86400" },
+        { "key": "Expires", "value": "Thu, 26 Nov 2027 00:00:00 GMT" }
+      ]
+    },
+    {
+      "source": "/(.*)\\.(?:css|js|mjs|woff2|woff|ttf|png|jpg|jpeg|gif|svg|ico|webp|avif)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400, s-maxage=2592000, stale-while-revalidate=86400" },
+        { "key": "Expires", "value": "Thu, 26 Nov 2027 00:00:00 GMT" }
+      ]
+    }
+  ],
   "crons": [
     {
       "path": "/api/mpesa/reconcile",
